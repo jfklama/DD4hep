@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4RANDOM_H
-#define DDG4_GEANT4RANDOM_H
+#ifndef DD4HEP_GEANT4RANDOM_H
+#define DD4HEP_GEANT4RANDOM_H
 
 // Framework include files
 #include "DDG4/Geant4Action.h"
@@ -153,20 +153,14 @@ namespace dd4hep {
       double exp(double tau);
       /// Create gaussian distributed random numbers
       double gauss(double mean=0, double sigma=1);
-      /// Create gamma distributed random numbers
-      double gamma(double k, double lambda);
       /// Create landau distributed random numbers
       double landau(double mean=0, double sigma=1);
       /// Create tuple of randum number around a circle with radius r
       void   circle(double &x, double &y, double r);
       /// Create tuple of randum number on a sphere with radius r
       void   sphere(double &x, double &y, double &z, double r);
-      /// Create poisson distributed random numbers
-      double poisson(double mean=1e0 );
-      /// Create breit wigner distributed random numbers
-      double breit_wigner(double mean=0e0, double gamma=1e0);
     };
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4RANDOM_H
+#endif // DD4HEP_GEANT4RANDOM_H

@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETAIL_OBJECTSINTERNA_H
-#define DD4HEP_DETAIL_OBJECTSINTERNA_H
+#ifndef DD4HEP_DDCORE_OBJECTSINTERNA_H
+#define DD4HEP_DDCORE_OBJECTSINTERNA_H
 
 // Framework include files
 #include "DD4hep/Volumes.h"
@@ -88,9 +88,9 @@ namespace dd4hep {
   class VisAttrObject: public NamedObject {
   public:
     unsigned long magic;
-    TColor*       color   = nullptr;
-    TColor*       colortr = nullptr;
-    float         alpha   = 0;
+    TColor*       col    = 0;
+    int           color  = 0;
+    float         alpha  = 0;
     unsigned char drawingStyle  = VisAttr::SOLID;
     unsigned char lineStyle     = VisAttr::SOLID;
     unsigned char showDaughters = true;
@@ -232,4 +232,4 @@ namespace dd4hep {
 #endif
   };
 }      /* End namespace dd4hep            */
-#endif // DD4HEP_DETAIL_OBJECTSINTERNA_H
+#endif /* DD4HEP_DDCORE_OBJECTSINTERNA_H  */

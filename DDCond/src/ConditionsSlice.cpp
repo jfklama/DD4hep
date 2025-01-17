@@ -22,15 +22,14 @@ using namespace dd4hep;
 using namespace dd4hep::cond;
 
 /// Initializing constructor
-ConditionsSlice::ConditionsSlice(ConditionsManager mgr) : manager(mgr)
+ConditionsSlice::ConditionsSlice(ConditionsManager m) : manager(m)
 {
   InstanceCount::increment(this);  
 }
 
 /// Initializing constructor
-ConditionsSlice::ConditionsSlice(ConditionsManager mgr,
-                                 const shared_ptr<ConditionsContent>& cont)
-  : manager(mgr), content(cont)
+ConditionsSlice::ConditionsSlice(ConditionsManager m, const shared_ptr<ConditionsContent>& c)
+  : manager(m), content(c)
 {
   InstanceCount::increment(this);  
 }
@@ -189,3 +188,4 @@ void dd4hep::cond::fill_content(ConditionsManager mgr,
   ConditionsIOVPool::Elements& pools = iovPool->elements;
   for_each(begin(pools),end(pools),SliceOper(content));
 }
+

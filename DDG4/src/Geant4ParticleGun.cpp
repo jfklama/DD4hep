@@ -32,14 +32,12 @@ Geant4ParticleGun::Geant4ParticleGun(Geant4Context* ctxt, const string& nam)
 {
   InstanceCount::increment(this);
   m_needsControl = true;
-  declareProperty("Standalone",   m_standalone = true);
-  declareProperty("mask",         m_mask);
   declareProperty("isotrop",      m_isotrop = false);
-  declareProperty("standalone",   m_standalone);
+  declareProperty("Standalone",   m_standalone = true);
   // Backwards compatibility: Un-capitalize
   declareProperty("position",     m_position);
-  declareProperty("distribution", m_distribution);
   declareProperty("direction",    m_direction);
+  declareProperty("energy",       m_energy);
   declareProperty("particle",     m_particleName);
   declareProperty("multiplicity", m_multiplicity);
   declareProperty("print",        m_print = true);
@@ -50,35 +48,27 @@ Geant4ParticleGun::~Geant4ParticleGun() {
   InstanceCount::decrement(this);
 }
 
-/// Particle modification. Caller presets defaults to: ( direction = m_direction, momentum = [mMin, mMax])
-void Geant4ParticleGun::getParticleDirection(int num, ROOT::Math::XYZVector& direction, double& momentum) const  {
-  ( m_isotrop )
-    ? this->Geant4IsotropeGenerator::getParticleDirection(num, direction, momentum)
-    : this->Geant4ParticleGenerator::getParticleDirection(num, direction, momentum);
-}
-
 /// Callback to generate primary particles
 void Geant4ParticleGun::operator()(G4Event* event)   {
-  double r = m_direction.R(), eps = numeric_limits<float>::epsilon();
-  if ( r > eps )  {
-    m_direction.SetXYZ(m_direction.X()/r, m_direction.Y()/r, m_direction.Z()/r);
+  if ( m_isotrop )   {
+    double mom = 0.0;
+    this->Geant4IsotropeGenerator::getParticleDirection(0,m_direction,mom);
+  }
+  else  {
+    double r = m_direction.R(), eps = numeric_limits<float>::epsilon();
+    if ( r > eps )  {
+      m_direction.SetXYZ(m_direction.X()/r, m_direction.Y()/r, m_direction.Z()/r);
+    }
   }
 
   if ( m_standalone )  {
     generationInitialization(this,context());
   }
-
-  //bit wasteful to always set this :(
-  if( m_energy != -1 ){
-    m_momentumMin = m_energy;
-    m_momentumMax = m_energy;
-  }
-
-  print("Shoot [%d] [%.3f , %.3f] GeV %s pos:(%.3f %.3f %.3f)[mm] dir:(%6.3f %6.3f %6.3f)",
-        m_shotNo, m_momentumMin/CLHEP::GeV, m_momentumMax/CLHEP::GeV, m_particleName.c_str(),
-        m_position.X()/CLHEP::mm, m_position.Y()/CLHEP::mm, m_position.Z()/CLHEP::mm,
-        m_direction.X(), m_direction.Y(), m_direction.Z());
   this->Geant4ParticleGenerator::operator()(event);
+  print("Shoot [%d] %.3f GeV %s pos:(%.3f %.3f %.3f)[mm] dir:(%6.3f %6.3f %6.3f)",
+        m_shotNo, m_energy/CLHEP::GeV, m_particleName.c_str(),
+        m_position.X()/CLHEP::mm, m_position.Y()/CLHEP::mm, m_position.Z()/CLHEP::mm,
+        m_direction.X(),m_direction.Y(), m_direction.Z());
   if ( m_print )   {
     this->Geant4ParticleGenerator::printInteraction(m_mask);
   }

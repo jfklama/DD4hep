@@ -10,17 +10,20 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4ASSEMBLYVOLUME_H
-#define DDG4_GEANT4ASSEMBLYVOLUME_H
 
-/// ROOT includes
-#include "TGeoNode.h"
+// Disable diagnostics for ROOT dictionaries
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wkeyword-macro"
+#endif
 
-/// Geant4 include files
+#define private public
 #include "G4AssemblyVolume.hh"
+#undef private
 
-/// C/C++ include files
-#include <vector>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -28,52 +31,50 @@ namespace dd4hep {
   /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
   namespace sim {
 
-    /// Forward declarations
-    class Geant4Converter;
-    class Geant4GeometryInfo;
-    
     /// Hack! Wrapper around G4AssemblyVolume to access protected members.
     /**
      *  \author  M.Frank
      *  \version 1.0
      *  \ingroup DD4HEP_SIMULATION
      */
-    class Geant4AssemblyVolume  {
+    class Geant4AssemblyVolume : public G4AssemblyVolume {
       
     public:
 
-      typedef std::vector<const TGeoNode*> Chain;
       std::vector<const TGeoNode*> m_entries;
-      std::vector<Geant4AssemblyVolume*> m_places;
-      G4AssemblyVolume*            m_assembly;
+      typedef std::vector<const TGeoNode*> Chain;
 
-    public:
       /// Default constructor with initialization
-      Geant4AssemblyVolume();
-      /// Inhibit move construction
-      Geant4AssemblyVolume(Geant4AssemblyVolume&& copy) = delete;
-      /// Inhibit copy construction
-      Geant4AssemblyVolume(const Geant4AssemblyVolume& copy) = delete;
-      /// Inhibit move assignment
-      Geant4AssemblyVolume& operator=(Geant4AssemblyVolume&& copy) = delete;
-      /// Inhibit copy assignment
-      Geant4AssemblyVolume& operator=(const Geant4AssemblyVolume& copy) = delete;
+      Geant4AssemblyVolume() {
+      }
+
       /// Default destructor
-      virtual ~Geant4AssemblyVolume();
-      /// Place logical daughter volume into the assembly
-      long placeVolume(const TGeoNode* n, G4LogicalVolume* pPlacedVolume, G4Transform3D& transformation);
-      /// Place daughter assembly into the assembly      
-      long placeAssembly(const TGeoNode* n, Geant4AssemblyVolume* pPlacedVolume, G4Transform3D& transformation);
-      /// Expand all daughter placements and expand the contained assemblies to imprints
-      void imprint(const Geant4Converter& cnv,
-                   const TGeoNode*        n,
-                   Chain                  chain,
-                   Geant4AssemblyVolume*  pAssembly,
-                   G4LogicalVolume*       pMotherLV,
-                   G4Transform3D&         transformation,
-                   G4int                  copyNumBase,
-                   G4bool                 surfCheck );
+      ~Geant4AssemblyVolume()   {
+      }
+
+      //std::vector<G4AssemblyTriplet>& triplets()  { return fTriplets; }
+      long placeVolume(const TGeoNode* n, G4LogicalVolume* pPlacedVolume, G4Transform3D& transformation) {
+        size_t id = fTriplets.size();
+        m_entries.push_back(n);
+        this->AddPlacedVolume(pPlacedVolume, transformation);
+        return (long)id;
+      }
+
+      long placeAssembly(const TGeoNode* n, Geant4AssemblyVolume* pPlacedVolume, G4Transform3D& transformation) {
+        size_t id = fTriplets.size();
+        m_entries.push_back(n);
+        this->AddPlacedAssembly(pPlacedVolume, transformation);
+        return (long)id;
+      }
+
+      void imprint(Geant4GeometryInfo& info,
+                   const TGeoNode* n,
+                   Chain chain,
+                   Geant4AssemblyVolume* pAssembly,
+                   G4LogicalVolume*  pMotherLV,
+                   G4Transform3D&    transformation,
+                   G4int copyNumBase,
+                   G4bool surfCheck );
     };
   }
 }
-#endif

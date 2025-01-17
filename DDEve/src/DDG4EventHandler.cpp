@@ -12,14 +12,14 @@
 //==========================================================================
 
 // Framework include files
-#include <DDEve/DDG4EventHandler.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/Objects.h>
-#include <DD4hep/Factories.h>
+#include "DDEve/DDG4EventHandler.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/Objects.h"
+#include "DD4hep/Factories.h"
 
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
+#include "TFile.h"
+#include "TTree.h"
+#include "TBranch.h"
 
 // C/C++ include files
 #include <stdexcept>
@@ -42,18 +42,18 @@ namespace {
   }
 }
 using namespace dd4hep::detail;
-DECLARE_CONSTRUCTOR(DD4hep_DDEve_DDG4EventHandler,_create)
+DECLARE_CONSTRUCTOR(DDEve_DDG4EventHandler,_create)
 
 /// Standard constructor
 DDG4EventHandler::DDG4EventHandler() : EventHandler(), m_file(0,0), m_entry(-1) {
-  void* ptr = PluginService::Create<void*>("DD4hep_DDEve_DDG4HitAccess",(const char*)"");
+  void* ptr = PluginService::Create<void*>("DDEve_DDG4HitAccess",(const char*)"");
   if ( 0 == ptr )   {
-    throw runtime_error("FATAL: Failed to access function pointer from factory DD4hep_DDEve_DDG4HitAccess");
+    throw runtime_error("FATAL: Failed to access function pointer from factory DDEve_DDG4HitAccess");
   }
   m_simhitConverter = FCN(ptr).hits;
-  ptr = PluginService::Create<void*>("DD4hep_DDEve_DDG4ParticleAccess",(const char*)"");
+  ptr = PluginService::Create<void*>("DDEve_DDG4ParticleAccess",(const char*)"");
   if ( 0 == ptr )   {
-    throw runtime_error("FATAL: Failed to access function pointer from factory DD4hep_DDEve_DDG4ParticleAccess");
+    throw runtime_error("FATAL: Failed to access function pointer from factory DDEve_DDG4ParticleAccess");
   }
   m_particleConverter = FCN(ptr).particles;
 }

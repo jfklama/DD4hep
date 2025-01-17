@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_CONTEXTMENU_H
-#define DDEVE_CONTEXTMENU_H
+#ifndef DD4HEP_DDEVE_CONTEXTMENU_H
+#define DD4HEP_DDEVE_CONTEXTMENU_H
 
 // Framework include files
 #include "DD4hep/Callback.h"
@@ -94,4 +94,4 @@ namespace dd4hep {
 } /* End namespace dd4hep   */
 
 
-#endif // DDEVE_CONTEXTMENU_H
+#endif /* DD4HEP_DDEVE_CONTEXTMENU_H */

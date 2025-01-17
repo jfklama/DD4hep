@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_DD4HEPMENU_H
-#define DDEVE_DD4HEPMENU_H
+#ifndef DD4HEP_DDEVE_DD4HEPMENU_H
+#define DD4HEP_DDEVE_DD4HEPMENU_H
 
 // Framework include files
 #include "DDEve/Display.h"
@@ -48,7 +48,7 @@ namespace dd4hep {
     virtual ~DD4hepMenu();
 
     /// Add the menu to the menu bar
-    virtual void Build(TGMenuBar* menuBar, int hints=kLHintsNormal)  override;
+    virtual void Build(TGMenuBar* bar, int hints=kLHintsNormal)  override;
     /// Callback when loading the configuration
     void OnLoadXML(TGMenuEntry* entry, void* ptr);
     /// Callback when loading the configuration
@@ -71,5 +71,5 @@ namespace dd4hep {
   };
 
 }      /* End namespace dd4hep      */
-#endif // DDEVE_DD4HEPMENU_H
+#endif /* DD4HEP_DDEVE_DD4HEPMENU_H */
 

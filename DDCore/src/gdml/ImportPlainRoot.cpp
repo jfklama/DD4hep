@@ -24,6 +24,8 @@
 #include "TInterpreter.h"
 #include "TGeoElement.h"
 #include "TGeoManager.h"
+#include "TGDMLParse.h"
+#include "TGDMLWrite.h"
 #include "TFile.h"
 #include "TUri.h"
 
@@ -88,11 +90,11 @@ static long plain_root_dump(Detector& description, int argc, char** argv) {
       ++num_nodes;
       if ( lvl <= max_level )  {
         if ( !import || (import && npatch > 0) )  {
-          ::snprintf(fmt,sizeof(fmt),"%-5d %%-%ds  %%s  NDau:%%d Ext:%%p  Vol:%%s Mother:%%s Ext:%%p Mat:%%s",lvl,lvl);
-          TGeoVolume* mother = n->GetMotherVolume();
+          snprintf(fmt,sizeof(fmt),"%-5d %%-%ds  %%s  NDau:%%d Ext:%%p  Vol:%%s Mother:%%s Ext:%%p Mat:%%s",lvl,lvl);
+          TGeoVolume* m = n->GetMotherVolume();
           printout(printLevel,"PlainROOTDump",fmt,"",
                    n->GetName(), n->GetNdaughters(), n->GetUserExtension(),
-                   v->GetName(), mother ? mother->GetName() : "-----",
+                   v->GetName(), m ? m->GetName() : "-----",
                    v->GetUserExtension(), v->GetMedium()->GetName());
           if ( import )  {
             if ( v_ext )   {
@@ -145,13 +147,13 @@ static long plain_root_dump(Detector& description, int argc, char** argv) {
     Error:
       cout <<
         "Usage: -plugin <name> -arg [-arg]                                            \n"
-        "     name:   factory name     DD4hep_PlainROOT                               \n"
+        "     name:   factory name     DD4hep_ROOTGDMLParse                           \n"
         "     -input  <string>         Input file name.                               \n"
         "     -object <string>         Name of geometry object in file. Default: \"Geometry\"\n"
         "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
-    printout(INFO,"ImportROOT","+++ Read geometry from GDML file file:%s",input.c_str());
+    printout(INFO,"ROOTGDMLParse","+++ Read geometry from GDML file file:%s",input.c_str());
     DetectorData::unpatchRootStreamer(TGeoVolume::Class());
     DetectorData::unpatchRootStreamer(TGeoNode::Class());
     TFile* f = TFile::Open(input.c_str());
@@ -181,7 +183,7 @@ static long plain_root_dump(Detector& description, int argc, char** argv) {
   }
   DetectorData::patchRootStreamer(TGeoVolume::Class());
   DetectorData::patchRootStreamer(TGeoNode::Class());
-  except("ImportROOT","+++ No input file name given.");
+  except("ROOTGDMLParse","+++ No input file name given.");
   return 0;
 }
 DECLARE_APPLY(DD4hep_PlainROOT,plain_root_dump)

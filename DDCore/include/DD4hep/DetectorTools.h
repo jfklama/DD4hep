@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETECTORTOOLS_H
-#define DD4HEP_DETECTORTOOLS_H
+#ifndef DD4HEP_DDCORE_DETECTORTOOLS_H
+#define DD4HEP_DDCORE_DETECTORTOOLS_H
 
 // Framework include files
 #include "DD4hep/DetElement.h"
@@ -48,9 +48,9 @@ namespace dd4hep {
 
       /// Collect detector elements to the top detector element (world)
       void elementPath(DetElement elt, ElementPath& detectors);
-      /// Find DetElement as child of the top level volume by its absolute path
+      /// Find DetElement as child of the top level volume by it's absolute path
       DetElement findElement(const Detector& description, const std::string& path);
-      /// Find DetElement as child of a parent by its relative or absolute path
+      /// Find DetElement as child of a parent by it's relative or absolute path
       DetElement findDaughterElement(DetElement parent, const std::string& subpath);
       /// Find path between the child element and the parent element
       bool isParentElement(DetElement parent, DetElement child);
@@ -84,4 +84,4 @@ namespace dd4hep {
     }
   }
 }         /* End namespace dd4hep                   */
-#endif // DD4HEP_DETECTORTOOLS_H
+#endif    /* DD4HEP_DDCORE_DETECTORTOOLS_H    */

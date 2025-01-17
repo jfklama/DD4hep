@@ -244,12 +244,12 @@ template<typename MAPPING> inline bool
 ConditionsMappedUserPool<MAPPING>::i_insert(Condition::Object* o)   {
   int ret = m_conditions.emplace(o->hash,o).second;
   if ( flags&PRINT_INSERT )  {
-    printout(INFO,"UserPool","++ %s condition [%016llX]"
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
-             ": %s [%s].", ret ? "Successfully inserted" : "FAILED to insert",
-             o->hash, o->GetName(), o->GetTitle());
+    printout(INFO,"UserPool","++ %s condition [%016llX]: %s.",
+             ret ? "Successfully inserted" : "FAILED to insert", o->hash,
+#if defined(DD4HEP_MINIMAL_CONDITIONS)
+             "");
 #else
-    , ret ? "Successfully inserted" : "FAILED to insert", o->hash);
+             o->name.c_str());
 #endif
   }
   return ret;
@@ -358,14 +358,16 @@ template<typename MAPPING>
 bool ConditionsMappedUserPool<MAPPING>::insert(DetElement detector,
                                                unsigned int item_key,
                                                Condition cond)   {
-  cond->hash = ConditionKey::KeyMaker(detector.key(),item_key).hash;
+  ConditionKey::KeyMaker m(detector.key(),item_key);
+  cond->hash = m.hash;
   return insert(cond);
 }
 
 /// ConditionsMap overload: Access a condition
 template<typename MAPPING>
 Condition ConditionsMappedUserPool<MAPPING>::get(DetElement detector, unsigned int item_key)  const  {
-  return get(ConditionKey::KeyMaker(detector.key(), item_key).hash);
+  ConditionKey::KeyMaker m(detector.key(), item_key);
+  return get(m.hash);
 }
   
 /// No ConditionsMap overload: Access all conditions within a key range in the interval [lower,upper]
@@ -470,8 +472,8 @@ size_t ConditionsMappedUserPool<MAPPING>::compute(const Dependencies& deps,
       missing.emplace(i);
     }
     if ( !missing.empty() )  {
-      ConditionsManagerObject* mgr(m_manager.access());
-      ConditionsDependencyHandler handler(mgr, *this, missing, user_param);
+      ConditionsManagerObject*    m(m_manager.access());
+      ConditionsDependencyHandler handler(m, *this, missing, user_param);
       /// 1rst pass: Compute/create the missing condiions
       handler.compute();
       /// 2nd pass:  Resolve missing dependencies
@@ -558,6 +560,7 @@ ConditionsMappedUserPool<MAPPING>::prepare(const IOV&                  required,
   if ( num_cond_miss > 0 )  {
     if ( do_load )  {
       ConditionsDataLoader::LoadedItems loaded;
+      //size_t updates = m_loader->load_many(required, cond_missing, loaded, pool_iov);
       size_t updates = m_loader->load_many(required, cond_missing, loaded, pool_iov);
       if ( updates > 0 )  {
         // Need to compute the intersection: All missing entries are required....
@@ -572,8 +575,8 @@ ConditionsMappedUserPool<MAPPING>::prepare(const IOV&                  required,
                  num_load_miss, loaded.size());
         if ( do_output_miss )  {
           copy(begin(load_missing), load_last, inserter(slice_miss_cond, slice_miss_cond.begin()));
-          for ( const auto& missing : slice_miss_cond )   {
-            printout (ERROR, "TEST", "Unloaded: %s",missing.second->toString().c_str());
+          for ( const auto& m : slice_miss_cond )   {
+            printout (ERROR, "TEST", "Unloaded: %s",m.second->toString().c_str());
           }
         }
         for_each(loaded.begin(),loaded.end(),Inserter<MAPPING>(m_conditions,&m_iov));
@@ -588,8 +591,8 @@ ConditionsMappedUserPool<MAPPING>::prepare(const IOV&                  required,
     }
     else if ( do_output_miss )  {
       copy(begin(cond_missing), last_cond, inserter(slice_miss_cond, slice_miss_cond.begin()));
-      for ( const auto& missing : slice_miss_cond )   {
-        printout (ERROR, "TEST", "Unloaded: %s",missing.second->toString().c_str());
+      for ( const auto& m : slice_miss_cond )   {
+        printout (ERROR, "TEST", "Unloaded: %s",m.second->toString().c_str());
       }
     }
   }

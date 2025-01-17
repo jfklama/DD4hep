@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDALIGN_GLOBALALIGNMENTSTACK_H
-#define DDALIGN_GLOBALALIGNMENTSTACK_H
+#ifndef DD4HEP_ALIGNMENT_GLOBALALIGNMENTSTACK_H
+#define DD4HEP_ALIGNMENT_GLOBALALIGNMENTSTACK_H
 
 // Framework include files
 #include "DD4hep/Alignments.h"
@@ -86,7 +86,7 @@ namespace dd4hep {
         /// Check flag if the node location and all children should be reset
         bool resetChildren() const     {  return delta.checkFlag(RESET_CHILDREN);   }
 
-        /// Set flag to reset the entry to its ideal geometrical position
+        /// Set flag to reset the entry to it's ideal geometrical position
         StackEntry& setReset(bool new_value=true);
         /// Set flag to reset the entry's children to their ideal geometrical position
         StackEntry& setResetChildren(bool new_value=true);
@@ -149,4 +149,4 @@ namespace dd4hep {
 
   }       /* End namespace detail                        */
 }         /* End namespace dd4hep                          */
-#endif // DDALIGN_GLOBALALIGNMENTSTACK_H
+#endif    /* DD4HEP_ALIGNMENT_GLOBALALIGNMENTSTACK_H       */

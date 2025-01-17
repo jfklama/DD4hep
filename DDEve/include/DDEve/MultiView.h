@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_MULTIVIEW_H
-#define DDEVE_MULTIVIEW_H
+#ifndef DD4HEP_DDEVE_MULTIVIEW_H
+#define DD4HEP_DDEVE_MULTIVIEW_H
 
 // Framework include files
 #include "DDEve/View.h"
@@ -41,4 +41,4 @@ namespace dd4hep {
     ClassDefOverride(MultiView,0);
   };
 }      /* End namespace dd4hep     */
-#endif // DDEVE_MULTIVIEW_H
+#endif /* DD4HEP_DDEVE_MULTIVIEW_H */

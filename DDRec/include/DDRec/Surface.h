@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_SURFACE_H
-#define DDREC_SURFACE_H
+#ifndef rec_Surface_H
+#define rec_Surface_H
 
 #include "DD4hep/Objects.h"
 #include "DD4hep/Volumes.h"
@@ -401,10 +401,10 @@ namespace dd4hep {
     class VolConeImpl : public VolSurfaceBase {
       
       //internal helper variables
-      double _ztip        { 0.0 }; // z position of the tip in the volume coordinate system
-      double _zt0         { 0.0 }; // z distance of the front face from the tip
-      double _zt1         { 0.0 }; // z distance of the back face from the tip
-      double _tanTheta    { 0.0 }; // tan of half the openeing angle 
+      double _ztip ;     // z position of the tip in the volume coordinate system
+      double _zt0 ;      // z distance of the front face from the tip
+      double _zt1 ;      // z distance of the back face from the tip
+      double _tanTheta ; // tan of half the openeing angle 
 
     public:
       
@@ -708,4 +708,4 @@ namespace dd4hep {
 
 
 
-#endif // DDREC_SURFACE_H
+#endif /* Surface */

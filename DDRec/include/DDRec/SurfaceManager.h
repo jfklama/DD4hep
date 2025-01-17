@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_SURFACEMANAGER_H
-#define DDREC_SURFACEMANAGER_H
+#ifndef rec_SurfaceManager_H_
+#define rec_SurfaceManager_H_
 
 #include "DDRec/ISurface.h"
 #include "DD4hep/Detector.h"
@@ -38,7 +38,7 @@ namespace dd4hep {
 
     public:
       /// The constructor
-      SurfaceManager(const Detector& theDetector);
+      SurfaceManager(Detector& theDetector);
 
       /// No default constructor
 #if defined(G__ROOT)
@@ -69,7 +69,7 @@ namespace dd4hep {
 
 
       /// initialize all known surface maps
-      void initialize(const Detector& theDetector) ;
+      void initialize(Detector& theDetector) ;
 
       SurfaceMapsMap _map ;
     };
@@ -79,4 +79,4 @@ namespace dd4hep {
 
 
 
-#endif // DDREC_SURFACEMANAGER_H
+#endif // rec_SurfaceManager_H_

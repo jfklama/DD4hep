@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_CONDITIONDERIVED_H
-#define DD4HEP_CONDITIONDERIVED_H
+#ifndef DD4HEP_DDCORE_CONDITIONDERIVED_H
+#define DD4HEP_DDCORE_CONDITIONDERIVED_H
 
 // Framework include files
 #include "DD4hep/Memory.h"
@@ -78,10 +78,6 @@ namespace dd4hep {
       virtual Condition get(Condition::key_type key) = 0;
       /// Interface to access conditions by hash value
       virtual Condition get(Condition::key_type key, bool throw_if_not) = 0;
-      /// Interface to access conditions by hash value
-      virtual Condition get(Condition::key_type key,
-                            const ConditionDependency* dependency,
-                            bool throw_if_not) = 0;
       /// Interface to access conditions by hash value of the DetElement (only valid at resolve!)
       virtual std::vector<Condition> get(DetElement de) = 0;
       /// Interface to access conditions by hash value of the DetElement (only valid at resolve!)
@@ -320,8 +316,10 @@ namespace dd4hep {
       int                                  m_refCount {0};
 
     public:
+#ifdef DD4HEP_CONDITIONS_DEBUG
       /// Reference to the target's detector element
       DetElement                           detector;
+#endif
       /// Key to the condition to be updated
       ConditionKey                         target {0};
       /// Dependency keys this condition depends on
@@ -339,14 +337,18 @@ namespace dd4hep {
 
     public:
       /// Initializing constructor used by builder
+      ConditionDependency(Condition::key_type key, std::shared_ptr<ConditionUpdateCall> call);
+      /// Initializing constructor used by builder
       ConditionDependency(DetElement de, const std::string& item, std::shared_ptr<ConditionUpdateCall> call);
       /// Initializing constructor used by builder
       ConditionDependency(DetElement de, Condition::itemkey_type item_key, std::shared_ptr<ConditionUpdateCall> call);
+      /// Initializing constructor used by builder
+      ConditionDependency(Condition::detkey_type det_key, Condition::itemkey_type item_key, std::shared_ptr<ConditionUpdateCall> call);
       /// Default constructor
       ConditionDependency();
       /// Access the dependency key
       Condition::key_type key()  const    {  return target.hash;                   }
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
+#ifdef DD4HEP_CONDITIONS_DEBUG
       /// Access the dependency key
       const char* name()  const           {  return target.name.c_str();           }
 #endif
@@ -393,7 +395,7 @@ namespace dd4hep {
     /// Access to dependency keys
     inline const ConditionKey&
     ConditionUpdateContext::key(size_t which)  const  {
-      return dependency->dependencies.at(which);
+      return dependency->dependencies[which];
     }
 
     /// Access of other conditions data from the resolver
@@ -432,4 +434,4 @@ namespace dd4hep {
 
   }       /* End namespace cond               */
 }         /* End namespace dd4hep                   */
-#endif // DD4HEP_CONDITIONDERIVED_H
+#endif    /* DD4HEP_DDCORE_CONDITIONDERIVED_H     */

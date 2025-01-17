@@ -1,6 +1,3 @@
-#ifndef ROOT_WARNINGS_H
-#define ROOT_WARNINGS_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -39,5 +36,3 @@
 #define  DD4HEP_DICTIONARY_CODE 1
 #endif
 
-
-#endif

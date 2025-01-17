@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_POPUPMENU_H
-#define DDEVE_POPUPMENU_H
+#ifndef DD4HEP_DDEVE_POPUPMENU_H
+#define DD4HEP_DDEVE_POPUPMENU_H
 
 // Framework include files
 #include "DD4hep/Callback.h"
@@ -53,14 +53,14 @@ namespace dd4hep {
     TGPopupMenu& menu()  {  return m_popup; }
 
     /// Add the menu to the menu bar
-    virtual void Build(TGMenuBar* menuBar, int hints=kLHintsNormal);
+    virtual void Build(TGMenuBar* bar, int hints=kLHintsNormal);
 
     /// Add a menu separator to the menu.
     virtual void AddSeparator(TGMenuEntry* before = 0);
     /// Add a menu label to the menu.
-    virtual void AddLabel(const char* label, const TGPicture* p = 0, TGMenuEntry* before = 0);
+    virtual void AddLabel(const char* s, const TGPicture* p = 0, TGMenuEntry* before = 0);
     /// Add a (cascading) popup menu to a popup menu.
-    virtual void AddPopup(const char* name, TGPopupMenu* popup, TGMenuEntry* before = 0, const TGPicture* p = 0);
+    virtual void AddPopup(const char* s, TGPopupMenu* popup, TGMenuEntry* before = 0, const TGPicture* p = 0);
     /// Add a new popup menu entry with a callback
     virtual int AddEntry(const char* name, Callback cb, void* ud=0, const TGPicture* p=0, TGMenuEntry* before=0);
     /// Add a new popup menu entry with a callback
@@ -83,5 +83,5 @@ namespace dd4hep {
     ClassDef(PopupMenu,0);
   };
 }      /* End namespace dd4hep     */
-#endif // DDEVE_POPUPMENU_H
+#endif /* DD4HEP_DDEVE_POPUPMENU_H */
 

@@ -11,12 +11,10 @@
 //
 //==========================================================================
 
-#include "DD4hep/detail/Handle.inl"
 #include "DD4hep/InstanceCount.h"
 #include "DD4hep/Printout.h"
+#include "DD4hep/detail/Handle.inl"
 #include "Evaluator/Evaluator.h"
-
-/// C/C++ include files
 #include <iostream>
 #include <iomanip>
 #include <climits>
@@ -32,7 +30,7 @@ namespace dd4hep {
 }
 
 namespace {
-  const dd4hep::tools::Evaluator& eval(dd4hep::evaluator());
+  dd4hep::tools::Evaluator& eval(dd4hep::evaluator());
 }
 
 using namespace std;
@@ -40,83 +38,69 @@ using namespace dd4hep;
 using namespace dd4hep::detail;
 
 namespace   {
-
-  /// Set true for backwards compatibility
-  static bool s_allow_variable_redefine = true;
-
-  ///
-  void check_evaluation(const string& value, std::pair<int,double> res, stringstream& err)   {
-    if ( res.first != tools::Evaluator::OK) {
-      throw runtime_error("dd4hep: "+err.str()+" : value="+value+" [Evaluation error]");
+  void check_evaluation(const string& value, int status)   {
+    if (status != tools::Evaluator::OK) {
+      stringstream str;
+      eval.print_error(str);
+      throw runtime_error("dd4hep: "+str.str()+" : value="+value+" [Evaluation error]");
     }
   }
 }
 
 namespace dd4hep  {
-
-  /// Steer redefinition of variable re-definition during expression evaluation. returns old value
-  bool set_allow_variable_redefine(bool value)    {
-    bool tmp = s_allow_variable_redefine;
-    s_allow_variable_redefine = value;
-    return tmp;
-  }
-
-  std::pair<int, double> _toFloatingPoint(const string& value)   {
-    stringstream err;
-    auto result = eval.evaluate(value, err);
-    check_evaluation(value, result, err);
-    return result;
-  }
-
-  std::pair<int, double> _toInteger(const string& value)    {
+  
+  short _toShort(const string& value) {
     string s(value);
     size_t idx = s.find("(int)");
     if (idx != string::npos)
       s.erase(idx, 5);
-    idx = s.find("(long)");
-    if (idx != string::npos)
-      s.erase(idx, 6);
     while (s[0] == ' ')
       s.erase(0, 1);
-    return _toFloatingPoint(s);
-  }
-
-  short _toShort(const string& value) {
-    return (short) _toInteger(value).second;
-  }
-
-  unsigned short _toUShort(const string& value) {
-    return (unsigned short) _toInteger(value).second;
+    double result = eval.evaluate(s.c_str());
+    check_evaluation(value, eval.status());
+    return (short) result;
   }
 
   int _toInt(const string& value) {
-    return (int) _toInteger(value).second;
-  }
-
-  unsigned int _toUInt(const string& value) {
-    return (unsigned int) _toInteger(value).second;
+    string s(value);
+    size_t idx = s.find("(int)");
+    if (idx != string::npos)
+      s.erase(idx, 5);
+    while (s[0] == ' ')
+      s.erase(0, 1);
+    double result = eval.evaluate(s.c_str());
+    check_evaluation(value, eval.status());
+    return (int) result;
   }
 
   long _toLong(const string& value) {
-    return (long) _toInteger(value).second;
-  }
-
-  unsigned long _toULong(const string& value) {
-    return (unsigned long) _toInteger(value).second;
+    string s(value);
+    size_t idx = s.find("(int)");
+    if (idx != string::npos)
+      s.erase(idx, 5);
+    while (s[0] == ' ')
+      s.erase(0, 1);
+    double result = eval.evaluate(s.c_str());
+    check_evaluation(value, eval.status());
+    return (long) result;
   }
 
   bool _toBool(const string& value) {
-    return value == "true" || value == "yes" || value == "True";
+    return value == "true" || value == "yes";
   }
 
   /// String conversions: string to float value
   float _toFloat(const string& value) {
-    return (float) _toFloatingPoint(value).second;
+    double result = eval.evaluate(value.c_str());
+    check_evaluation(value, eval.status());
+    return (float) result;
   }
 
   /// String conversions: string to double value
   double _toDouble(const string& value) {
-    return _toFloatingPoint(value).second;
+    double result = eval.evaluate(value.c_str());
+    check_evaluation(value, eval.status());
+    return result;
   }
 
   /// Generic type conversion from string to primitive value  \ingroup DD4HEP_CORE
@@ -189,7 +173,7 @@ namespace dd4hep  {
     double val = _toDouble(left + "*" + right);
     if ( val >= 0 && val <= double(UCHAR_MAX) )
       return (unsigned char) (int)val;
-    except("_multiply<unsigned char>",
+    except("_multiply<char>",
            "Multiplication %e = %s * %s out of bounds for conversion to unsigned char.",
            val, left.c_str(), right.c_str());
     return 0;
@@ -199,7 +183,7 @@ namespace dd4hep  {
     double val = _toDouble(left + "*" + right);
     if ( val >= double(SHRT_MIN) && val <= double(SHRT_MAX) )
       return (short) val;
-    except("_multiply<short>",
+    except("_multiply<char>",
            "Multiplication %e = %s * %s out of bounds for conversion to short.",
            val, left.c_str(), right.c_str());
     return 0;
@@ -209,7 +193,7 @@ namespace dd4hep  {
     double val = _toDouble(left + "*" + right);
     if ( val >= 0 && val <= double(USHRT_MAX) )
       return (unsigned short)val;
-    except("_multiply<unsigned short>",
+    except("_multiply<char>",
            "Multiplication %e = %s * %s out of bounds for conversion to unsigned short.",
            val, left.c_str(), right.c_str());
     return 0;
@@ -250,8 +234,6 @@ namespace dd4hep  {
       return;
     }
     else  {
-      int status;
-      stringstream err;
       string n = name, v = value;
       size_t idx = v.find("(int)");
       if (idx != string::npos)
@@ -261,59 +243,10 @@ namespace dd4hep  {
         v.erase(idx, 7);
       while (v[0] == ' ')
         v.erase(0, 1);
-      auto result = eval.evaluate(v, err);
-      check_evaluation(v, result, err);
-      err.str("");
-      status = eval.setVariable(n, result.second, err);
-      if ( status != tools::Evaluator::OK )   {
-	stringstream err_msg;
-	err_msg << "name=" << name << " value=" << value
-		<< "  " << err.str() << " [setVariable error]";
-	if ( status == tools::Evaluator::WARNING_EXISTING_VARIABLE )   {
-	  if ( s_allow_variable_redefine )
-	    printout(WARNING,"Evaluator","+++ Overwriting variable: "+err_msg.str());
-	  else
-	    except("Evaluator","+++ Overwriting variable: "+err_msg.str());
-	}
-      }
+      double result = eval.evaluate(v.c_str());
+      check_evaluation(v, eval.status());
+      eval.setVariable(n.c_str(), result);
     }
-  }
-
-  /// Evaluate string constant using environment stored in the evaluator
-  string _getEnviron(const string& env)   {    
-    // We are trying to deal with the case when several variables are being replaced in the
-    // string.   
-    size_t current_index = 0;
-    stringstream processed_variable;
-    while (true) {
-      // Looking for the start of a variable use, with the syntax
-      // "path1/path2/${VAR1}/path3/${VAR2}"
-      size_t id1 = env.find("${", current_index);
-      // variable start found, do a greedy search for the variable end 
-      if (id1 == string::npos) {
-         // In this case we did not find the ${ to indicate a start of variable,
-        // we just copy the rest of the variable to the stringstream and exit
-        processed_variable << env.substr(current_index);
-        break;
-      }
-      size_t id2 = env.find("}", id1);
-      if (id2 == string::npos) {
-        runtime_error("dd4hep: Syntax error, bad variable syntax: " + env); 
-      }
-      processed_variable << env.substr(current_index, id1 -current_index );
-      string v   = env.substr(id1, id2-id1+1);
-      stringstream err;
-      auto   ret = eval.getEnviron(v, err);
-      // Checking that the variable lookup worked
-      if ( ret.first != tools::Evaluator::OK) {
-        cerr << v << ": " << err.str() << endl;
-        throw runtime_error("dd4hep: Severe error during environment lookup of " + v + " " + err.str());
-      }
-      // Now adding the variable
-      processed_variable << ret.second;
-      current_index = id2 + 1;       
-    }
-    return processed_variable.str();
   }
 
   /// String manipulations: Remove unconditionally all white spaces
@@ -437,10 +370,8 @@ DD4HEP_INSTANTIATE_HANDLE(TGeoNodeOffset);
 #include "TGeoTorus.h"
 #include "TGeoBoolNode.h"
 #include "TGeoVolume.h"
-#include "TGeoScaledShape.h"
 #include "TGeoCompositeShape.h"
 #include "TGeoShapeAssembly.h"
-#include "DD4hep/detail/ShapesInterna.h"
 DD4HEP_INSTANTIATE_HANDLE(TGeoVolumeAssembly,TGeoVolume,TGeoAtt);
 DD4HEP_INSTANTIATE_HANDLE(TGeoVolumeMulti,TGeoVolume,TGeoAtt);
 DD4HEP_INSTANTIATE_HANDLE(TGeoVolume,TGeoAtt,TAttLine,TAtt3D);
@@ -455,15 +386,12 @@ DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoParaboloid);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoPcon);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoPgon,TGeoPcon);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoXtru);
-DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoScaledShape);
 
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTube);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoHype,TGeoTube);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoEltu,TGeoTube);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTubeSeg,TGeoTube);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoCtub,TGeoTubeSeg,TGeoTube);
-using dd4hep::TwistedTubeObject;
-DD4HEP_INSTANTIATE_SHAPE_HANDLE(TwistedTubeObject,TGeoTubeSeg);
 
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTrap,TGeoArb8);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoGtra,TGeoArb8);
@@ -471,12 +399,6 @@ DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTrd1);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTrd2);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoSphere);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTorus);
-
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-#include "TGeoTessellated.h"
-DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoTessellated);
-#endif
-
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoHalfSpace);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoShapeAssembly);
 DD4HEP_INSTANTIATE_SHAPE_HANDLE(TGeoCompositeShape);

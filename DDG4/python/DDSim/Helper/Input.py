@@ -1,6 +1,8 @@
 """Base class for inputfile parameters"""
 
+from __future__ import absolute_import, unicode_literals
 from DDSim.Helper.ConfigHelper import ConfigHelper
+import ddsix as six
 
 
 class Input(ConfigHelper):
@@ -8,8 +10,8 @@ class Input(ConfigHelper):
 
   def __init__(self):
     super(Input, self).__init__()
+
     self.__parameters = {}
-    self._closeProperties()
 
   def getParameters(self):
     return self.__parameters
@@ -21,7 +23,7 @@ class Input(ConfigHelper):
   @_parameters.setter
   def _parameters(self, newParameters):
     if isinstance(newParameters, dict):
-      for par, val in newParameters.items():
+      for par, val in six.iteritems(newParameters):
         self.__parameters[par] = str(val)
 
     else:

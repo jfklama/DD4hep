@@ -11,9 +11,9 @@
 //
 //==========================================================================
 
-/// Framework include files
-#include <DD4hep/InstanceCount.h>
-#include <DDDigi/DigiActionSequence.h>
+// Framework include files
+#include "DD4hep/InstanceCount.h"
+#include "DDDigi/DigiActionSequence.h"
 
 // C/C++ include files
 #include <stdexcept>
@@ -36,7 +36,7 @@ DigiActionSequence::~DigiActionSequence() {
 }
 
 /// Adopt a new action as part of the sequence. Sequence takes ownership.
-void DigiActionSequence::adopt(DigiEventAction* action)    {
+void DigiActionSequence::adopt(DigiAction* action)    {
   this->DigiSynchronize::adopt(action);
 }
 
@@ -45,32 +45,6 @@ void DigiActionSequence::execute(DigiContext& context)  const   {
   m_begin(&context);
   this->DigiSynchronize::execute(context);
   debug("+++ Event: %8d (DigiActionSequence) Parallel: %s Done.",
-       context.event->eventNumber, yes_no(m_parallel));
+       context.event().eventNumber, yes_no(m_parallel));
   m_end(&context);
-}
-
-/// Standard constructor
-DigiSequentialActionSequence::DigiSequentialActionSequence(const DigiKernel& kernel, const string& nam)
-  : DigiActionSequence(kernel, nam)
-{
-  this->m_parallel = false;
-  InstanceCount::increment(this);
-}
-
-/// Default destructor
-DigiSequentialActionSequence::~DigiSequentialActionSequence() {
-  InstanceCount::decrement(this);
-}
-
-/// Standard constructor
-DigiParallelActionSequence::DigiParallelActionSequence(const DigiKernel& kernel, const string& nam)
-  : DigiActionSequence(kernel, nam)
-{
-  this->m_parallel = true;
-  InstanceCount::increment(this);
-}
-
-/// Default destructor
-DigiParallelActionSequence::~DigiParallelActionSequence() {
-  InstanceCount::decrement(this);
 }

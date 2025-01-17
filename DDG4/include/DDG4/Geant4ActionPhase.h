@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4ACTIONPHASE_H
-#define DDG4_GEANT4ACTIONPHASE_H
+#ifndef DD4HEP_DDG4_GEANT4ACTIONPHASE_H
+#define DD4HEP_DDG4_GEANT4ACTIONPHASE_H
 
 // Framework include files
 #include "DD4hep/Exceptions.h"
@@ -144,4 +144,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4ACTIONPHASE_H
+#endif // DD4HEP_DDG4_GEANT4ACTIONPHASE_H

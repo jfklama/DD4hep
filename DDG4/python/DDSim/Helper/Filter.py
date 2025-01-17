@@ -4,9 +4,13 @@ Later the parameter dictionary is used to instantiate the filter object
 The default filters are a GeantinoRejector and a 1keV minimum energy cut
 
 """
+
+from __future__ import absolute_import, unicode_literals
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from g4units import keV
 import logging
+from ddsix.moves import range
+import ddsix as six
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +18,8 @@ logger = logging.getLogger(__name__)
 class Filter(ConfigHelper):
   """Configuration for sensitive detector filters
 
-  Set the default filter for 'tracker'
+  Set the default filter for tracker or caliromter
   >>> SIM.filter.tracker = "edep1kev"
-  Use no filter for 'calorimeter' by default
   >>> SIM.filter.calo = ""
 
   Assign a filter to a sensitive detector via pattern matching
@@ -40,7 +43,6 @@ class Filter(ConfigHelper):
     self._calo = "edep0"
     self._filters = {}
     self._createDefaultFilters()
-    self._closeProperties()
 
   @property
   def tracker(self):
@@ -87,7 +89,7 @@ class Filter(ConfigHelper):
       self._mapDetFilter.update(val)
       return
 
-    if isinstance(val, str):
+    if isinstance(val, six.string_types):
       vals = val.split(" ")
     elif isinstance(val, list):
       vals = val
@@ -113,7 +115,7 @@ class Filter(ConfigHelper):
 
   def __makeMapDetList(self):
     """ create the values of the mapDetFilters a list of filters """
-    for pattern, filters in self._mapDetFilter.items():
+    for pattern, filters in six.iteritems(self._mapDetFilter):
       self._mapDetFilter[pattern] = ConfigHelper.makeList(filters)
 
   def setupFilters(self, kernel):
@@ -121,10 +123,10 @@ class Filter(ConfigHelper):
     import DDG4
     setOfFilters = set()
 
-    for name, filt in self.filters.items():
+    for name, filt in six.iteritems(self.filters):
       setOfFilters.add(name)
       ddFilt = DDG4.Filter(kernel, filt['name'])
-      for para, value in filt['parameter'].items():
+      for para, value in six.iteritems(filt['parameter']):
         setattr(ddFilt, para, value)
       kernel.registerGlobalFilter(ddFilt)
       filt['filter'] = ddFilt
@@ -147,17 +149,12 @@ class Filter(ConfigHelper):
     """
     self.__makeMapDetList()
     foundFilter = False
-    for pattern, filts in self.mapDetFilter.items():
+    for pattern, filts in six.iteritems(self.mapDetFilter):
       if pattern.lower() in det.lower():
         foundFilter = True
         for filt in filts:
           logger.info("Adding filter '%s' matched with '%s' to sensitive detector for '%s' " % (filt, pattern, det))
           seq.add(self.filters[filt]['filter'])
 
-    if foundFilter:
-      return
-    if defaultFilter:
-      logger.info("Adding default filter '%s' to sensitive detector for '%s' " % (defaultFilter, det))
+    if not foundFilter and defaultFilter:
       seq.add(self.filters[defaultFilter]['filter'])
-      return
-    logger.info("Not adding any filter to sensitive detector for '%s' " % det)

@@ -12,35 +12,22 @@ call for the parser object create an additional member::
 
 """
 
+from __future__ import absolute_import, unicode_literals
+import ddsix as six
+
 
 class ConfigHelper(object):
   """Base class for configuration helper"""
 
-  # We need a static set of properties, because steeringFile parsing creates new Helper objects!
-  _setOfProperties = dict()
-
   def __init__(self):
     pass
-
-  def _name(self):
-    return self.__class__.__name__
-
-  def _closeProperties(self):
-    """Store the list of properties."""
-    self._setOfProperties[self._name()] = set(vars(self))
-
-  def _checkProperties(self):
-    newProps = set(vars(self))
-    if existingProps := self._setOfProperties.get(self._name(), set()):
-      if unknownProps := newProps - existingProps:
-        raise RuntimeError(f"{self._name()} error: Trying to add unknown propert(y/ies): {unknownProps}!")
 
   def getOptions(self):
     finalVars = {}
 
     # get all direct members not starting with underscore
     allVars = vars(self)
-    for var, val in allVars.items():
+    for var, val in six.iteritems(allVars):
       if not var.startswith('_'):
         extraArgumentsName = "_%s_EXTRA" % var
         options = getattr(self, extraArgumentsName) if hasattr(self, extraArgumentsName) else None
@@ -68,7 +55,7 @@ class ConfigHelper(object):
   def printOptions(self):
     """print all parameters"""
     options = []
-    for opt, val in self.getOptions().items():
+    for opt, val in six.iteritems(self.getOptions()):
       options.append("\n\t'%s': '%s'" % (opt, val['default']))
     return "".join(options)
 
@@ -112,7 +99,7 @@ class ConfigHelper(object):
       myTuple = val
     if isinstance(val, list):
       myTuple = tuple(val)
-    if isinstance(val, str):
+    if isinstance(val, six.string_types):
       sep = ',' if ',' in val else ' '
       myTuple = tuple([_.strip("(), ") for _ in val.split(sep)])
     if myTuple is None:
@@ -124,7 +111,7 @@ class ConfigHelper(object):
     """check if val is a bool or a string of true/false, otherwise raise exception"""
     if isinstance(val, bool):
       return val
-    elif isinstance(val, str):
+    elif isinstance(val, six.string_types):
       if val.lower() == 'true':
         return True
       elif val.lower() == 'false':
@@ -134,11 +121,10 @@ class ConfigHelper(object):
   @staticmethod
   def addAllHelper(ddsim, parser):
     """all configHelper objects to commandline args"""
-    for name, obj in vars(ddsim).items():
+    for name, obj in six.iteritems(vars(ddsim)):
       if isinstance(obj, ConfigHelper):
-        for var, optionsDict in obj.getOptions().items():
-          optionsDict['action'] = ('store_true' if var.startswith(("enable", "force"))
-                                   else optionsDict.get('action', 'store'))
+        for var, optionsDict in six.iteritems(obj.getOptions()):
+          optionsDict['action'] = 'store_true' if var.startswith("enable") else 'store'
           parser.add_argument("--%s.%s" % (name, var),
                               dest="%s.%s" % (name, var),
                               **optionsDict

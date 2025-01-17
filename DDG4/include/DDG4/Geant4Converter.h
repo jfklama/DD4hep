@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4CONVERTER_H
-#define DDG4_GEANT4CONVERTER_H
+#ifndef DD4HEP_GEANT4CONVERTER_H
+#define DD4HEP_GEANT4CONVERTER_H
 
 // Framework include files
 #include "DD4hep/Printout.h"
@@ -32,28 +32,24 @@ namespace dd4hep {
     class Geant4Converter : public detail::GeoHandler, public Geant4Mapping {
     public:
       /// Property: Flag to debug materials during conversion mechanism
-      bool debugMaterials   = false;
+      bool debugMaterials  = false;
       /// Property: Flag to debug elements during conversion mechanism
-      bool debugElements    = false;
+      bool debugElements   = false;
       /// Property: Flag to debug shapes during conversion mechanism
-      bool debugShapes      = false;
+      bool debugShapes     = false;
       /// Property: Flag to debug volumes during conversion mechanism
-      bool debugVolumes     = false;
+      bool debugVolumes    = false;
       /// Property: Flag to debug placements during conversion mechanism
-      bool debugPlacements  = false;
-      /// Property: Flag to debug reflections during conversion mechanism
-      bool debugReflections = false;
+      bool debugPlacements = false;
       /// Property: Flag to debug regions during conversion mechanism
-      bool debugRegions     = false;
-      /// Property: Flag to debug LimitSets during conversion mechanism
-      bool debugLimits      = false;
+      bool debugRegions    = false;
       /// Property: Flag to debug surfaces during conversion mechanism
-      bool debugSurfaces    = false;
+      bool debugSurfaces   = false;
 
       /// Property: Flag to dump all placements after the conversion procedure
-      bool printPlacements  = false;
+      bool printPlacements = false;
       /// Property: Flag to dump all sensitives after the conversion procedure
-      bool printSensitives  = false;
+      bool printSensitives = false;
 
       /// Property: Check geometrical overlaps for volume placements and G4 imprints 
       bool       checkOverlaps;
@@ -87,9 +83,6 @@ namespace dd4hep {
 #endif
       /// Convert the geometry type material into the corresponding Geant4 object(s).
       virtual void* handleMaterial(const std::string& name, Material medium) const;
-
-      /// Handle the conversion of isotopes
-      virtual void* handleIsotope(const std::string& name, const TGeoIsotope* iso) const;
 
       /// Convert the geometry type element into the corresponding Geant4 object(s).
       virtual void* handleElement(const std::string& name, Atom element) const;
@@ -129,4 +122,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4CONVERTER_H
+#endif // DD4HEP_GEANT4CONVERTER_H

@@ -11,18 +11,8 @@
 //
 //==========================================================================
 
-/** \addtogroup Geant4GeneratorAction
- *
- @{
-   \package Geant4InputAction
- * \brief Basic geant4 event reader class. This interface/base-class must be implemented by concrete readers.
- *
- *
-@}
- */
-
-#ifndef DDG4_GEANT4INPUTACTION_H
-#define DDG4_GEANT4INPUTACTION_H
+#ifndef DD4HEP_DDG4_GEANT4INPUTACTION_H
+#define DD4HEP_DDG4_GEANT4INPUTACTION_H
 
 // Framework include files
 #include "DDG4/Geant4Vertex.h"
@@ -36,7 +26,6 @@
 
 // Forward declarations
 class G4Event;
-class G4Run;
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep  {
@@ -138,9 +127,6 @@ namespace dd4hep  {
 
       /// make sure that all parameters have been processed, otherwise throw exceptions
       virtual void checkParameters( std::map< std::string, std::string >& );
-
-      /// Register Run Parameters
-      virtual void registerRunParameters() {}
     };
 
     /// Generic input action capable of using the Geant4EventReader class.
@@ -178,11 +164,6 @@ namespace dd4hep  {
       /// Property: named parameters to configure file readers or input actions
       std::map< std::string, std::string> m_parameters;
 
-      /// Perform some actions before the run starts, like opening the event inputs
-      void beginRun(const G4Run*);
-
-      /// Create the input reader
-      void createReader();
     public:
       /// Read an event and return a LCCollectionVec of MCParticles.
       int readParticles(int event_number,
@@ -198,8 +179,8 @@ namespace dd4hep  {
       /// Create particle vector
       Particles* new_particles() const { return new Particles; }
       /// Callback to generate primary particles
-      virtual void operator()(G4Event* event)   override;
+      virtual void operator()(G4Event* event);
     };
   }     /* End namespace sim   */
 }       /* End namespace dd4hep */
-#endif // DDG4_GEANT4INPUTACTION_H
+#endif  /* DD4HEP_DDG4_GEANT4INPUTACTION_H  */

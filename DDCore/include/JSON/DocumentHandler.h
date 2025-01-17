@@ -10,11 +10,11 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef JSON_DOCUMENTHANDLER_H
-#define JSON_DOCUMENTHANDLER_H
+#ifndef DD4HEP_DDCORE_JSON_DOCUMENTHANDLER_H
+#define DD4HEP_DDCORE_JSON_DOCUMENTHANDLER_H
 
 /// Framework include files
-#include <JSON/Elements.h>
+#include "JSON/Elements.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -44,4 +44,4 @@ namespace dd4hep {
 
   }       /* End namespace json                    */
 }         /* End namespace dd4hep                  */
-#endif // JSON_DOCUMENTHANDLER_H
+#endif    /* DD4HEP_DDCORE_JSON_DOCUMENTHANDLER_H  */

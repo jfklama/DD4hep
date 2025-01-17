@@ -11,13 +11,12 @@
 //
 //==========================================================================
 
-#include <DD4hep/Objects.h>
-#include <DD4hep/InstanceCount.h>
-#include <DD4hep/detail/Handle.inl>
-#include <DD4hep/detail/ObjectsInterna.h>
-#include <DD4hep/detail/SegmentationsInterna.h>
+#include "DD4hep/Objects.h"
+#include "DD4hep/InstanceCount.h"
+#include "DD4hep/detail/Handle.inl"
+#include "DD4hep/detail/ObjectsInterna.h"
+#include "DD4hep/detail/SegmentationsInterna.h"
 
-#include <TROOT.h>
 using namespace std;
 using namespace dd4hep;
 using namespace dd4hep::detail;

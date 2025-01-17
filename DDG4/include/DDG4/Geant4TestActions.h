@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TESTACTIONS_H
-#define DDG4_GEANT4TESTACTIONS_H
+#ifndef DD4HEP_DDG4_GEANT4TESTACTIONS_H
+#define DD4HEP_DDG4_GEANT4TESTACTIONS_H
 
 // Framework include files
 #include "DDG4/Geant4Handle.h"
@@ -127,9 +127,9 @@ namespace dd4hep {
         /// Default destructor
         virtual ~Geant4TestTrackAction();
         /// Begin-of-tracking callback
-        virtual void begin(const G4Track*)  override;
+        virtual void begin(const G4Track*);
         /// End-of-tracking callback
-        virtual void end(const G4Track*)  override;
+        virtual void end(const G4Track*);
       };
 
       /// Example stepping action doing nothing, but print
@@ -145,7 +145,7 @@ namespace dd4hep {
         /// Default destructor
         virtual ~Geant4TestStepAction();
         /// User stepping callback
-        void operator()(const G4Step*, G4SteppingManager*)  override;
+        void operator()(const G4Step*, G4SteppingManager*);
       };
 
       /// Example sensitve detector action doing nothing, but print
@@ -163,14 +163,14 @@ namespace dd4hep {
         /// Default destructor
         virtual ~Geant4TestSensitive();
         /// Begin-of-tracking callback
-        virtual void begin(G4HCofThisEvent*)  override;
+        virtual void begin(G4HCofThisEvent*);
         /// End-of-tracking callback
-        virtual void end(G4HCofThisEvent*)  override;
+        virtual void end(G4HCofThisEvent*);
         /// Method for generating hit(s) using the information of G4Step object.
-        virtual bool process(const G4Step*, G4TouchableHistory*)  override;
+        virtual bool process(G4Step*, G4TouchableHistory*);
       };
     }   // End namespace Test
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4TESTACTIONS_H
+#endif // DD4HEP_DDG4_GEANT4TESTACTIONS_H

@@ -13,7 +13,6 @@
 
 // Framework include files
 #include "DDG4/Geant4GeometryInfo.h"
-#include "DDG4/Geant4AssemblyVolume.h"
 
 // Geant4 include files
 #include "G4VPhysicalVolume.hh"
@@ -26,18 +25,18 @@ using namespace dd4hep::sim;
 
 
 string Geant4GeometryInfo::placementPath(const Geant4PlacementPath& path, bool reverse)   {
-  string path_name;
+  string s;
   if ( reverse )  {
     for (Geant4PlacementPath::const_reverse_iterator pIt = path.rbegin(); pIt != path.rend(); ++pIt) {
-      path_name += "/"; path_name += (*pIt)->GetName();
+      s += "/"; s += (*pIt)->GetName();
     }
   }
   else  {
     for (Geant4PlacementPath::const_iterator pIt = path.begin(); pIt != path.end(); ++pIt) {
-      path_name += "/"; path_name += (*pIt)->GetName();
+      s += "/"; s += (*pIt)->GetName();
     }
   }
-  return path_name;
+  return s;
 }
 
 /// Default constructor
@@ -47,9 +46,6 @@ Geant4GeometryInfo::Geant4GeometryInfo()
 
 /// Default destructor
 Geant4GeometryInfo::~Geant4GeometryInfo() {
-  for( auto& a : g4AssemblyVolumes )
-    delete a.second;
-  g4AssemblyVolumes.clear();
 }
 
 /// The world placement

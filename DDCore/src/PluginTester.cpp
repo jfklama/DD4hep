@@ -25,14 +25,13 @@ namespace {
   static int s_extensionID = 0;
   PluginTester::ExtensionMap* extensionContainer(const std::type_info& typ) {
     static std::map<const std::type_info*, PluginTester::ExtensionMap> s_map;
-    PluginTester::ExtensionMap& m = s_map[&typ];
-    return &m;
+    return &s_map[&typ];
   }
 }
 
 /// Default constructor
 PluginTester::PluginTester()    {
-  extensionMap = extensionContainer(typeid(PluginTester));
+  extensionMap = extensionContainer(typeid(*this));
   InstanceCount::increment(this);
 }
 

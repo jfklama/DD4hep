@@ -81,10 +81,7 @@ std::vector<double> PolarGridRPhi::cellDimensions(const CellID& cID) const {
 #endif
 }
 
+REGISTER_SEGMENTATION(PolarGridRPhi)
 
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(PolarGridRPhi,create_segmentation<dd4hep::DDSegmentation::PolarGridRPhi>)

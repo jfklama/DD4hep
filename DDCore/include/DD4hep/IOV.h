@@ -10,15 +10,13 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_IOV_H
-#define DD4HEP_IOV_H
+#ifndef DD4HEP_DDCORE_IOV_H
+#define DD4HEP_DDCORE_IOV_H
 
 // C/C++ include files
 #include <string>
 #include <limits>
 #include <algorithm>
-#include <utility>
-#include <cstdint>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -36,8 +34,8 @@ namespace dd4hep {
    */
   class IOVType   {
   public:
-    static constexpr unsigned int UNKNOWN_IOV = ~0x0;
-    /// integer identifier used internally
+    enum _IOVTypes { UNKNOWN_IOV = ~0x0 };
+    /// integer identifier ised internally
     unsigned int type = UNKNOWN_IOV;
     /// String name
     std::string  name;
@@ -69,17 +67,21 @@ namespace dd4hep {
     /// Initializing constructor: Does not set reference to IOVType !
     explicit IOV() = delete;
   public:
-    /// Key definition. Use fixed width type, though not portable!
-    using Key_value_type = std::int64_t;
-    using Key = std::pair<Key_value_type, Key_value_type>;
+    /// Key definition
+    typedef long Key_first_type;
+    typedef long Key_second_type;
+    typedef std::pair<Key_first_type,Key_second_type> Key;
 
-    static constexpr Key_value_type MIN_KEY = std::numeric_limits<Key_value_type>::min();
-    static constexpr Key_value_type MAX_KEY = std::numeric_limits<Key_value_type>::max();
-
+    enum {
+      INVALID_KEY = 0,
+      MIN_KEY = std::numeric_limits<long>::min(),
+      MAX_KEY = std::numeric_limits<long>::max()
+    };
+    
     /// Reference to IOV type
     const IOVType* iovType = 0;
     /// IOV key (if second==first, discrete, otherwise range)
-    Key            keyData{MIN_KEY,MIN_KEY};
+    Key            keyData{INVALID_KEY,INVALID_KEY};
     /// Optional user data
     int            optData = 0;
     /// IOV buffer type: Must be a bitmap!
@@ -90,7 +92,7 @@ namespace dd4hep {
     /// Specialized copy constructor for range IOVs
     explicit IOV(const IOVType* typ, const Key& key);
     /// Specialized copy constructor for discrete IOVs
-    explicit IOV(const IOVType* typ, Key_value_type iov_value);
+    explicit IOV(const IOVType* typ, Key_first_type iov_value);
     /// Copy constructor
     IOV(const IOV& copy) = default;
     /// Move constructor
@@ -116,9 +118,9 @@ namespace dd4hep {
     /// Set discrete IOV value
     void set(const Key& value);
     /// Set discrete IOV value
-    void set(Key_value_type value);
+    void set(Key_first_type value);
     /// Set range IOV value
-    void set(Key_value_type val_1, Key_value_type val_2);
+    void set(Key_first_type val_1, Key_second_type val_2);
     /// Set keys to unphysical values (LONG_MAX, LONG_MIN)
     IOV& reset();
     /// Invert the key values (first=second and second=first)
@@ -186,4 +188,4 @@ namespace dd4hep {
   }
 
 } /* End namespace dd4hep                   */
-#endif // DD4HEP_IOV_H
+#endif    /* DD4HEP_DDCORE_IOV_H        */

@@ -12,10 +12,10 @@
 //==========================================================================
 
 // Framework include files
-#include <DDG4/Factories.h>
+#include "DDG4/Factories.h"
 
 // Geant4 physics lists
-#include <G4Version.hh>
+#include "G4Version.hh"
 
 #if G4VERSION_NUMBER>=960
 #define GEANT4_9_6
@@ -37,10 +37,6 @@
 //
 //
 // ======================================================================
-
-// Fast simulation
-#include "G4FastSimulationManagerProcess.hh"
-DECLARE_GEANT4_PROCESS(G4FastSimulationManagerProcess)
 
 // Photon Processes:
 #include "G4GammaConversion.hh"
@@ -103,10 +99,6 @@ DECLARE_GEANT4_PROCESS(G4CoulombScattering)
 DECLARE_GEANT4_PROCESS(G4PolarizedCompton)
 #include "G4PolarizedGammaConversion.hh"
 DECLARE_GEANT4_PROCESS(G4PolarizedGammaConversion)
-#include "G4ePairProduction.hh"
-DECLARE_GEANT4_PROCESS(G4ePairProduction)
-
-#if G4VERSION_NUMBER < 1100
 #include "G4PolarizedPhotoElectricEffect.hh"
 DECLARE_GEANT4_PROCESS(G4PolarizedPhotoElectricEffect)
 #include "G4ePolarizedBremsstrahlung.hh"
@@ -115,33 +107,6 @@ DECLARE_GEANT4_PROCESS(G4ePolarizedBremsstrahlung)
 DECLARE_GEANT4_PROCESS(G4ePolarizedIonisation)
 #include "G4eplusPolarizedAnnihilation.hh"
 DECLARE_GEANT4_PROCESS(G4eplusPolarizedAnnihilation)
-
-#else
-#include "G4PolarizedAnnihilation.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedAnnihilation)
-#include "G4PolarizedAnnihilationXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedAnnihilationXS)
-#include "G4PolarizedBremsstrahlung.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedBremsstrahlung)
-#include "G4PolarizedCompton.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedCompton)
-#include "G4PolarizedComptonXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedComptonXS)
-#include "G4PolarizedGammaConversion.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedGammaConversion)
-#include "G4PolarizedGammaConversionXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedGammaConversionXS)
-#include "G4PolarizedIonisation.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedIonisation)
-#include "G4PolarizedIonisationBhabhaXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedIonisationBhabhaXS)
-#include "G4PolarizedIonisationMollerXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedIonisationMollerXS)
-#include "G4PolarizedPhotoElectric.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedPhotoElectric)
-#include "G4PolarizedPhotoElectricXS.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedPhotoElectricXS)
-#endif
 
 // Processes for simulation of X-rays and optical protons production by charged particles
 #include "G4SynchrotronRadiation.hh"
@@ -215,7 +180,6 @@ DECLARE_GEANT4_PROCESS(G4BraggNoDeltaModel)
 DECLARE_GEANT4_PROCESS(G4ChipsElasticModel)
 #include "G4DNABornExcitationModel.hh"
 DECLARE_GEANT4_PROCESS(G4DNABornExcitationModel)
-
 #include "G4eBremParametrizedModel.hh"
 DECLARE_GEANT4_PROCESS(G4eBremParametrizedModel)
 #include "G4eBremsstrahlungRelModel.hh"
@@ -240,15 +204,8 @@ DECLARE_GEANT4_PROCESS(G4ecpssrFormFactorLixsModel)
 DECLARE_GEANT4_PROCESS(G4ecpssrFormFactorMixsModel)
 #include "G4EmMultiModel.hh"
 DECLARE_GEANT4_PROCESS(G4EmMultiModel)
-
-#if G4VERSION_NUMBER < 1100
 #include "G4ePolarizedBremsstrahlungModel.hh"
 DECLARE_GEANT4_PROCESS(G4ePolarizedBremsstrahlungModel)
-#else
-#include "G4PolarizedBremsstrahlungModel.hh"
-DECLARE_GEANT4_PROCESS(G4PolarizedBremsstrahlungModel)
-#endif
-
 #include "G4FTFModel.hh"
 DECLARE_GEANT4_PROCESS(G4FTFModel)
 #include "G4GoudsmitSaundersonMscModel.hh"
@@ -279,6 +236,7 @@ DECLARE_GEANT4_PROCESS(G4ICRU73QOModel)
 //DECLARE_GEANT4_PROCESS(G4IonChuFluctuationModel)
 
 #endif
+
 
 #if 0
 #include ".hh"

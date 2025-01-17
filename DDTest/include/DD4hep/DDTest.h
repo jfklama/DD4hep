@@ -1,6 +1,3 @@
-#ifndef DD4HEP_DDTEST_H
-#define DD4HEP_DDTEST_H
-
 #include <iostream>
 #include <sstream>
 #include <stdlib.h>
@@ -177,5 +174,3 @@ namespace dd4hep{
 
 
 } // end namespace
-
-#endif

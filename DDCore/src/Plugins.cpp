@@ -36,10 +36,6 @@ bool PluginService::setDebug(bool new_value)   {
   return old_value;
 }
 
-#if defined(__linux) && !defined(__APPLE__)
-#define DD4HEP_PARSERS_NO_ROOT
-#endif
-
 #include "DD4hep/Printout.h"
 #if !defined(DD4HEP_PARSERS_NO_ROOT)
 #include "TSystem.h"
@@ -98,33 +94,16 @@ namespace   {
   {
     void* handle = 0;
     const char* plugin_name = ::getenv("DD4HEP_PLUGINMGR");
-#if defined(__linux) && !defined(__APPLE__)
-    if ( 0 == plugin_name ) plugin_name = "libDD4hepGaudiPluginMgr.so";
-#else
-    if ( 0 == plugin_name ) plugin_name = "libDD4hepGaudiPluginMgr";
-#endif
+    if ( 0 == plugin_name )   {
+      plugin_name = "libDD4hepGaudiPluginMgr";
+    }
 #if defined(DD4HEP_PARSERS_NO_ROOT)
-    struct handle_guard  {
-      void* _handle {nullptr};
-      handle_guard(void* hdl) : _handle(hdl) {
-      }
-      ~handle_guard()  {
-	if ( _handle ) ::dlclose(_handle);
-	_handle = nullptr;
-      }
-    };
-    static handle_guard _guard(nullptr);
-    if ( nullptr == _guard._handle )   {
-      _guard._handle = handle = ::dlopen(plugin_name, RTLD_LAZY | RTLD_GLOBAL);
-    }
-    if ( !handle )   {
-      throw runtime_error("Failed to load plugin manager library: "+string(plugin_name));
-    }
+    handle = ::dlopen(plugin_name, RTLD_LAZY | RTLD_GLOBAL);
 #else
     if ( 0 != gSystem->Load(plugin_name) ) {}
 #endif
     getDebug = get_func< int (*) ()>(handle, plugin_name,MAKE_FUNC(getdebug,DD4HEP_PLUGINSVC_VERSION));
-    setDebug = get_func< int (*) (int)>(handle, plugin_name,MAKE_FUNC(setdebug,DD4HEP_PLUGINSVC_VERSION));
+  setDebug = get_func< int (*) (int)>(handle, plugin_name,MAKE_FUNC(setdebug,DD4HEP_PLUGINSVC_VERSION));
     create   = get_func< PluginService::stub_t (*)(const char*,
                                                    const char*)>(handle, plugin_name,MAKE_FUNC(create,DD4HEP_PLUGINSVC_VERSION));
     add      = get_func< void (*) (const char* identifier, 

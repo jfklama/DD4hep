@@ -67,15 +67,15 @@ namespace dd4hep {
        */
       class GeometryInfo {
       public:
-        std::set<TGeoShape*>   solids;
-        std::set<Volume>       volumeSet;
-        std::vector<Volume>    volumes;
+        std::set<TGeoShape*>  solids;
+        std::set<Volume>      volumeSet;
+        std::vector<Volume>   volumes;
+        std::vector<std::pair<std::string, TGeoMatrix*> > trafos;
         std::set<VisAttr>      vis;
         std::set<Ref_t>        fields;
         std::set<Material>     materials;
         std::set<TGeoMedium*>  media;
         std::set<TGeoElement*> elements;
-        std::vector<std::pair<std::string, TGeoMatrix*> > trafos;
       };
     };
 
@@ -98,9 +98,7 @@ namespace dd4hep {
       std::map<int, std::set<const TGeoNode*> >* m_data;
 
       /// Internal helper to collect geometry information from traversal
-      GeoHandler& i_collect(const TGeoNode* parent,
-			    const TGeoNode* node,
-			    int level, Region rg, LimitSet ls);
+      GeoHandler& i_collect(const TGeoNode* node, int level, Region rg, LimitSet ls);
 
     private:
       /// Never call Copy constructor

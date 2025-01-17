@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_IMATERIAL_H
-#define DDREC_IMATERIAL_H
+#ifndef DDRec_IMaterial_H_
+#define DDRec_IMaterial_H_
 
 #include <string>
 #include <ostream>
@@ -69,4 +69,4 @@ namespace dd4hep { namespace rec {
 
 
 
-#endif // DDREC_IMATERIAL_H
+#endif /* DDRec_MATERIAL_H_ */

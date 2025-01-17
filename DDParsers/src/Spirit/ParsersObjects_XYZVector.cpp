@@ -23,7 +23,9 @@ namespace ROOT {  namespace Math {
     }
   }}
 
+template struct std::less<ROOT::Math::XYZPoint>;
 template struct std::less<ROOT::Math::XYZVector>;
+template struct std::less<ROOT::Math::PxPyPzEVector>;
 
 // ============================================================================
 namespace dd4hep {
@@ -37,7 +39,7 @@ namespace dd4hep {
      *  @author Vanya BELYAEV Ivan.Belyaev@nikhef.nl
      *  @date 2009-09-05
      */
-    template <> int parse(ROOT::Math::XYZVector& result,const std::string& input) {
+    int parse(ROOT::Math::XYZVector& result,const std::string& input) {
       ROOT::Math::XYZPoint point;
       int sc = parse(point,input);
       if ( 0 == sc ){ return sc; }                               // RETURN

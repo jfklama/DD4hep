@@ -29,8 +29,8 @@
 #endif
 
 // C/C++ include files
-#include <DDG4/DDG4Dict.h>
-#include <DDEve/DDEveEventData.h>
+#include "DDG4/DDG4Dict.h"
+#include "DDEve/DDEveEventData.h"
 
 namespace { class DDG4IO {}; }
 
@@ -48,8 +48,8 @@ namespace dd4hep { namespace sim {
 #include <typeinfo>
 
 // ROOT include files
-#include <TROOT.h>
-#include <TClass.h>
+#include "TROOT.h"
+#include "TClass.h"
 
 namespace {
   template <typename T> T* _fill(dd4hep::sim::Geant4HitData* ptr, dd4hep::DDEveHit* target)   {
@@ -83,16 +83,16 @@ namespace {
   void* _convertParticleFunc(void* source, dd4hep::DDEveParticle* p)  {
     if (source )  {
       dd4hep::sim::Geant4Particle* s = (dd4hep::sim::Geant4Particle*)source;
-      p->id        = s->id;
-      p->vsx       = s->vsx;
-      p->vsy       = s->vsy;
-      p->vsz       = s->vsz;
-      p->vex       = s->vex;
-      p->vey       = s->vey;
-      p->vez       = s->vez;
-      p->psx       = s->psx;
-      p->psy       = s->psy;
-      p->psz       = s->psz;
+      p->id = s->id;
+      p->vsx = s->vsx;
+      p->vsy = s->vsy;
+      p->vsz = s->vsz;
+      p->vex = s->vex;
+      p->vey = s->vey;
+      p->vez = s->vez;
+      p->psx = s->psx;
+      p->psy = s->psy;
+      p->psz = s->psz;
       p->pdgID     = s->pdgID;
       p->parent    = s->parents.empty() ? -1 : *(s->parents.begin());
       p->energy    = std::sqrt(s->vsx*s->vsx + s->vsy*s->vsy + s->vsz*s->vsz + s->mass*s->mass);
@@ -119,8 +119,8 @@ namespace {
 
 }
 
-#include <DD4hep/Factories.h>
-DECLARE_CONSTRUCTOR(DD4hep_DDEve_DDG4HitAccess,_convertHit)
-DECLARE_CONSTRUCTOR(DD4hep_DDEve_DDG4ParticleAccess,_convertParticle)
+#include "DD4hep/Factories.h"
+DECLARE_CONSTRUCTOR(DDEve_DDG4HitAccess,_convertHit)
+DECLARE_CONSTRUCTOR(DDEve_DDG4ParticleAccess,_convertParticle)
 #endif
 

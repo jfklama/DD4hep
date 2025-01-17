@@ -16,8 +16,8 @@
  *      Author: S. Lu, DESY
  */
 
-#ifndef DDSEGMENTATION_WAFERGRIDXY_H
-#define DDSEGMENTATION_WAFERGRIDXY_H
+#ifndef DDSegmentation_WAFERGRIDXY_H_
+#define DDSegmentation_WAFERGRIDXY_H_
 
 #include "DDSegmentation/CartesianGrid.h"
 
@@ -143,4 +143,4 @@ namespace dd4hep {
 
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-#endif // DDSEGMENTATION_WAFERGRIDXY_H
+#endif /* DDSegmentation_WAFERGRIDXY_H_ */

@@ -10,13 +10,14 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDDIGI_DIGIACTION_H
-#define DDDIGI_DIGIACTION_H
+#ifndef DD4HEP_DDDIGI_DIGIACTION_H
+#define DD4HEP_DDDIGI_DIGIACTION_H
 
 // Framework include files
-#include <DD4hep/Printout.h>
-#include <DD4hep/ComponentProperties.h>
-#include <DDDigi/DigiContext.h>
+#include "DD4hep/Printout.h"
+#include "DD4hep/Callback.h"
+#include "DD4hep/ComponentProperties.h"
+#include "DDDigi/DigiContext.h"
 
 // C/C++ include files
 #include <string>
@@ -46,6 +47,15 @@ namespace dd4hep {
 
   /// Namespace for the Digitization part of the AIDA detector description toolkit
   namespace digi {
+
+    /// Cast operator
+    template <typename TO, typename FROM> TO fast_cast(FROM from) {
+#ifdef USE_FASTCAST
+      return static_cast<TO>(from);
+#else
+      return dynamic_cast<TO>(from);
+#endif
+    }
 
     /// Helper class to handle strings of the format "type/name"
     /**
@@ -80,29 +90,17 @@ namespace dd4hep {
      *
      *  \author  M.Frank
      *  \version 1.0
-     *  \ingroup DD4HEP_DIGITIZATION
+     *  \ingroup DD4HEP_SIMULATION
      */
     class DigiAction {
-
       friend class DigiKernel;
-
-    public:
-      using context_t = DigiContext;
-      using kernel_t  = DigiKernel;
 
     protected:
       /// Reference to the Digi context
 #if defined(G__ROOT) || defined(__CLING__) || defined(__ROOTCLING__)
-      const kernel_t*  m_kernel;
-
-    public:
-      const kernel_t*  kernel()  const   {
-	return m_kernel;
-      }
-
-    protected:
+      const DigiKernel*  m_kernel;
 #else
-      const kernel_t&    m_kernel;
+      const DigiKernel&  m_kernel;
 #endif
       /// Action name
       std::string        m_name;
@@ -113,9 +111,126 @@ namespace dd4hep {
       /// Default property: Output level
       int                m_outputLevel = 3;
       ///
-      std::vector<void*> m_opt_properties;
       
+      /// Property: Support parallel execution
+      bool               m_parallel    = false;
+
     protected:
+
+      /// Functor to access elements by name
+      struct FindByName  {
+        std::string _n;
+        FindByName(const std::string& n) : _n(n) {}
+        bool operator()(const DigiAction* a) { return a->name() == _n; }
+      };
+      /// Actor class to manipulate action groups
+      /**
+       *  \author  M.Frank
+       *  \version 1.0
+       *  \ingroup DD4HEP_SIMULATION
+       */
+      template <typename T> class Actors {
+      public:
+        typedef typename std::vector<T*> _V;
+        _V m_v;
+        Actors() = default;
+        ~Actors()  = default;
+        size_t size()    const        { return m_v.size();              }
+        void clear()                  { m_v.clear();                    }
+        void add(T* obj)              { m_v.emplace_back(obj);          }
+        void add_front(T* obj)        { m_v.insert(m_v.begin(), obj);   }
+        const typename _V::value_type& operator[](size_t i)  const
+        {  return m_v[i];}
+        typename _V::value_type& operator[](size_t i)  {  return m_v[i];}
+        operator const _V&() const    { return m_v;                     }
+        operator _V&()                { return m_v;                     }
+        const _V* operator->() const  { return &m_v;                    }
+        _V* operator->()              { return &m_v;                    }
+        typename _V::iterator begin() { return m_v.begin();             }
+        typename _V::iterator end()   { return m_v.end();               }
+        typename _V::const_iterator begin() const { return m_v.begin(); }
+        typename _V::const_iterator end()   const { return m_v.end();   }
+        
+        /// Context updates
+        void updateContext(DigiContext* ctxt)  {
+          (*this)(&T::updateContext,ctxt);
+        }
+        /// Element access by name
+        template <typename F> typename _V::value_type get(const F& f)  const   {
+          if (!m_v.empty())  {
+            typename _V::const_iterator i=std::find_if(m_v.begin(),m_v.end(),f);
+            return i==m_v.end() ? 0 : (*i);
+          }
+          return 0;
+        }
+        /// NON-CONST actions
+        template <typename R, typename Q> void operator()(R (Q::*pmf)()) {
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)();
+        }
+        template <typename R, typename Q, typename A0> void operator()(R (Q::*pmf)(A0&), A0& a0) {
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0);
+        }
+        template <typename R, typename Q, typename A0, typename A1> void operator()(R (Q::*pmf)(A0, A1), A0 a0, A1 a1) {
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0, a1);
+        }
+        /// CONST actions
+        template <typename R, typename Q> void operator()(R (Q::*pmf)() const) const {
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)();
+        }
+        template <typename R, typename Q, typename A0> void operator()(R (Q::*pmf)(A0&) const, A0& a0) const {
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0);
+        }
+        template <typename R, typename Q, typename A0, typename A1> void operator()(R (Q::*pmf)(A0, A1) const, A0 a0,
+                                                                                    A1 a1) const {
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0, a1);
+        }
+        /// CONST filters
+        template <typename Q> bool filter(bool (Q::*pmf)() const) const {
+          if (!m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)())
+              return false;
+          return true;
+        }
+        template <typename Q, typename A0> bool filter(bool (Q::*pmf)(A0) const, A0 a0) const {
+          if (m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)(a0))
+              return false;
+          return true;
+        }
+        template <typename Q, typename A0, typename A1> bool filter(bool (Q::*pmf)(A0, A1) const, A0 a0, A1 a1) const {
+          if (m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)(a0, a1))
+              return false;
+          return true;
+        }
+      };
+
+    protected:
+
       /// Define standard assignments and constructors
       DDDIGI_DEFINE_ACTION_CONSTRUCTORS(DigiAction);
 
@@ -124,7 +239,7 @@ namespace dd4hep {
 
     public:
       /// Standard constructor
-      DigiAction(const kernel_t& kernel, const std::string& nam);
+      DigiAction(const DigiKernel& kernel, const std::string& nam);
       /// Increase reference count
       long addRef();
       /// Decrease reference count. Implicit destruction
@@ -142,11 +257,7 @@ namespace dd4hep {
         m_name = new_name;
       }
       /// Access to the properties of the object
-      PropertyManager& properties()  {
-        return m_properties;
-      }
-      /// Access to the properties of the object (CONST)
-      const PropertyManager& properties()   const  {
+      PropertyManager& properties() {
         return m_properties;
       }
       /// Access the output level
@@ -155,38 +266,32 @@ namespace dd4hep {
       }
       /// Set the output level; returns previous value
       PrintLevel setOutputLevel(PrintLevel new_level);
+      /// Access parallization flag
+      bool executeParallel()  const  {
+        return m_parallel;
+      }      
+      /// Set the parallization flag; returns previous value
+      bool setExecuteParallel(bool new_value);
       
-      /** Property access                            */
       /// Declare property
       template <typename T> DigiAction& declareProperty(const std::string& nam, T& val);
       /// Declare property
       template <typename T> DigiAction& declareProperty(const char* nam, T& val);
-      /// Declare property
-      template <typename T> DigiAction& addProperty(const std::string& nam, T& val);
-      /// Declare property
-      template <typename T> DigiAction& addProperty(const char* nam, T& val);
       /// Check property for existence
       bool hasProperty(const std::string& name) const;
       /// Access single property
       Property& property(const std::string& name);
-      /// Access single property (CONST)
-      const Property& property(const std::string& name)  const;
-      /// Print the property values
-      virtual void printProperties() const;
-
-      /// Adopt named property of another action for data processing
-      virtual void adopt_property(DigiAction* action, const std::string& foreign_name, const std::string& local_name);
-
-      /// Adopt named tool to delegate actions
-      virtual void adopt_tool(DigiAction* action, const std::string& typ);
-
-      /** Support for output messages       */
       /// Support for messages with variable output level using output level
       void print(const char* fmt, ...) const;
-      /// Support for building formatted messages
-      std::string format(const char* fmt, ...) const;
-      /// Support of messages always printed.
-      void always(const char* fmt, ...) const;
+      /// Support for messages with variable output level using output level-1
+      void printM1(const char* fmt, ...) const;
+      /// Support for messages with variable output level using output level-2
+      void printM2(const char* fmt, ...) const;
+      /// Support for messages with variable output level using output level+1
+      void printP1(const char* fmt, ...) const;
+      /// Support for messages with variable output level using output level+2
+      void printP2(const char* fmt, ...) const;
+
       /// Support of debug messages.
       void debug(const char* fmt, ...) const;
       /// Support of info messages.
@@ -201,6 +306,9 @@ namespace dd4hep {
       void fatal(const char* fmt, ...) const;
       /// Support of exceptions: Print fatal message and throw runtime_error.
       void except(const char* fmt, ...) const;
+
+      /// Main functional callback
+      virtual void execute(DigiContext& context)   const = 0;
     };
 
     /// Declare property
@@ -214,24 +322,7 @@ namespace dd4hep {
       m_properties.add(nam, val);
       return *this;
     }
-    /// Declare property
-    template <typename T> DigiAction& DigiAction::addProperty(const std::string& nam, T& val) {
-      void* ptr = ::operator new(sizeof(T));
-      T* prop = new(ptr) T(val);
-      m_properties.add(nam, *prop);
-      m_opt_properties.emplace_back(ptr);
-      return *this;
-    }
-
-    /// Declare property
-    template <typename T> DigiAction& DigiAction::addProperty(const char* nam, T& val) {
-      void* ptr = ::operator new(sizeof(T));
-      T* prop = new(ptr) T(val);
-      m_properties.add(nam, *prop);
-      m_opt_properties.emplace_back(ptr);
-      return *this;
-    }
   }    // End namespace digi
 }      // End namespace dd4hep
 
-#endif // DDDIGI_DIGIACTION_H
+#endif // DD4HEP_DDDIGI_DIGIACTION_H

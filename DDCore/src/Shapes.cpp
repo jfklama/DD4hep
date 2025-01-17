@@ -14,12 +14,11 @@
 #define _USE_MATH_DEFINES
 
 // Framework include files
-#include <DD4hep/Detector.h>
-#include <DD4hep/MatrixHelpers.h>
-#include <DD4hep/DD4hepUnits.h>
-#include <DD4hep/ShapeTags.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/detail/ShapesInterna.h>
+#include "DD4hep/Detector.h"
+#include "DD4hep/MatrixHelpers.h"
+#include "DD4hep/DD4hepUnits.h"
+#include "DD4hep/Printout.h"
+#include "ShapeTags.h"
 
 // C/C++ include files
 #include <stdexcept>
@@ -27,11 +26,11 @@
 #include <sstream>
 
 // ROOT includes
-#include <TClass.h>
-#include <TGeoMatrix.h>
-#include <TGeoBoolNode.h>
-#include <TGeoScaledShape.h>
-#include <TGeoCompositeShape.h>
+#include "TClass.h"
+#include "TGeoMatrix.h"
+#include "TGeoBoolNode.h"
+#include "TGeoScaledShape.h"
+#include "TGeoCompositeShape.h"
 
 using namespace std;
 using namespace dd4hep;
@@ -53,18 +52,7 @@ void Solid_type<T>::_assign(T* n, const string& nam, const string& tit, bool cbb
 
 /// Access to shape name
 template <typename T> const char* Solid_type<T>::name() const {
-  if ( this->ptr() )  {
-    return this->ptr()->GetName();
-  }
-  return this->access()->GetName();   // Trigger an exception if object is invalid
-}
-
-/// Access to shape name
-template <typename T> const char* Solid_type<T>::title() const {
-  if ( this->ptr() )  {
-    return this->ptr()->GetTitle();
-  }
-  return this->access()->GetTitle();   // Trigger an exception if object is invalid
+  return this->ptr()->GetName();
 }
 
 /// Set new shape name
@@ -84,12 +72,12 @@ template <typename T> const char* Solid_type<T>::type() const  {
   if ( this->ptr() )  {
     return this->ptr()->IsA()->GetName();
   }
-  return this->access()->GetName();  // Trigger an exception on invalid handle
+  return "";
 }
 
 /// Access the dimensions of the shape: inverse of the setDimensions member function
 template <typename T> vector<double> Solid_type<T>::dimensions()  {
-  return get_shape_dimensions(this->access());
+  return move( get_shape_dimensions(this->access()) );
 }
 
 /// Set the shape dimensions. As for the TGeo shape, but angles in rad rather than degrees.
@@ -104,41 +92,16 @@ Solid_type<T>::divide(const Volume& voldiv, const string& divname,
                       int iaxis, int ndiv, double start, double step)   const {
   T* p = this->ptr();
   if ( p )  {
-    auto* pdiv = p->Divide(voldiv.ptr(), divname.c_str(), iaxis, ndiv, start, step);
-    if ( pdiv )   {
-      VolumeMulti mv(pdiv);
-      return mv.ptr();
-    }
-    except("dd4hep","Volume: Failed to divide volume %s -> %s [Invalid result]",
-	   voldiv.name(), divname.c_str());
+    VolumeMulti mv(p->Divide(voldiv.ptr(), divname.c_str(), iaxis, ndiv, start, step));
+    return mv.ptr();
   }
-  except("dd4hep","Volume: Attempt to divide an invalid logical volume to %s.", divname.c_str());
+  except("dd4hep","Volume: Attempt to divide an invalid logical volume.");
   return 0;
 }
 
 /// Constructor to create an anonymous new box object (retrieves name from volume)
 ShapelessSolid::ShapelessSolid(const string& nam)  {
   _assign(new TGeoShapeAssembly(), nam, SHAPELESS_TAG, true);
-}
-
-void Scale::make(const string& nam, Solid base, double x_scale, double y_scale, double z_scale)   {
-  auto scale = make_unique<TGeoScale>(x_scale, y_scale, z_scale);
-  _assign(new TGeoScaledShape(nam.c_str(), base.access(), scale.release()), "", SCALE_TAG, true);
-}
-
-/// Access x-scale factor
-double Scale::scale_x() const {
-  return this->access()->GetScale()->GetScale()[0];
-}
-
-/// Access y-scale factor
-double Scale::scale_y() const {
-  return this->access()->GetScale()->GetScale()[1];
-}
-
-/// Access z-scale factor
-double Scale::scale_z() const {
-  return this->access()->GetScale()->GetScale()[2];
 }
 
 void Box::make(const string& nam, double x_val, double y_val, double z_val)   {
@@ -289,11 +252,21 @@ void Polycone::addZPlanes(const vector<double>& rmin, const vector<double>& rmax
 }
 
 /// Constructor to be used when creating a new cone segment object
-void ConeSegment::make(const string& nam,
-                       double dz, 
-                       double rmin1,     double rmax1,
-                       double rmin2,     double rmax2,
-                       double startPhi,  double endPhi)
+ConeSegment::ConeSegment(double dz, 
+                         double rmin1,     double rmax1,
+                         double rmin2,     double rmax2,
+                         double startPhi,  double endPhi)
+{
+  _assign(new TGeoConeSeg(dz, rmin1, rmax1, rmin2, rmax2,
+                          startPhi/units::deg, endPhi/units::deg), "", CONESEGMENT_TAG, true);
+}
+
+/// Constructor to be used when creating a new cone segment object
+ConeSegment::ConeSegment(const string& nam,
+                         double dz, 
+                         double rmin1,     double rmax1,
+                         double rmin2,     double rmax2,
+                         double startPhi,  double endPhi)
 {
   _assign(new TGeoConeSeg(nam.c_str(), dz, rmin1, rmax1, rmin2, rmax2,
                           startPhi/units::deg, endPhi/units::deg), "", CONESEGMENT_TAG, true);
@@ -322,69 +295,64 @@ Cone& Cone::setDimensions(double z, double rmin1, double rmax1, double rmin2, do
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
-void Tube::make(const string& nam, double rmin, double rmax, double z, double start_phi, double end_phi) {
-  // Check if it is a full tube
-  if(fabs(end_phi-start_phi-2*M_PI)<10e-6){
-    _assign(new TGeoTubeSeg(nam.c_str(), rmin, rmax, z, start_phi/units::deg, start_phi/units::deg+360.),nam,TUBE_TAG,true);
-  }else{
-    _assign(new TGeoTubeSeg(nam.c_str(), rmin, rmax, z, start_phi/units::deg, end_phi/units::deg),nam,TUBE_TAG,true);
-  }
+void Tube::make(const string& nam, double rmin, double rmax, double z, double startPhi, double endPhi) {
+  _assign(new TGeoTubeSeg(nam.c_str(), rmin, rmax, z, startPhi/units::deg, endPhi/units::deg),nam,TUBE_TAG,true);
 }
 
 /// Set the tube dimensions
-Tube& Tube::setDimensions(double rmin, double rmax, double z, double start_phi, double end_phi) {
-  double params[] = {rmin,rmax,z,start_phi/units::deg,end_phi/units::deg};
+Tube& Tube::setDimensions(double rmin, double rmax, double z, double startPhi, double endPhi) {
+  double params[] = {rmin,rmax,z,startPhi/units::deg,endPhi/units::deg};
   _setDimensions(params);
   return *this;
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
-CutTube::CutTube(double rmin, double rmax, double dz, double start_phi, double end_phi,
+CutTube::CutTube(double rmin, double rmax, double dz, double startPhi, double endPhi,
                  double lx, double ly, double lz, double tx, double ty, double tz)  {
-  make("", rmin,rmax,dz,start_phi/units::deg,end_phi/units::deg,lx,ly,lz,tx,ty,tz);
+  make("", rmin,rmax,dz,startPhi/units::deg,endPhi/units::deg,lx,ly,lz,tx,ty,tz);
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
 CutTube::CutTube(const string& nam,
-                 double rmin, double rmax, double dz, double start_phi, double end_phi,
+                 double rmin, double rmax, double dz, double startPhi, double endPhi,
                  double lx, double ly, double lz, double tx, double ty, double tz)  {
-  make(nam, rmin,rmax,dz,start_phi/units::deg,end_phi/units::deg,lx,ly,lz,tx,ty,tz);
+  make(nam, rmin,rmax,dz,startPhi/units::deg,endPhi/units::deg,lx,ly,lz,tx,ty,tz);
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
-void CutTube::make(const string& nam, double rmin, double rmax, double dz, double start_phi, double end_phi,
+void CutTube::make(const string& nam, double rmin, double rmax, double dz, double startPhi, double endPhi,
                    double lx, double ly, double lz, double tx, double ty, double tz)  {
-  _assign(new TGeoCtub(nam.c_str(), rmin,rmax,dz,start_phi,end_phi,lx,ly,lz,tx,ty,tz),"",CUTTUBE_TAG,true);
+  _assign(new TGeoCtub(nam.c_str(), rmin,rmax,dz,startPhi,endPhi,lx,ly,lz,tx,ty,tz),"",CUTTUBE_TAG,true);
 }
 
 /// Constructor to create a truncated tube object with attribute initialization
-TruncatedTube::TruncatedTube(double dz, double rmin, double rmax, double start_phi, double delta_phi,
-                             double cut_atStart, double cut_atDelta, bool cut_inside)
-{  make("", dz, rmin, rmax, start_phi/units::deg, delta_phi/units::deg, cut_atStart, cut_atDelta, cut_inside);    }
+TruncatedTube::TruncatedTube(double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
+                             double cutAtStart, double cutAtDelta, bool cutInside)
+{  make("", zhalf, rmin, rmax, startPhi/units::deg, deltaPhi/units::deg, cutAtStart, cutAtDelta, cutInside);    }
 
 /// Constructor to create a truncated tube object with attribute initialization
 TruncatedTube::TruncatedTube(const string& nam,
-                             double dz, double rmin, double rmax, double start_phi, double delta_phi,
-                             double cut_atStart, double cut_atDelta, bool cut_inside)
-{  make(nam, dz, rmin, rmax, start_phi/units::deg, delta_phi/units::deg, cut_atStart, cut_atDelta, cut_inside);    }
+                             double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
+                             double cutAtStart, double cutAtDelta, bool cutInside)
+{  make(nam, zhalf, rmin, rmax, startPhi/units::deg, deltaPhi/units::deg, cutAtStart, cutAtDelta, cutInside);    }
 
 /// Internal helper method to support object construction
 void TruncatedTube::make(const string& nam,
-                         double dz, double rmin, double rmax, double start_phi, double delta_phi,
-                         double cut_atStart, double cut_atDelta, bool cut_inside)   {
+                         double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
+                         double cutAtStart, double cutAtDelta, bool cutInside)   {
   // check the parameters
-  if( rmin <= 0 || rmax <= 0 || cut_atStart <= 0 || cut_atDelta <= 0 )
-    except(TRUNCATEDTUBE_TAG,"++ 0 <= rIn,cut_atStart,rOut,cut_atDelta,rOut violated!");
+  if( rmin <= 0 || rmax <= 0 || cutAtStart <= 0 || cutAtDelta <= 0 )
+    except(TRUNCATEDTUBE_TAG,"++ 0 <= rIn,cutAtStart,rOut,cutAtDelta,rOut violated!");
   else if( rmin >= rmax )
     except(TRUNCATEDTUBE_TAG,"++ rIn<rOut violated!");
-  else if( start_phi != 0. )
-    except(TRUNCATEDTUBE_TAG,"++ start_phi != 0 not supported!");
+  else if( startPhi != 0. )
+    except(TRUNCATEDTUBE_TAG,"++ startPhi != 0 not supported!");
 
-  double r         = cut_atStart;
-  double R         = cut_atDelta;
+  double r         = cutAtStart;
+  double R         = cutAtDelta;
   // angle of the box w.r.t. tubs
-  double cath      = r - R * std::cos( delta_phi*units::deg );
-  double hypo      = std::sqrt( r*r + R*R - 2.*r*R * std::cos( delta_phi*units::deg ));
+  double cath      = r - R * std::cos( deltaPhi*units::deg );
+  double hypo      = std::sqrt( r*r + R*R - 2.*r*R * std::cos( deltaPhi*units::deg ));
   double cos_alpha = cath / hypo;
   double alpha     = std::acos( cos_alpha );
   double sin_alpha = std::sin( std::fabs(alpha) );
@@ -395,9 +363,9 @@ void TruncatedTube::make(const string& nam,
   double boxX      = 1.1*rmax + rmax/sin_alpha; // Need to adjust for move!
   double boxY      = rmax;
   // width of the box > width of the tubs
-  double boxZ      = 1.1 * dz;
+  double boxZ      = 1.1 * zhalf;
   double xBox;      // center point of the box
-  if( cut_inside )
+  if( cutInside )
     xBox = r - boxY / sin_alpha;
   else
     xBox = r + boxY / sin_alpha;
@@ -406,32 +374,32 @@ void TruncatedTube::make(const string& nam,
   TGeoRotation rot;
   rot.RotateZ( -alpha/dd4hep::deg );
   TGeoTranslation trans(xBox, 0., 0.);  
-  TGeoBBox*        box   = new TGeoBBox((nam+"Box").c_str(), boxX, boxY, boxZ);
-  TGeoTubeSeg*     tubs  = new TGeoTubeSeg((nam+"Tubs").c_str(), rmin, rmax, dz, start_phi, delta_phi);
-  TGeoCombiTrans*  combi = new TGeoCombiTrans(trans, rot);
-  TGeoSubtraction* sub   = new TGeoSubtraction(tubs, box, nullptr, combi);
+  TGeoBBox* box  = new TGeoBBox((nam+"Box").c_str(), boxX, boxY, boxZ);
+  TGeoTubeSeg* tubs = new TGeoTubeSeg((nam+"Tubs").c_str(), rmin, rmax, zhalf, startPhi, deltaPhi);
+  TGeoCombiTrans* combi = new TGeoCombiTrans(trans, rot);
+  TGeoSubtraction* sub  = new TGeoSubtraction(tubs, box, nullptr, combi);
   _assign(new TGeoCompositeShape(nam.c_str(), sub),"",TRUNCATEDTUBE_TAG,true);
   stringstream params;
-  params << dz                  << " " << endl
+  params << zhalf               << " " << endl
          << rmin                << " " << endl
          << rmax                << " " << endl
-         << start_phi*units::deg << " " << endl
-         << delta_phi*units::deg << " " << endl
-         << cut_atStart          << " " << endl
-         << cut_atDelta          << " " << endl
-         << char(cut_inside ? '1' : '0') << endl;
+         << startPhi*units::deg << " " << endl
+         << deltaPhi*units::deg << " " << endl
+         << cutAtStart          << " " << endl
+         << cutAtDelta          << " " << endl
+         << char(cutInside ? '1' : '0') << endl;
   combi->SetTitle(params.str().c_str());
   //cout << "Params: " << params.str() << endl;
 #if 0
   params << TRUNCATEDTUBE_TAG << ":" << endl
-         << "\t dz:          " << dz << " " << endl
+         << "\t zhalf:       " << zhalf << " " << endl
          << "\t rmin:        " << rmin << " " << endl
          << "\t rmax:        " << rmax << " " << endl
-         << "\t startPhi:    " << start_phi << " " << endl
-         << "\t deltaPhi:    " << delta_phi << " " << endl
-         << "\t r/cutAtStart:" << cut_atStart << " " << endl
-         << "\t R/cutAtDelta:" << cut_atDelta << " " << endl
-         << "\t cutInside:   " << char(cut_inside ? '1' : '0') << endl
+         << "\t startPhi:    " << startPhi << " " << endl
+         << "\t deltaPhi:    " << deltaPhi << " " << endl
+         << "\t r/cutAtStart:" << cutAtStart << " " << endl
+         << "\t R/cutAtDelta:" << cutAtDelta << " " << endl
+         << "\t cutInside:   " << char(cutInside ? '1' : '0') << endl
          << "\t\t alpha:     " << alpha << endl
          << "\t\t sin_alpha: " << sin_alpha << endl
          << "\t\t boxY:      " << boxY << endl
@@ -440,12 +408,12 @@ void TruncatedTube::make(const string& nam,
 #if 0
   cout << "Trans:";  trans.Print(); cout << endl;
   cout << "Rot:  ";  rot.Print();   cout << endl;
-  cout << " Dz:           " << dz
+  cout << " Zhalf:        " << zhalf
        << " rmin:         " << rmin
        << " rmax:         " << rmax
        << " r/cutAtStart: " << r
        << " R/cutAtDelta: " << R
-       << " cutInside:    " << (cut_inside ? "YES" : "NO ")
+       << " cutInside:    " << (cutInside ? "YES" : "NO ")
        << endl;
   cout << " cath:      " << cath
        << " hypo:      " << hypo
@@ -458,61 +426,14 @@ void TruncatedTube::make(const string& nam,
        << " xBox:      " << xBox
        << endl;
   cout << "Box:" << "x:" << box->GetDX() << " y:" << box->GetDY() << " z:" << box->GetDZ() << endl;
-  cout << "Tubs:" << " rmin:" << rmin << " rmax" << rmax << "dZ" << dZ
-       << " startPhi:" <<  start_phi << " deltaPhi:" << delta_phi << endl;
+  cout << "Tubs:" << " rmin:" << rmin << " rmax" << rmax << "zhalf" << zhalf
+       << " startPhi:" <<  startPhi << " deltaPhi:" << deltaPhi << endl;
 #endif
-}
-
-/// Accessor: dZ value
-double TruncatedTube::dZ() const    {
-  return dd4hep::dimensions<TruncatedTube>(*this)[0];
-}
-
-/// Accessor: r-min value
-double TruncatedTube::rMin() const   {
-  return dd4hep::dimensions<TruncatedTube>(*this)[1];
-}
-
-/// Accessor: r-max value
-double TruncatedTube::rMax() const   {
-  return dd4hep::dimensions<TruncatedTube>(*this)[2];
-}
-
-/// Accessor: start-phi value
-double TruncatedTube::startPhi() const    {
-  return dd4hep::dimensions<TruncatedTube>(*this)[3];
-}
-
-/// Accessor: delta-phi value
-double TruncatedTube::deltaPhi() const    {
-  return dd4hep::dimensions<TruncatedTube>(*this)[4];
-}
-
-/// Accessor: cut at start value
-double TruncatedTube::cutAtStart() const   {
-  return dd4hep::dimensions<TruncatedTube>(*this)[5];
-}
-
-/// Accessor: cut at delta value
-double TruncatedTube::cutAtDelta() const   {
-  return dd4hep::dimensions<TruncatedTube>(*this)[6];
-}
-
-/// Accessor: cut-inside value
-bool TruncatedTube::cutInside() const   {
-  return std::abs(dd4hep::dimensions<TruncatedTube>(*this)[7]) > std::numeric_limits<double>::epsilon();
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
 void EllipticalTube::make(const string& nam, double a, double b, double dz) {
   _assign(new TGeoEltu(nam.c_str(), a, b, dz), "", ELLIPTICALTUBE_TAG, true);
-}
-
-/// Internal helper method to support TwistedTube object construction
-void TwistedTube::make(const std::string& nam, double twist_angle, double rmin, double rmax,
-                       double zneg, double zpos, int nsegments, double totphi)   {
-  _assign(new TwistedTubeObject(nam.c_str(), twist_angle, rmin, rmax, zneg, zpos, nsegments, totphi/units::deg),
-          "", TWISTEDTUBE_TAG, true);
 }
 
 /// Constructor to be used when creating a new object with attribute initialization
@@ -609,23 +530,17 @@ Trap::Trap(const string& nam,
 }
 
 /// Constructor to be used when creating a new anonymous object with attribute initialization
-void Trap::make(const string& nam, double pZ, double pY, double pX, double pLTX) {
-  double fDz  = 0.5*pZ;
-  double fTheta = 0;
-  double fPhi = 0;
-  double fDy1 = 0.5*pY;
-  double fDx1 = 0.5*pX;
-  double fDx2 = 0.5*pLTX;
-  double fAlpha1 = atan(0.5*(pLTX - pX)/pY);
-  double fDy2 = fDy1;
-  double fDx3 = fDx1;
-  double fDx4 = fDx2;
-  double fAlpha2 = fAlpha1;
-
-  _assign(new TGeoTrap(nam.c_str(),
-		       fDz,  fTheta /* = 0 */,  fPhi /* = 0 */,
-                       fDy1, fDx1, fDx2, fAlpha1/units::deg,
-                       fDy2, fDx3, fDx4, fAlpha2/units::deg), "", TRAP_TAG, true);
+void Trap::make(const string& nam, double pz, double py, double px, double pLTX) {
+  double z      = pz / 2e0;
+  double theta  = 0e0;
+  double phi    = 0e0;
+  double h      = py / 2e0;
+  double bl     = px / 2e0;
+  double tl     = pLTX / 2e0;
+  double alpha1 = (pLTX - px) / py;
+  _assign(new TGeoTrap(nam.c_str(), z, theta, phi,
+                       h, bl, tl, alpha1/units::deg,
+                       h, bl, tl, alpha1/units::deg), "", TRAP_TAG, true);
 }
 
 /// Set the trap dimensions
@@ -717,26 +632,20 @@ void PseudoTrap::make(const string& nam, double x1, double x2, double y1, double
   else  {
     except(PSEUDOTRAP_TAG,"Check parameters of the PseudoTrap!");   
   }
-  printout(DEBUG,"PseudoTrap","++ Trd2(%s): x1=%.3g x2=%.3g y1=%.3g y2=%.3g halfZ=%.3g",
-	   (nam+"Trd2").c_str(), x1, x2, y1, y2, halfZ);
-  printout(DEBUG,"PseudoTrap","++ Tubs(%s): r=%.3g h=%.3g startPhi=%.3g endPhi=%.3g",
-	   (nam+"Tubs").c_str(), std::abs(r),h,startPhi,startPhi + halfOpeningAngle*2.);
 
   Solid trap(new TGeoTrd2((nam+"Trd2").c_str(), x1, x2, y1, y2, halfZ));
   Solid tubs(new TGeoTubeSeg((nam+"Tubs").c_str(), 0.,std::abs(r),h,startPhi,startPhi + halfOpeningAngle*2.));
-  stringstream params;
-  params << x1 << " " << x2 << " " << y1 << " " << y2 << " " << z << " "
-         << r << " " << char(atMinusZ ? '1' : '0') << " ";
   TGeoCompositeShape* solid = 0;
   if( intersec )  {
-    printout(DEBUG,"PseudoTrap","++ Intersection displacement=%.3g", displacement);
     solid = SubtractionSolid(nam, trap, tubs, Transform3D(RotationX(M_PI/2.), Position(0.,0.,displacement))).ptr();
   }
   else  {
-    printout(DEBUG,"PseudoTrap","++ Union displacement=%.3g sqrt(r*r-x*x)=%.3g", displacement, std::sqrt(r*r-x*x));
     SubtractionSolid sub((nam+"Subs").c_str(), tubs, Box(1.1*x, 1.1*h, std::sqrt(r*r-x*x)), Transform3D(RotationX(M_PI/2.)));
     solid = UnionSolid(nam, trap, sub, Transform3D(RotationX(M_PI/2.), Position(0,0,displacement))).ptr();
   }
+  stringstream params;
+  params << x1 << " " << x2 << " " << y1 << " " << y2 << " " << z << " "
+         << r << " " << char(atMinusZ ? '1' : '0') << " ";
   solid->GetBoolNode()->GetRightMatrix()->SetTitle(params.str().c_str());
   _assign(solid,"",PSEUDOTRAP_TAG, true);
 }
@@ -777,7 +686,7 @@ void Polyhedra::make(const string& nam, int nsides, double start, double delta,
 }
 
 /// Helper function to create the polyhedron
-void ExtrudedPolygon::make(const string&         nam,
+void ExtrudedPolygon::make(const string& nam,
                            const vector<double>& pt_x,
                            const vector<double>& pt_y,
                            const vector<double>& sec_z,
@@ -793,81 +702,9 @@ void ExtrudedPolygon::make(const string&         nam,
     solid->DefineSection(i, sec_z[i], sec_x[i], sec_y[i], sec_scale[i]);
 }
 
-/// Creator method for arbitrary eight point solids
+/// Creator method
 void EightPointSolid::make(const string& nam, double dz, const double* vtx)   {
   _assign(new TGeoArb8(nam.c_str(), dz, (double*)vtx), "", EIGHTPOINTSOLID_TAG, true);
-}
-
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-/// Internal helper method to support object construction
-void TessellatedSolid::make(const std::string& nam, int num_facets)   {
-  _assign(new TGeoTessellated(nam.c_str(), num_facets), nam, TESSELLATEDSOLID_TAG, false);
-}
-
-/// Internal helper method to support object construction
-void TessellatedSolid::make(const std::string& nam, const std::vector<Vertex>& vertices)   {
-  _assign(new TGeoTessellated(nam.c_str(), vertices), nam, TESSELLATEDSOLID_TAG, false);
-}
-
-/// Add new facet to the shape
-bool TessellatedSolid::addFacet(const Vertex& pt0, const Vertex& pt1, const Vertex& pt2)  const {
-  return access()->AddFacet(pt0, pt1, pt2);
-}
-
-/// Add new facet to the shape
-bool TessellatedSolid::addFacet(const Vertex& pt0, const Vertex& pt1, const Vertex& pt2, const Vertex& pt3)  const {
-  return access()->AddFacet(pt0, pt1, pt2, pt3);
-}
-
-/// Add new facet to the shape. Call only if the tessellated shape was constructed with vertices
-bool TessellatedSolid::addFacet(const int pt0, const int pt1, const int pt2)  const    {
-  return access()->AddFacet(pt0, pt1, pt2);
-}
-
-/// Add new facet to the shape. Call only if the tessellated shape was constructed with vertices
-bool TessellatedSolid::addFacet(const int pt0, const int pt1, const int pt2, const int pt3)  const   {
-  return access()->AddFacet(pt0, pt1, pt2, pt3);
-}
-
-/// Access the number of facets in the shape
-int TessellatedSolid::num_facet()   const   {
-  return access()->GetNvertices();
-}
-
-/// Access a facet from the built shape
-const TessellatedSolid::Facet& TessellatedSolid::facet(int index)    const   {
-  return ptr()->GetFacet(index);
-}
-
-/// Access the number of vertices in the shape
-int TessellatedSolid::num_vertex()   const   {
-  return access()->GetNvertices();
-}
-
-/// Access a single vertex from the shape
-const TessellatedSolid::Vertex& TessellatedSolid::vertex(int index)    const    {
-  return ptr()->GetVertex(index);
-}
-#endif
-
-/// Access right solid of the boolean
-Solid BooleanSolid::rightShape()  const    {
-  return access()->GetBoolNode()->GetRightShape();
-}
-
-/// Access left solid of the boolean
-Solid BooleanSolid::leftShape()  const   {
-  return access()->GetBoolNode()->GetLeftShape();
-}
-
-/// Access right positioning matrix of the boolean
-const TGeoMatrix* BooleanSolid::rightMatrix()  const   {
-  return access()->GetBoolNode()->GetRightMatrix();
-}
-
-/// Access left positioning matrix of the boolean
-const TGeoMatrix* BooleanSolid::leftMatrix()  const   {
-  return access()->GetBoolNode()->GetLeftMatrix();
 }
 
 /// Constructor to be used when creating a new object. Position is identity, Rotation is the identity rotation
@@ -1072,10 +909,4 @@ INSTANTIATE(TGeoHype);
 INSTANTIATE(TGeoTrap);
 INSTANTIATE(TGeoTrd1);
 INSTANTIATE(TGeoTrd2);
-INSTANTIATE(TGeoCtub);
-INSTANTIATE(TGeoScaledShape);
 INSTANTIATE(TGeoCompositeShape);
-
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-INSTANTIATE(TGeoTessellated);
-#endif

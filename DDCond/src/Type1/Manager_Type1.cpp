@@ -246,15 +246,9 @@ bool Manager_Type1::registerUnlocked(ConditionsPool& pool, Condition cond)   {
     cond->iov  = pool.iov;
     cond->setFlag(Condition::ACTIVE);
     pool.insert(cond);
-#if !defined(DD4HEP_MINIMAL_CONDITIONS) && defined(DD4HEP_CONDITIONS_HAVE_NAME)
-    printout(DEBUG,"ConditionsMgr","Register condition %016lX %s [%s] IOV:%s",
-             cond.key(), cond.name(), cond->address.c_str(), pool.iov->str().c_str());
-#elif defined(DD4HEP_CONDITIONS_HAVE_NAME)
-    printout(DEBUG,"ConditionsMgr","Register condition %016lX %s IOV:%s",
-             cond.key(), cond.name(), pool.iov->str().c_str());
-#else
-    printout(DEBUG,"ConditionsMgr","Register condition %016lX IOV:%s",
-             cond.key(), pool.iov->str().c_str());
+#if 0
+    printout(INFO,"ConditionsMgr","Register condition %016lX %s [%s] IOV:%s",
+             cond->hash, cond.name(), cond->address.c_str(), pool.iov->str().c_str());
 #endif
     if ( !m_onRegister.empty() )   {
       __callListeners(m_onRegister, &ConditionsListener::onRegisterCondition, cond);
@@ -296,6 +290,7 @@ size_t Manager_Type1::blockRegister(ConditionsPool& pool, const vector<Condition
 Condition Manager_Type1::__queue_update(cond::Entry* e)   {
   if ( e )  {
     ConditionsPool*  p = this->ConditionsManagerObject::registerIOV(e->validity);
+    ConditionKey::KeyMaker m(e->detector,e->name);
     Condition condition(e->name,e->type);
     Condition::Object* c = condition.ptr();
     c->value = e->value;
@@ -305,7 +300,7 @@ Condition Manager_Type1::__queue_update(cond::Entry* e)   {
     c->validity = e->validity;
 #endif
     c->iov  = p->iov;
-    c->hash = ConditionKey::KeyMaker(e->detector,e->name).hash;
+    c->hash = m.hash;
     p->insert(c);
     if ( s_debug > INFO )  {
 #if defined(DD4HEP_MINIMAL_CONDITIONS)
@@ -399,9 +394,8 @@ void Manager_Type1::pushUpdates()   {
     if ( !ents.empty() )  {
       for(Condition c : ents )  {
         c->setFlag(Condition::ACTIVE);
-	except("ConditionsMgr",
-	       "+++ We should never end up here [%s]. FIXME!!!!",
-	       c.str(0).c_str());
+        /// FIXME!
+        throw runtime_error("FIXME!!!");
         //c->pool->insert(c);
       }
     }

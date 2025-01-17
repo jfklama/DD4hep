@@ -98,7 +98,6 @@ bool ConditionsContent::remove(Condition::key_type hash)   {
 pair<Condition::key_type, ConditionsLoadInfo*>
 ConditionsContent::insertKey(Condition::key_type hash)   {
   auto ret = m_conditions.emplace(hash,(ConditionsLoadInfo*)0);
-  //printout(DEBUG,"ConditionsContent","++ Insert key: %016X",hash);
   if ( ret.second )  return pair<Condition::key_type, ConditionsLoadInfo*>(hash,0);
   return pair<Condition::key_type, ConditionsLoadInfo*>(0,0);
 }
@@ -107,7 +106,6 @@ ConditionsContent::insertKey(Condition::key_type hash)   {
 pair<Condition::key_type, ConditionsLoadInfo*>
 ConditionsContent::addLocationInfo(Condition::key_type hash, ConditionsLoadInfo* info)   {
   if ( info )   {
-    //printout(DEBUG,"ConditionsContent","++ Add location key: %016X",hash);
     auto ret = m_conditions.emplace(hash,info);
     if ( ret.second )  {
       info->addRef();
@@ -124,21 +122,16 @@ ConditionsContent::addDependency(ConditionDependency* dep)
 {
   auto ret = m_derived.emplace(dep->key(),dep);
   if ( ret.second )  {
-    //printout(DEBUG,"ConditionsContent","++ Add dependency key: %016X",dep->key());
     dep->addRef();
     return *(ret.first);
   }
-  ConditionKey::KeyMaker maker(dep->target.hash);
-#if defined(DD4HEP_CONDITIONS_DEBUG)
+  ConditionKey::KeyMaker km(dep->target.hash);
   DetElement             de(dep->detector);
-  const char* path = de.isValid() ? de.path().c_str() : "(global)";
-#else
-  const char* path = "";
-#endif
   dep->release();
+  const char* path = de.isValid() ? de.path().c_str() : "(global)";
   except("DeConditionsRequests",
          "++ Dependency already exists: %s [%08X] [%016llX]",
-         path, maker.values.item_key, maker.hash);
+         path, km.values.item_key, km.hash);
   return pair<Condition::key_type, ConditionDependency*>(0,0);
 }
 

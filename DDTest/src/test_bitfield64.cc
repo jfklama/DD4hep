@@ -6,18 +6,24 @@
 
 #include "DDSegmentation/BitField64.h"
 
-using namespace std;
-using namespace dd4hep;
-using namespace DDSegmentation;
+
+using namespace std ;
+using namespace dd4hep ;
+using namespace DDSegmentation ;
+
+// this should be the first line in your test
+static DDTest test( "bitfield64" ) ; 
 
 //=============================================================================
+
 int main(int /* argc */, char** /* argv */ ){
     
-  DDTest test( "bitfield64" ) ; 
-
   try{
+    
     // ----- write your tests in here -------------------------------------
+
     test.log( "test bitfield64" );
+
 
     // initialize with a string that uses all 64 bits :
     BitField64 bf("system:5,side:-2,layer:9,module:8,sensor:8,x:32:-16,y:-16" ) ;
@@ -26,7 +32,7 @@ int main(int /* argc */, char** /* argv */ ){
     BitField64 bf3( bf.fieldDescription() ) ;
 
 
-    test(  bf.getValue() , CellID(0x0) , " initialized with 0 " ); 
+    test(  bf.getValue() , long64(0x0) , " initialized with 0 " ); 
 
     //    std::cout  << " bf value : " << bf << std::endl ;
     
@@ -34,10 +40,10 @@ int main(int /* argc */, char** /* argv */ ){
 
     //    std::cout  << " bf value : " << bf << std::endl ;
 
-    test(  bf.getValue() , 0xbebafecacafebabeULL, 
+    test(  bf.getValue() , long64( 0xbebafecacafebabeULL ) , 
 	   " initialized with 0xbebafecacafebabeUL - compare as signed " ); 
 
-    test( bf.getValue()   , 0xbebafecacafebabeULL  , 
+    test(  (ulong64) bf.getValue()   , 0xbebafecacafebabeULL  , 
 	   " initialized with 0xbebafecacafebabeUL - compare as unsigned " ); 
 
 

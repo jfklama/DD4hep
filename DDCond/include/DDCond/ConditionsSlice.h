@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDCOND_CONDITIONSSLICE_H
-#define DDCOND_CONDITIONSSLICE_H
+#ifndef DD4HEP_DDCOND_CONDITIONSSLICE_H
+#define DD4HEP_DDCOND_CONDITIONSSLICE_H
 
 // Framework include files
 #include "DD4hep/Conditions.h"
@@ -81,8 +81,8 @@ namespace dd4hep {
           iov_pool = s.manager.registerIOV(*iov.iovType,iov.key());
         }
         template <typename T> Inserter(ConditionsSlice& s, const T& data) : slice(s) {
-          const IOV& iov = slice.pool->validity();
-          iov_pool = slice.manager.registerIOV(*iov.iovType,iov.key());
+          const IOV& iov = s.pool->validity();
+          iov_pool = s.manager.registerIOV(*iov.iovType,iov.key());
           std::for_each(std::begin(data), std::end(data), *this);
         }
         void operator()(Condition c) const  {
@@ -201,4 +201,4 @@ namespace dd4hep {
 
   }        /* End namespace cond               */
 }          /* End namespace dd4hep                   */
-#endif // DDCOND_CONDITIONSSLICE_H
+#endif     /* DD4HEP_DDCOND_CONDITIONSSLICE_H        */

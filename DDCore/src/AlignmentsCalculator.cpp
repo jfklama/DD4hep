@@ -66,7 +66,7 @@ namespace dd4hep {
         DetElement::Object*         det   = 0;
         const Delta*                delta = 0;
         AlignmentCondition::Object* cond  = 0;
-        unsigned char               key   = 0, valid = 0, created = 0, _pad[1] { 0 };
+        unsigned char               key   = 0, valid = 0, created = 0, _pad[1];
         Entry(DetElement d, const Delta* del) : det(d.ptr()), delta(del), key(d.key())  {}
       };
 
@@ -130,7 +130,7 @@ Result Calculator::compute(Context& context, Entry& e)   const  {
     return result;
   }
   AlignmentCondition c = context.mapping.get(det, Keys::alignmentKey);
-  AlignmentCondition cond = c.isValid() ? c : AlignmentCondition(det.path()+"#alignment");
+  AlignmentCondition cond = c.isValid() ? c : AlignmentCondition("alignment");
   AlignmentData&     align = cond.data();
   const Delta*       delta = e.delta ? e.delta : &identity_delta;
   TGeoHMatrix        transform_for_delta;
@@ -165,7 +165,6 @@ Result Calculator::compute(Context& context, Entry& e)   const  {
   // Update mapping if the condition is freshly created
   if ( !c.isValid() )  {
     e.created = 1;
-    cond->flags |= Condition::ALIGNMENT_DERIVED;
     cond->hash = ConditionKey(e.det,Keys::alignmentKey).hash;
     context.mapping.insert(e.det, Keys::alignmentKey, cond);
   }
@@ -280,9 +279,9 @@ size_t AlignmentsCalculator::extract_deltas(DetElement start,
         : delta_conditions(d), extract_context(e), effective_iov(eff_iov) {}
       /// Conditions callback for object processing
       virtual int process(Condition c)  const override  {
-        ConditionKey::KeyMaker key_maker(c->hash);
-        if ( key_maker.values.item_key == align::Keys::deltaKey )   {
-          auto idd = extract_context.find(key_maker.values.det_key);
+        ConditionKey::KeyMaker km(c->hash);
+        if ( km.values.item_key == align::Keys::deltaKey )   {
+          auto idd = extract_context.find(km.values.det_key);
           if ( idd != extract_context.end() )   {
             const Delta& d  = c.get<Delta>();
             DetElement   de = idd->second;
@@ -324,5 +323,14 @@ size_t AlignmentsCalculator::extract_deltas(DetElement start,
   return deltas.size();
 }
 
-#include "DD4hep/GrammarUnparsed.h"
-static auto s_registry = GrammarRegistry::pre_note<AlignmentsCalculator::OrderedDeltas>(1);
+// The map is used by the Alignments calculator
+typedef AlignmentsCalculator::OrderedDeltas OrderedMap;
+// Have only a weak reference here!
+inline std::ostream& operator << (std::ostream& s, const DetElement& )   { return s; }
+
+#include "Parsers/Parsers.h"
+DD4HEP_DEFINE_PARSER_DUMMY(OrderedMap)
+#include "DD4hep/detail/BasicGrammar_inl.h"
+#include "DD4hep/detail/ConditionsInterna.h"
+DD4HEP_DEFINE_PARSER_GRAMMAR(OrderedMap,eval_none<OrderedMap>)
+DD4HEP_DEFINE_CONDITIONS_TYPE(OrderedMap)

@@ -10,22 +10,12 @@
 // Author     : M.Frank
 //
 //==========================================================================
-/** \addtogroup Geant4GeneratorAction
- *
- @{
-   \package Geant4InteractionVertexBoost
- * \brief Action class to boost the primary vertex (and all outgoing particles) of a single interaction
- *
- *
-@}
- */
 
-#ifndef DDG4_GEANT4INTERACTIONVERTEXBOOST_H
-#define DDG4_GEANT4INTERACTIONVERTEXBOOST_H
+#ifndef DD4HEP_DDG4_GEANT4INTERACTIONVERTEXBOOST_H
+#define DD4HEP_DDG4_GEANT4INTERACTIONVERTEXBOOST_H
 
 // Framework include files
 #include "DDG4/Geant4GeneratorAction.h"
-#include "DDG4/Geant4Primary.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -35,7 +25,7 @@ namespace dd4hep {
 
     /// Action class to boost the primary vertex (and all outgoing particles) of a single interaction
     /**
-     * The vertex boost is steered by the Lorentz transformation angle.
+     * The vertex smearing is steered by the Lorentz transformation angle.
      * The interaction to be modified is identified by the interaction's unique mask.
      *
      *  \author  M.Frank
@@ -68,4 +58,4 @@ namespace dd4hep {
     };
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4INTERACTIONVERTEXBOOST_H
+#endif /* DD4HEP_DDG4_GEANT4INTERACTIONVERTEXBOOST_H  */

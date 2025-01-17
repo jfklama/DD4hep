@@ -18,7 +18,6 @@
 #include "DD4hep/InstanceCount.h"
 
 // ROOT include files
-#include <TROOT.h>
 #include <TSystem.h>
 #include <TGTab.h>
 #include <TGLabel.h>
@@ -159,11 +158,7 @@ void EventControl::OnNewEvent(EventHandler& handler)   {
 
 /// User callback to add elements to the control
 void EventControl::OnBuild()   {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,9,2)
-  string icondir = TString::Format("%s/", TROOT::GetIconPath().Data()).Data();
-#else
   string icondir = TString::Format("%s/icons/", gSystem->Getenv("ROOTSYS")).Data();
-#endif
   TGGroupFrame* group = new TGGroupFrame(m_frame,"Event I/O Control");
   TGCompositeFrame* top = new TGHorizontalFrame(group);
   TGPictureButton* b = 0;

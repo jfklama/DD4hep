@@ -11,19 +11,9 @@
 //
 //==========================================================================
 
-/** \addtogroup Geant4EventReader
- *
- @{
-  \package Geant4EventReaderHepMC
- * \brief Plugin to read HepMC2 ASCII files
- *
- *
-@}
- */
-
 // Framework include files
-#include <DDG4/IoStreams.h>
-#include <DDG4/Geant4InputAction.h>
+#include "DDG4/IoStreams.h"
+#include "DDG4/Geant4InputAction.h"
 
 // C/C++ include files
 
@@ -39,7 +29,7 @@ namespace dd4hep {
       class EventStream;
     }
 
-    /// Class to populate Geant4 primaries from HepMC(2) files.
+    /// Class to populate Geant4 primaries from StdHep files.
     /**
      *  Class to populate Geant4 primary particles and vertices from a
      *  file in HepMC format (ASCII)
@@ -80,20 +70,21 @@ namespace dd4hep {
 //--------------------------------------------------------------------
 //
 //====================================================================
-// #include <DDG4/Geant4EventReaderHepMC"
+// #include "DDG4/Geant4EventReaderHepMC"
 
 // Framework include files
-#include <DDG4/Factories.h>
-#include <DD4hep/Printout.h>
-#include <DDG4/Geant4Primary.h>
-#include <CLHEP/Units/SystemOfUnits.h>
-#include <CLHEP/Units/PhysicalConstants.h>
+#include "DDG4/Factories.h"
+#include "DD4hep/Printout.h"
+#include "DDG4/Geant4Primary.h"
+#include "CLHEP/Units/SystemOfUnits.h"
+#include "CLHEP/Units/PhysicalConstants.h"
 
 // C/C++ include files
 #include <cerrno>
 #include <algorithm>
 
 using namespace std;
+using namespace CLHEP;
 using namespace dd4hep::sim;
 typedef dd4hep::detail::ReferenceBitMask<int> PropertyMask;
 
@@ -173,7 +164,7 @@ namespace dd4hep {
         void set_io(int typ, const string& k)
         { io_type = typ;    key = k;                 }
         void use_default_units()
-        { mom_unit = CLHEP::MeV;   pos_unit = CLHEP::mm;           }
+        { mom_unit = MeV;   pos_unit = mm;           }
         bool read();
         void clear();
       };
@@ -277,7 +268,7 @@ Geant4EventReaderHepMC::readParticles(int /* ev_id */,
                "+++ %s ID:%3d status:%08X typ:%9d Mom:(%+.2e,%+.2e,%+.2e)[MeV] "
                "time: %+.2e [ns] #Dau:%3d #Par:%1d",
                "",p->id,p->status,p->pdgID,
-               p->psx/CLHEP::MeV,p->psy/CLHEP::MeV,p->psz/CLHEP::MeV,p->time/CLHEP::ns,
+               p->psx/MeV,p->psy/MeV,p->psz/MeV,p->time/ns,
                p->daughters.size(),
                p->parents.size());
       //output.emplace_back(p);
@@ -443,7 +434,6 @@ int HepMC::read_particle(EventStream &info, istringstream& input, Geant4Particle
     cout << "Particle id: " << p->id << endl;
   }
 #endif
-  p->charge = 0;
   p->psx *= info.mom_unit;
   p->psy *= info.mom_unit;
   p->psz *= info.mom_unit;
@@ -480,8 +470,7 @@ int HepMC::read_particle(EventStream &info, istringstream& input, Geant4Particle
   /// Keep a copy of the full generator status
   p->genStatus = stat&G4PARTICLE_GEN_STATUS_MASK;
   
-  // read flow patterns if any exist. Protect against tainted readings.
-  size = min(size,100);
+  // read flow patterns if any exist
   for (int i = 0; i < size; ++i ) {
     input >> p->colorFlow[0] >> p->colorFlow[1];
     if(!input) return 0;
@@ -619,14 +608,14 @@ int HepMC::read_units(EventStream &info, istringstream & input)   {
     string mom, pos;
     input >> mom >> pos;
     if ( !input.fail() )  {
-      if ( mom == "KEV" ) info.mom_unit = CLHEP::keV;
-      else if ( mom == "MEV" ) info.mom_unit = CLHEP::MeV;
-      else if ( mom == "GEV" ) info.mom_unit = CLHEP::GeV;
-      else if ( mom == "TEV" ) info.mom_unit = CLHEP::TeV;
+      if ( mom == "KEV" ) info.mom_unit = keV;
+      else if ( mom == "MEV" ) info.mom_unit = MeV;
+      else if ( mom == "GEV" ) info.mom_unit = GeV;
+      else if ( mom == "TEV" ) info.mom_unit = TeV;
 
-      if ( pos == "MM" ) info.pos_unit = CLHEP::mm;
-      else if ( pos == "CM" ) info.pos_unit = CLHEP::cm;
-      else if ( pos == "M"  ) info.pos_unit = CLHEP::m;
+      if ( pos == "MM" ) info.pos_unit = mm;
+      else if ( pos == "CM" ) info.pos_unit = cm;
+      else if ( pos == "M"  ) info.pos_unit = m;
     }
   }
   return input.fail() ? 0 : 1;

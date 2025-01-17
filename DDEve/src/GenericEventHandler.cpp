@@ -19,7 +19,6 @@
 #include <stdexcept>
 
 /// ROOT include files
-#include "TROOT.h"
 #include "TGMsgBox.h"
 #include "TSystem.h"
 #include <climits>
@@ -108,14 +107,14 @@ bool GenericEventHandler::Open(const string& file_type, const string& file_name)
     detail::deletePtr(m_current);
     //  prefer event handler configured in xml
     if ( file_type.find("FCC") != string::npos ) {
-      m_current = (EventHandler*)PluginService::Create<void*>("DD4hep_DDEve_FCCEventHandler",(const char*)0);
+      m_current = (EventHandler*)PluginService::Create<void*>("DDEve_FCCEventHandler",(const char*)0);
     }
     // fall back to defaults according to file ending
     else if ( idx != string::npos )   {
-      m_current = (EventHandler*)PluginService::Create<void*>("DD4hep_DDEve_LCIOEventHandler",(const char*)0);
+      m_current = (EventHandler*)PluginService::Create<void*>("DDEve_LCIOEventHandler",(const char*)0);
     }
     else if ( idr != string::npos )   {
-      m_current = (EventHandler*)PluginService::Create<void*>("DD4hep_DDEve_DDG4EventHandler",(const char*)0);
+      m_current = (EventHandler*)PluginService::Create<void*>("DDEve_DDG4EventHandler",(const char*)0);
     }
     else   {
       throw runtime_error("Attempt to open file:"+file_name+" of unknown type:"+file_type);
@@ -137,11 +136,7 @@ bool GenericEventHandler::Open(const string& file_type, const string& file_name)
     err = "\nAn exception occurred \n"
       "while opening event data:\n" + string(e.what()) + "\n\n";
   }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,9,2)
-  string path = TString::Format("%s/stop_t.xpm", TROOT::GetIconPath().Data()).Data();
-#else
   string path = TString::Format("%s/icons/stop_t.xpm", gSystem->Getenv("ROOTSYS")).Data();
-#endif
   const TGPicture* pic = gClient->GetPicture(path.c_str());
   new TGMsgBox(gClient->GetRoot(),0,"Failed to open event data",err.c_str(),pic,
                kMBDismiss,0,kVerticalFrame,kTextLeft|kTextCenterY);
@@ -162,11 +157,7 @@ bool GenericEventHandler::NextEvent()   {
     throw runtime_error("+++ EventHandler::readEvent: No file open!");
   }
   catch(const exception& e)  {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,9,2)
-    string path = TString::Format("%s/stop_t.xpm", TROOT::GetIconPath().Data()).Data();
-#else
     string path = TString::Format("%s/icons/stop_t.xpm", gSystem->Getenv("ROOTSYS")).Data();
-#endif
     string err = "\nAn exception occurred \n"
       "while reading a new event:\n" + string(e.what()) + "\n\n";
     const TGPicture* pic = gClient->GetPicture(path.c_str());

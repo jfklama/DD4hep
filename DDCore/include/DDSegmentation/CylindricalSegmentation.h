@@ -16,8 +16,8 @@
  *      Author: Christian Grefe, CERN
  */
 
-#ifndef DDSEGMENTATION_CYLINDRICALSEGMENTATION_H
-#define DDSEGMENTATION_CYLINDRICALSEGMENTATION_H
+#ifndef DDSegmentation_CYLINDRICALSEGMENTATION_H_
+#define DDSegmentation_CYLINDRICALSEGMENTATION_H_
 
 #include "DDSegmentation/Segmentation.h"
 
@@ -42,4 +42,4 @@ namespace dd4hep {
 
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-#endif // DDSEGMENTATION_CYLINDRICALSEGMENTATION_H
+#endif /* DDSegmentation_CYLINDRICALSEGMENTATION_H_ */

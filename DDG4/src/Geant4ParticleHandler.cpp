@@ -12,34 +12,34 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Primitives.h>
-#include <DD4hep/InstanceCount.h>
-#include <DDG4/Geant4StepHandler.h>
-#include <DDG4/Geant4TrackHandler.h>
-#include <DDG4/Geant4EventAction.h>
-#include <DDG4/Geant4SensDetAction.h>
-#include <DDG4/Geant4TrackingAction.h>
-#include <DDG4/Geant4SteppingAction.h>
-#include <DDG4/Geant4ParticleHandler.h>
-#include <DDG4/Geant4ParticleInformation.h>
-#include <DDG4/Geant4UserParticleHandler.h>
+#include "DD4hep/Primitives.h"
+#include "DD4hep/InstanceCount.h"
+#include "DDG4/Geant4StepHandler.h"
+#include "DDG4/Geant4TrackHandler.h"
+#include "DDG4/Geant4EventAction.h"
+#include "DDG4/Geant4SensDetAction.h"
+#include "DDG4/Geant4TrackingAction.h"
+#include "DDG4/Geant4SteppingAction.h"
+#include "DDG4/Geant4ParticleHandler.h"
+#include "DDG4/Geant4UserParticleHandler.h"
 
 // Geant4 include files
-#include <G4Step.hh>
-#include <G4Track.hh>
-#include <G4Event.hh>
-#include <G4TrackStatus.hh>
-#include <G4PrimaryVertex.hh>
-#include <G4PrimaryParticle.hh>
-#include <G4TrackingManager.hh>
-#include <G4ParticleDefinition.hh>
-#include <CLHEP/Units/SystemOfUnits.h>
+#include "G4Step.hh"
+#include "G4Track.hh"
+#include "G4Event.hh"
+#include "G4TrackStatus.hh"
+#include "G4PrimaryVertex.hh"
+#include "G4PrimaryParticle.hh"
+#include "G4TrackingManager.hh"
+#include "G4ParticleDefinition.hh"
+#include "CLHEP/Units/SystemOfUnits.h"
 
 // C/C++ include files
 #include <set>
 #include <stdexcept>
 #include <algorithm>
 
+using CLHEP::MeV;
 using namespace std;
 using namespace dd4hep;
 using namespace dd4hep::sim;
@@ -99,16 +99,17 @@ Geant4ParticleHandler& Geant4ParticleHandler::operator=(const Geant4ParticleHand
 bool Geant4ParticleHandler::adopt(Geant4Action* action)    {
   if ( action )   {
     if ( !m_userHandler )  {
-      if ( Geant4UserParticleHandler* h = dynamic_cast<Geant4UserParticleHandler*>(action) )  {
+      Geant4UserParticleHandler* h = dynamic_cast<Geant4UserParticleHandler*>(action);
+      if ( h )  {
         m_userHandler = h;
         m_userHandler->addRef();
         return true;
       }
-      except("Cannot add an invalid user particle handler object [Invalid-object-type].");
+      except("Cannot add an invalid user particle handler object [Invalid-object-type].", c_name());
     }
-    except("Cannot add an user particle handler object [Object-exists].");
+    except("Cannot add an user particle handler object [Object-exists].", c_name());
   }
-  except("Cannot add an invalid user particle handler object [NULL-object].");
+  except("Cannot add an invalid user particle handler object [NULL-object].", c_name());
   return false;
 }
 
@@ -116,8 +117,6 @@ bool Geant4ParticleHandler::adopt(Geant4Action* action)    {
 void Geant4ParticleHandler::clear()  {
   detail::releaseObjects(m_particleMap);
   m_particleMap.clear();
-  // m_suspendedPM should already be empty and cleared...
-  assert(m_suspendedPM.empty() && "There was something wrong with the particle record treatment, please open a bug report!");
   m_equivalentTracks.clear();
 }
 
@@ -129,7 +128,7 @@ void Geant4ParticleHandler::mark(const G4Track* track, int reason)   {
       return;
     }
   }
-  except("Cannot mark the G4Track if the pointer is invalid!");
+  except("Cannot mark the G4Track if the pointer is invalid!", c_name());
 }
 
 /// Store a track produced in a step to be kept for later MC truth analysis
@@ -138,7 +137,7 @@ void Geant4ParticleHandler::mark(const G4Step* step_value, int reason)   {
     mark(step_value->GetTrack(),reason);
     return;
   }
-  except("Cannot mark the G4Track if the step-pointer is invalid!");
+  except("Cannot mark the G4Track if the step-pointer is invalid!", c_name());
 }
 
 /// Mark a Geant4 track of the step to be kept for later MC truth analysis
@@ -147,7 +146,7 @@ void Geant4ParticleHandler::mark(const G4Step* step_value)   {
     mark(step_value->GetTrack());
     return;
   }
-  except("Cannot mark the G4Track if the step-pointer is invalid!");
+  except("Cannot mark the G4Track if the step-pointer is invalid!", c_name());
 }
 
 /// Mark a Geant4 track of the step to be kept for later MC truth analysis
@@ -205,32 +204,13 @@ void Geant4ParticleHandler::step(const G4Step* step_value, G4SteppingManager* mg
 
 /// Pre-track action callback
 void Geant4ParticleHandler::begin(const G4Track* track)   {
-  Geant4TrackHandler   h(track);
-  double               kine = h.kineticEnergy();
-  G4ThreeVector        mom = h.momentum();
+  Geant4TrackHandler h(track);
+  double kine = h.kineticEnergy();
+  G4ThreeVector m = h.momentum();
   const G4ThreeVector& v = h.vertex();
-  int                  reason = (kine > m_kinEnergyCut) ? G4PARTICLE_ABOVE_ENERGY_THRESHOLD : 0;
+  int reason = (kine > m_kinEnergyCut) ? G4PARTICLE_ABOVE_ENERGY_THRESHOLD : 0;
   const G4PrimaryParticle* prim = h.primary();
   Particle* prim_part = 0;
-
-  // if particles are not tracked to the end, we pick up where we stopped previously
-  if (m_haveSuspended) {
-    //primary particles are already in the particle map, we don't have to store them in another map
-    auto existingParticle = m_particleMap.find(h.id());
-    if(existingParticle != m_particleMap.end()) {
-      m_currTrack.get_data(*(existingParticle->second));
-      return;
-    }
-    //other particles might not be in the particleMap yet, so we take them from here
-    existingParticle = m_suspendedPM.find(h.id());
-    if(existingParticle != m_suspendedPM.end()) {
-      m_currTrack.get_data(*(existingParticle->second));
-      // make sure we delete a suspended particle in the map, fill it back later...
-      delete (*existingParticle).second;
-      m_suspendedPM.erase(existingParticle);
-      return;
-    }
-  }
 
   if ( prim )   {
     prim_part = m_primaryMap->get(prim);
@@ -256,7 +236,6 @@ void Geant4ParticleHandler::begin(const G4Track* track)   {
     m_currTrack.daughters    = prim_part->daughters;
     m_currTrack.pdgID        = prim_part->pdgID;
     m_currTrack.mass         = prim_part->mass;
-    m_currTrack.charge       = int(3.0 * h.charge());
   }
   else  {
     m_currTrack.id           = m_globalParticleID;
@@ -271,9 +250,8 @@ void Geant4ParticleHandler::begin(const G4Track* track)   {
     m_currTrack.colorFlow[1] = 0;
     m_currTrack.parents.clear();
     m_currTrack.daughters.clear();
-    m_currTrack.pdgID        = h.pdgID();
-    m_currTrack.mass         = h.mass();
-    m_currTrack.charge       = int(3.0 * h.charge());
+    m_currTrack.pdgID        = h.trackDef()->GetPDGEncoding();
+    m_currTrack.mass         = h.trackDef()->GetPDGMass();
     ++m_globalParticleID;
   }
   m_currTrack.steps       = 0;
@@ -288,9 +266,9 @@ void Geant4ParticleHandler::begin(const G4Track* track)   {
   m_currTrack.vex         = 0.0;
   m_currTrack.vey         = 0.0;
   m_currTrack.vez         = 0.0;
-  m_currTrack.psx         = mom.x();
-  m_currTrack.psy         = mom.y();
-  m_currTrack.psz         = mom.z();
+  m_currTrack.psx         = m.x();
+  m_currTrack.psy         = m.y();
+  m_currTrack.psz         = m.z();
   m_currTrack.pex         = 0.0;
   m_currTrack.pey         = 0.0;
   m_currTrack.pez         = 0.0;
@@ -315,19 +293,18 @@ void Geant4ParticleHandler::begin(const G4Track* track)   {
 void Geant4ParticleHandler::end(const G4Track* track)   {
   Geant4TrackHandler h(track);
   Geant4ParticleHandle ph(&m_currTrack);
-  const int g4_id = h.id();
-
+  int g4_id = h.id();
   int track_reason = m_currTrack.reason;
   PropertyMask mask(m_currTrack.reason);
   // Update vertex end point and final momentum
-  G4ThreeVector mom = track->GetMomentum();
-  const G4ThreeVector& pos = track->GetPosition();
-  ph->pex = mom.x();
-  ph->pey = mom.y();
-  ph->pez = mom.z();
-  ph->vex = pos.x();
-  ph->vey = pos.y();
-  ph->vez = pos.z();
+  G4ThreeVector m = track->GetMomentum();
+  const G4ThreeVector& p = track->GetPosition();
+  ph->pex = m.x();
+  ph->pey = m.y();
+  ph->pez = m.z();
+  ph->vex = p.x();
+  ph->vey = p.y();
+  ph->vez = p.z();
 
   // Set the simulator status bits
   PropertyMask simStatus(m_currTrack.status);
@@ -352,18 +329,15 @@ void Geant4ParticleHandler::end(const G4Track* track)   {
   if ( m_userHandler )  {
     m_userHandler->end(track, m_currTrack);
   }
- 
-  // These are candidate tracks with a probability to be stored due to their properties:
+
+  // These are candate tracks with a probability to be stored due to their properties:
   // - primary particle
   // - hits created
   // - secondaries
   // - above energy threshold
   // - to be kept due to creator process
-  // - to be kept due to user information of type 'Geant4ParticleInformation' stored in the G4Track
   //
-  Geant4ParticleInformation* track_info =
-    dynamic_cast<Geant4ParticleInformation*>(track->GetUserInformation());
-  if ( !mask.isNull() || track_info )   {
+  if ( !mask.isNull() )   {
     m_equivalentTracks[g4_id] = g4_id;
     ParticleMap::iterator ip = m_particleMap.find(g4_id);
     if ( mask.isSet(G4PARTICLE_PRIMARY) )   {
@@ -373,10 +347,6 @@ void Geant4ParticleHandler::end(const G4Track* track)   {
     Particle* part = 0;
     if ( ip==m_particleMap.end() ) part = m_particleMap[g4_id] = new Particle();
     else part = (*ip).second;
-    if ( track_info )  {
-      mask.set(G4PARTICLE_KEEP_USER);
-      part->extension.reset(track_info->release());
-    }
     part->get_data(m_currTrack);
   }
   else   {
@@ -388,10 +358,10 @@ void Geant4ParticleHandler::end(const G4Track* track)   {
     m_equivalentTracks[g4_id] = pid;
     // Need to find the last stored particle and OR this particle's mask
     // with the mask of the last stored particle
-    auto iend = m_equivalentTracks.end(), iequiv=m_equivalentTracks.end();
+    TrackEquivalents::const_iterator iequiv, iend = m_equivalentTracks.end();
     ParticleMap::iterator ip;
     for(ip=m_particleMap.find(pid); ip == m_particleMap.end(); ip=m_particleMap.find(pid))  {
-      if (iequiv=m_equivalentTracks.find(pid); iequiv == iend) break;  // ERROR
+      if ((iequiv=m_equivalentTracks.find(pid)) == iend) break;  // ERROR
       pid = (*iequiv).second;
     }
     if ( ip != m_particleMap.end() )
@@ -399,17 +369,6 @@ void Geant4ParticleHandler::end(const G4Track* track)   {
     else
       ph.dumpWithVertex(outputLevel()+3,name(),"FATAL: No real particle parent present");
   }
-
-  if(track->GetTrackStatus() == fSuspend) {
-    m_haveSuspended = true;
-    //track is already in particle map, we pick it up from there in begin again
-    if(m_particleMap.find(g4_id) != m_particleMap.end()) return;
-    //track is not already stored, keep it in special map
-    auto iPart = m_suspendedPM.emplace(g4_id, new Particle());
-    (iPart.first->second)->get_data(m_currTrack);
-    return; // we trust that we eventually return to this function with another status and go on then
-  }
-
 }
 
 /// Pre-event action callback
@@ -533,8 +492,8 @@ void Geant4ParticleHandler::rebaseSimulatedTracks(int )   {
   //     Processing by Geant4 to establish mother daughter relationships.
   //     == > use finalParticles map and NOT m_particleMap.
   int equiv_id = -1;
-  for( auto& part : finalParticles )  {
-    auto& p = part.second;
+  for(iend=finalParticles.end(), i=finalParticles.begin(); i!=iend; ++i)  {
+    Particle* p = (*i).second;
     if ( p->g4Parent > 0 )  {
       TrackEquivalents::iterator iequ = equivalents.find(p->g4Parent);
       if ( iequ != equivalents.end() )  {
@@ -657,7 +616,8 @@ int Geant4ParticleHandler::recombineParents()  {
       //continue;
     }
     else if ( mask.isSet(G4PARTICLE_KEEP_PROCESS) )  {
-      if(ParticleMap::iterator ip = m_particleMap.find(p->g4Parent); ip != m_particleMap.end() )   {
+      ParticleMap::iterator ip = m_particleMap.find(p->g4Parent);
+      if ( ip != m_particleMap.end() )   {
         Particle* parent_part = (*ip).second;
         PropertyMask parent_mask(parent_part->reason);
         if ( parent_mask.isSet(G4PARTICLE_ABOVE_ENERGY_THRESHOLD) )   {
@@ -672,9 +632,10 @@ int Geant4ParticleHandler::recombineParents()  {
     /// Remove this track from the list and also do the cleanup in the parent's children list
     if ( remove_me )  {
       int g4_id = (*i).first;
+      ParticleMap::iterator ip = m_particleMap.find(p->g4Parent);
       remove.insert(g4_id);
       m_equivalentTracks[g4_id] = p->g4Parent;
-      if(ParticleMap::iterator ip = m_particleMap.find(p->g4Parent); ip != m_particleMap.end() )   {
+      if ( ip != m_particleMap.end() )   {
         Particle* parent_part = (*ip).second;
         PropertyMask(parent_part->reason).set(mask.value());
         parent_part->steps += p->steps;
@@ -686,8 +647,9 @@ int Geant4ParticleHandler::recombineParents()  {
       }
     }
   }
-  for( int r : remove )  {
-    if( auto ir = m_particleMap.find(r); ir != m_particleMap.end() )  {
+  for(set<int>::const_iterator r=remove.begin(); r!=remove.end();++r)  {
+    ParticleMap::iterator ir = m_particleMap.find(*r);
+    if ( ir != m_particleMap.end() )  {
       (*ir).second->release();
       m_particleMap.erase(ir);
     }
@@ -700,16 +662,15 @@ void Geant4ParticleHandler::checkConsistency()  const   {
   int num_errors = 0;
 
   /// First check the consistency of the particle map itself
-  for(const auto& part : m_particleMap )  {
-    Geant4Particle* particle = part.second;
-    Geant4ParticleHandle p(particle);
+  for(ParticleMap::const_iterator j, i=m_particleMap.begin(); i!=m_particleMap.end(); ++i)  {
+    Geant4ParticleHandle p((*i).second);
     PropertyMask mask(p->reason);
     PropertyMask status(p->status);
     set<int>& daughters = p->daughters;
-    ParticleMap::const_iterator j;
     // For all particles, the set of daughters must be contained in the record.
-    for( int id_dau : daughters )   {
-      if ( j=m_particleMap.find(id_dau); j == m_particleMap.end() )   {
+    for(set<int>::const_iterator id=daughters.begin(); id!=daughters.end(); ++id)   {
+      int id_dau = *id;
+      if ( (j=m_particleMap.find(id_dau)) == m_particleMap.end() )   {
         ++num_errors;
         error("+++ Particle:%d Daughter %d is not in particle map!",p->id,id_dau);
       }
@@ -717,11 +678,12 @@ void Geant4ParticleHandler::checkConsistency()  const   {
     // We assume that particles from the generator have consistent parents
     // For all other particles except the primaries, the parent must be contained in the record.
     if ( !mask.isSet(G4PARTICLE_PRIMARY) && !status.anySet(G4PARTICLE_GEN_STATUS) )  {
+      TrackEquivalents::const_iterator eq_it = m_equivalentTracks.find(p->g4Parent);
       bool in_map = false, in_parent_list = false;
-      int  parent_id = -1;
-      if( auto eq_it=m_equivalentTracks.find(p->g4Parent); eq_it != m_equivalentTracks.end() )   {
+      int parent_id = -1;
+      if ( eq_it != m_equivalentTracks.end() )   {
         parent_id = (*eq_it).second;
-        in_map    = (j=m_particleMap.find(parent_id)) != m_particleMap.end();
+        in_map = (j=m_particleMap.find(parent_id)) != m_particleMap.end();
         in_parent_list = p->parents.find(parent_id) != p->parents.end();
       }
       if ( !in_map || !in_parent_list )  {
@@ -729,8 +691,8 @@ void Geant4ParticleHandler::checkConsistency()  const   {
         parent_list[0] = 0;
         ++num_errors;
         p.dumpWithMomentum(ERROR,name(),"INCONSISTENCY");
-        for( int ip : p->parents )
-          ::snprintf(parent_list+strlen(parent_list),sizeof(parent_list)-strlen(parent_list),"%d ",ip);
+        for(set<int>::const_iterator ip=p->parents.begin(); ip!=p->parents.end();++ip)
+          ::snprintf(parent_list+strlen(parent_list),sizeof(parent_list)-strlen(parent_list),"%d ",*ip);
         error("+++ Particle:%d Parent %d (G4id:%d)  In record:%s In parent list:%s [%s]",
               p->id,parent_id,p->g4Parent,yes_no(in_map),yes_no(in_parent_list),parent_list);
       }
@@ -743,16 +705,23 @@ void Geant4ParticleHandler::checkConsistency()  const   {
 }
 
 void Geant4ParticleHandler::setVertexEndpointBit() {
-  for( auto& part : m_particleMap )   {
-    auto* p = part.second;
-    if( !p->parents.empty() )   {
-      Geant4Particle *parent(m_particleMap[ *p->parents.begin() ]);
-      const double X( parent->vex - p->vsx );
-      const double Y( parent->vey - p->vsy );
-      const double Z( parent->vez - p->vsz );
-      if( sqrt(X*X + Y*Y + Z*Z) > m_minDistToParentVertex ){
-        PropertyMask(p->status).set(G4PARTICLE_SIM_PARENT_RADIATED);
-      }
+
+  ParticleMap& pm = m_particleMap;
+  ParticleMap::const_iterator iend, i;
+  for(iend=pm.end(), i=pm.begin(); i!=iend; ++i)  {
+    Particle* p = (*i).second;
+
+    if( p->parents.empty() ) {
+      continue;
+    }
+
+    Geant4Particle *parent(pm[ *p->parents.begin() ]);
+    const double X( parent->vex - p->vsx );
+    const double Y( parent->vey - p->vsy );
+    const double Z( parent->vez - p->vsz );
+    if( sqrt(X*X + Y*Y + Z*Z) > m_minDistToParentVertex ){
+      PropertyMask(p->status).set(G4PARTICLE_SIM_PARENT_RADIATED);
     }
   }
+
 }

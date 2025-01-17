@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4INPUTHANDLING_H
-#define DDG4_GEANT4INPUTHANDLING_H
+#ifndef DD4HEP_DDG4_GEANT4INPUTHANDLING_H
+#define DD4HEP_DDG4_GEANT4INPUTHANDLING_H
 
 // Framework include files
 #include "DDG4/Geant4Primary.h"
@@ -35,14 +35,14 @@ namespace dd4hep {
 
     /** Helpers to import and export G4 records  */
 
-    /// Create a vertex object from its G4 counterpart
+    /// Create a vertex object from it's G4 counterpart
     Geant4Vertex* createPrimary(const G4PrimaryVertex* g4);
     
-    /// Create a particle object from its G4 counterpart
+    /// Create a particle object from it's G4 counterpart
     Geant4Particle* createPrimary(int particle_id, const Geant4Vertex* v, const G4PrimaryParticle* g4p);
 
     /// Create a DDG4 interaction record from a Geant4 interaction defined by a primary vertex
-    Geant4PrimaryInteraction* createPrimary(int mask, Geant4PrimaryMap* pm, std::set<G4PrimaryVertex*>const& primaries);
+    Geant4PrimaryInteraction* createPrimary(int mask, Geant4PrimaryMap* pm, const G4PrimaryVertex* gv);
 
     /// Initialize the generation of one event
     int generationInitialization(const Geant4Action* caller,const Geant4Context* context);
@@ -68,4 +68,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4INPUTHANDLING_H
+#endif /* DD4HEP_DDG4_GEANT4INPUTHANDLING_H  */

@@ -30,15 +30,14 @@
 #include "Evaluator/Evaluator.h"
 
 // C/C++ include files
-#include <sstream>
 #include <iostream>
 #include <stdexcept>
 
 namespace dd4hep {
-  const dd4hep::tools::Evaluator& g4Evaluator();
+  dd4hep::tools::Evaluator& g4Evaluator();
 }
 namespace {
-  const dd4hep::tools::Evaluator& eval(dd4hep::g4Evaluator());
+  dd4hep::tools::Evaluator& eval(dd4hep::g4Evaluator());
 }
 
 //==============================================================================
@@ -48,22 +47,22 @@ namespace dd4hep {  namespace Parsers {
     }
 
     template <> double evaluate_string<double>(const std::string& value)   {
-      std::stringstream err;
-      auto result = eval.evaluate(value, err);
-      if (result.first != tools::Evaluator::OK) {
-        throw std::runtime_error("dd4hep::Properties: Severe error during expression evaluation of " + 
-				 value + " : " + err.str());
+      double result = eval.evaluate(value.c_str());
+      if (eval.status() != tools::Evaluator::OK) {
+        std::cerr << value << ": ";
+        eval.print_error();
+        throw std::runtime_error("dd4hep::Properties: Severe error during expression evaluation of " + value);
       }
-      return result.second;
+      return result;
     }
     template <> float evaluate_string<float>(const std::string& value)   {
-      std::stringstream err;
-      auto result = eval.evaluate(value, err);
-      if (result.first != tools::Evaluator::OK) {
-        throw std::runtime_error("dd4hep::Properties: Severe error during expression evaluation of " +
-				 value + " : " + err.str());
+      double result = eval.evaluate(value.c_str());
+      if (eval.status() != tools::Evaluator::OK) {
+        std::cerr << value << ": ";
+        eval.print_error();
+        throw std::runtime_error("dd4hep::Properties: Severe error during expression evaluation of " + value);
       }
-      return (float) result.second;
+      return (float) result;
     }
   }
 }

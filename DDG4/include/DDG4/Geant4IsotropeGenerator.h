@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4ISOTROPEGENERATOR_H
-#define DDG4_GEANT4ISOTROPEGENERATOR_H
+#ifndef DD4HEP_DDG4_GEANT4ISOTROPEGENERATOR_H
+#define DD4HEP_DDG4_GEANT4ISOTROPEGENERATOR_H
 
 // Framework include files
 #include "DDG4/Geant4ParticleGenerator.h"
@@ -41,7 +41,7 @@ namespace dd4hep {
       /// Property: Maximal theta angular value
       double      m_thetaMax;
       
-      /// Particle modification. Caller presets defaults to: ( direction = m_direction,  momentum = [m_momentumMin, m_momentumMax])
+      /// Particle modification. Caller presets defaults to: ( direction = m_direction, momentum = m_energy)
       /** Use this function to implement isotrop guns, multiple guns etc. 
           User must return a UNIT vector, which gets scaled with momentum.
       */
@@ -67,4 +67,4 @@ namespace dd4hep {
     };
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4ISOTROPEGENERATOR_H
+#endif /* DD4HEP_DDG4_GEANT4ISOTROPEGENERATOR_H  */

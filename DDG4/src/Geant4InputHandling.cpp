@@ -12,19 +12,19 @@
 //==========================================================================
 
 // Framework include files
-#include <DDG4/Geant4InputHandling.h>
-#include <DDG4/Geant4Primary.h>
-#include <DDG4/Geant4Context.h>
-#include <DDG4/Geant4Action.h>
-#include <DDG4/Geant4PrimaryHandler.h>
-#include <CLHEP/Units/SystemOfUnits.h>
-#include <CLHEP/Units/PhysicalConstants.h>
+#include "DDG4/Geant4InputHandling.h"
+#include "DDG4/Geant4Primary.h"
+#include "DDG4/Geant4Context.h"
+#include "DDG4/Geant4Action.h"
+#include "DDG4/Geant4PrimaryHandler.h"
+#include "CLHEP/Units/SystemOfUnits.h"
+#include "CLHEP/Units/PhysicalConstants.h"
 
 // Geant4 include files
-#include <G4Event.hh>
-#include <G4ParticleDefinition.hh>
-#include <G4PrimaryParticle.hh>
-#include <G4PrimaryVertex.hh>
+#include "G4ParticleDefinition.hh"
+#include "G4Event.hh"
+#include "G4PrimaryVertex.hh"
+#include "G4PrimaryParticle.hh"
 
 // C/C++ include files
 #include <stdexcept>
@@ -76,7 +76,7 @@ dd4hep::sim::createPrimary(int particle_id,
   p->colorFlow[0] = 0;
   p->colorFlow[0] = 0;
   p->mass         = g4p->GetMass();
-  p->charge       = int(3.0 * g4p->GetCharge());
+  p->charge       = g4p->GetCharge();
   PropertyMask status(p->status);
   status.set(G4PARTICLE_GEN_STABLE);
   return p;
@@ -88,11 +88,6 @@ static void collectPrimaries(Geant4PrimaryMap*         pm,
                              Geant4Vertex*             particle_origine,
                              G4PrimaryParticle*        gp)
 {
-  //if the particle is in the map, we do not have to do anything
-  if ( pm->get(gp) )  {
-    return;
-  }
-
   int pid = int(interaction->particles.size());
   Geant4Particle* p = createPrimary(pid,particle_origine,gp);
   G4PrimaryParticle* dau = gp->GetDaughter();
@@ -108,13 +103,14 @@ static void collectPrimaries(Geant4PrimaryMap*         pm,
 
   if ( dau )   {
     Geant4Vertex* dv = new Geant4Vertex(*particle_origine);
+    int vid = int(interaction->vertices.size());
     PropertyMask reason(p->reason);
     reason.set(G4PARTICLE_HAS_SECONDARIES);
 
     dv->mask = mask;
     dv->in.insert(p->id);
 
-    interaction->vertices[mask].emplace_back(dv) ;
+    interaction->vertices[vid].emplace_back(dv) ;
 
     for(; dau; dau = dau->GetNext())
       collectPrimaries(pm, interaction, dv, dau);
@@ -125,19 +121,18 @@ static void collectPrimaries(Geant4PrimaryMap*         pm,
 Geant4PrimaryInteraction* 
 dd4hep::sim::createPrimary(int mask,
                            Geant4PrimaryMap* pm,
-                           std::set<G4PrimaryVertex*>const& primaries)
+                           const G4PrimaryVertex* gv)
 {
   Geant4PrimaryInteraction* interaction = new Geant4PrimaryInteraction();
+  Geant4Vertex* v = createPrimary(gv);
+  int vid = int(interaction->vertices.size());
   interaction->locked = true;
   interaction->mask = mask;
-  for (auto const& gv: primaries) {
-    Geant4Vertex* v = createPrimary(gv);
-    v->mask = mask;
-    interaction->vertices[mask].emplace_back(v);
-    for (G4PrimaryParticle *gp = gv->GetPrimary(); gp; gp = gp->GetNext()) {
-      collectPrimaries(pm, interaction, v, gp);
-    }
-  }
+  v->mask = mask;
+  interaction->vertices[vid].emplace_back(v);
+
+  for (G4PrimaryParticle *gp = gv->GetPrimary(); gp; gp = gp->GetNext() )
+    collectPrimaries(pm, interaction, v, gp);
   return interaction;
 }
 
@@ -185,14 +180,13 @@ static void appendInteraction(const Geant4Action* caller,
   }
   Geant4PrimaryInteraction::VertexMap::iterator ivfnd, iv, ivend;
   for( iv=input->vertices.begin(), ivend=input->vertices.end(); iv != ivend; ++iv )   {
-    int theMask = input->mask;
-    ivfnd = output->vertices.find(theMask);
+    ivfnd = output->vertices.find((*iv).first) ; //(*iv).second->mask);
     if ( ivfnd != output->vertices.end() )   {
       caller->abortRun("Duplicate primary interaction identifier!",
                        "Cannot handle 2 interactions with identical identifiers!");
     }
     for(Geant4Vertex* vtx :  (*iv).second )
-      output->vertices[theMask].emplace_back( vtx->addRef() );
+      output->vertices[(*iv).first].emplace_back( vtx->addRef() );
   }
 }
 
@@ -350,18 +344,14 @@ int dd4hep::sim::smearInteraction(const Geant4Action* caller,
 static G4PrimaryParticle* createG4Primary(const Geant4ParticleHandle p)  {
   G4PrimaryParticle* g4 = 0;
   if ( 0 != p->pdgID )   {
-    // For ions we use the pdgID of the definition, in case we had to zero the excitation level, see Geant4Particle.cpp
-    const int pdgID =  p->pdgID < 1000000000 ? p->pdgID : p.definition()->GetPDGEncoding();
-    g4 = new G4PrimaryParticle(pdgID, p->psx, p->psy, p->psz, p.energy());
+    g4 = new G4PrimaryParticle(p->pdgID, p->psx, p->psy, p->psz);
   }
   else   {
     const G4ParticleDefinition* def = p.definition();
-    g4 = new G4PrimaryParticle(def, p->psx, p->psy, p->psz, p.energy());
-    g4->SetCharge(double(p.charge())/3.0);
+    g4 = new G4PrimaryParticle(def, p->psx, p->psy, p->psz);
+    g4->SetCharge(p.charge());
   }
-  // The particle is fully defined with the 4-vector set above, setting the mass isn't necessary, not
-  // using the 4-vector, means the PDG mass is used, and the momentum is scaled if the mass is set here
-  // g4->SetMass(p->mass);
+  g4->SetMass(p->mass);
   return g4;
 }
 
@@ -391,33 +381,14 @@ getRelevant(set<int>& visited,
     double me = en > std::numeric_limits<double>::epsilon() ? p->mass / en : 0.0;
     //  fix by S.Morozov for real != 0
     double proper_time = fabs(dp->time-p->time) * me;
-    double proper_time_Precision = pow(10.,-DBL_DIG)*fabs(me)*fmax(fabs(p->time),fabs(dp->time));
-    bool isProperTimeZero = (fabs(proper_time) <= fabs(proper_time_Precision));
+    double proper_time_Precision = pow(10.,-DBL_DIG)*me*fmax(fabs(p->time),fabs(dp->time));
+    bool isProperTimeZero = (proper_time <= proper_time_Precision);
 
     // -- remove original if ---
     bool rejectParticle = not p.definition()                    // completely unknown to geant4
       or (primaryConfig.m_rejectPDGs.count(abs(p->pdgID)) != 0) // quarks, gluon, "strings", W, Z etc.
       or (isProperTimeZero and p.definition()->GetPDGStable() ) // initial state electrons, etc.
-      or (isProperTimeZero and primaryConfig.m_zeroTimePDGs.count(abs(p->pdgID)) != 0 )  // charged 'documentation' leptons, e.g. in lepton pairs w/ FSR
-      or (status.isSet(G4PARTICLE_GEN_DOCUMENTATION) || status.isSet(G4PARTICLE_GEN_BEAM) || status.isSet(G4PARTICLE_GEN_OTHER))  // documentation generator status
-      or false;
-
-    printout(dd4hep::DEBUG, "Input",
-             "Checking rejection: PDG(%-10d), Definition(%s), isProperTimeZero(%s, %3.15f), stable(%s), doc(%s), reject(%s)",
-             p->pdgID,
-             p.definition() ? "true" : "false",
-             isProperTimeZero ? "true" : "false", proper_time,
-             (bool(p.definition()) ? p.definition()->GetPDGStable() : false)  ? "true" : "false",
-             status.isSet(G4PARTICLE_GEN_DOCUMENTATION) || status.isSet(G4PARTICLE_GEN_BEAM) || status.isSet(G4PARTICLE_GEN_OTHER) ? "true" : "false",
-             rejectParticle ? "true" : "false");
-    // end running simulation if we have a really inconsistent record, that is unrejected stable particle with children
-    bool failStableWithChildren = (not rejectParticle and p.definition()->GetPDGStable());
-    if (failStableWithChildren) {
-      printout(FATAL,"Input",
-               "+++ Stable particle (PDG: %-10d) with daughters! check your MC record, adapt particle.tbl file...",
-               p->pdgID);
-      throw std::runtime_error("Cannot Simmulate this MC Record");
-    }
+      or (isProperTimeZero and primaryConfig.m_zeroTimePDGs.count(abs(p->pdgID)) != 0 ) ; // charged 'documentation' leptons, e.g. in lepton pairs w/ FSR
     if (not rejectParticle) {
       map<int,G4PrimaryParticle*>::iterator ip4 = prim.find(p->id);
       G4PrimaryParticle* p4 = (ip4 == prim.end()) ? 0 : (*ip4).second;

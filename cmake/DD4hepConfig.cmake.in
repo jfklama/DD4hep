@@ -25,16 +25,11 @@ set ( @CMAKE_PROJECT_NAME@_DIR                "${_thisdir}" )
 set ( @CMAKE_PROJECT_NAME@_ROOT               "${_thisdir}" )
 set ( @CMAKE_PROJECT_NAME@_VERSION            "@DD4hep_VERSION@" )
 set ( @CMAKE_PROJECT_NAME@_SOVERSION          "@DD4hep_SOVERSION@" )
-set ( DD4HEP_BUILD_DEBUG                       @DD4HEP_BUILD_DEBUG@ )
-set ( DD4HEP_USE_GEANT4                        @DD4HEP_USE_GEANT4@ )
-set ( DD4HEP_USE_CLHEP                         @DD4HEP_USE_CLHEP@ )
-set ( DD4HEP_USE_LCIO                          @DD4HEP_USE_LCIO@ )
-set ( DD4HEP_USE_EDM4HEP                       @DD4HEP_USE_EDM4HEP@ )
-set ( DD4HEP_USE_XERCESC                       @DD4HEP_USE_XERCESC@ )
-set ( DD4HEP_USE_TBB                           @DD4HEP_USE_TBB@ )
-set ( DD4HEP_USE_GEANT4_UNITS                  @DD4HEP_USE_GEANT4_UNITS@ )
-set ( DD4HEP_RELAX_PYVER                       @DD4HEP_RELAX_PYVER@ )
-set ( @CMAKE_PROJECT_NAME@_BUILD_CXX_STANDARD  @CMAKE_CXX_STANDARD@ )
+set ( DD4HEP_USE_GEANT4         @DD4HEP_USE_GEANT4@ )
+set ( DD4HEP_USE_CLHEP          @DD4HEP_USE_CLHEP@ )
+set ( DD4HEP_USE_LCIO           @DD4HEP_USE_LCIO@ )
+set ( DD4HEP_USE_XERCESC        @DD4HEP_USE_XERCESC@ )
+set ( @CMAKE_PROJECT_NAME@_BUILD_CXX_STANDARD @CMAKE_CXX_STANDARD@ )
 
 include ( ${@CMAKE_PROJECT_NAME@_DIR}/cmake/DD4hep.cmake )
 
@@ -45,8 +40,14 @@ set (CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} ${@CMAKE_PROJECT_NAME@_DIR}/cmake  
 # ---------- include dirs -----------------------------------------------------
 set(@CMAKE_PROJECT_NAME@_INCLUDE_DIRS "")
 
+# ---------- default build type  --------------------------------------------------------
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set (CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "One of: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif()
+
 
 FIND_DEPENDENCY(Boost REQUIRED)
+DD4HEP_SETUP_BOOST_TARGETS()
 
 if(DD4HEP_USE_GEANT4)
   MESSAGE(STATUS "@CMAKE_PROJECT_NAME@ uses Geant4")
@@ -54,22 +55,17 @@ if(DD4HEP_USE_GEANT4)
     find_dependency(CLHEP REQUIRED CONFIG)
     UNSET(CLHEP_INCLUDE_DIR)
   ENDIF()
-  find_dependency(Geant4 10.2.2 REQUIRED gdml ui_all vis_all CONFIG)
+  find_dependency(Geant4 10.2.2 REQUIRED gdml ui_all vis_all)
   DD4HEP_SETUP_GEANT4_TARGETS()
 endif()
 
-FIND_DEPENDENCY(ROOT REQUIRED CONFIG)
+FIND_DEPENDENCY(ROOT REQUIRED)
 DD4HEP_SETUP_ROOT_TARGETS()
 
 if(DD4HEP_USE_LCIO)
   MESSAGE(STATUS "@CMAKE_PROJECT_NAME@ uses LCIO")
-  find_dependency(LCIO REQUIRED CONFIG)
+  find_dependency(LCIO REQUIRED)
   DD4HEP_SETUP_LCIO_TARGETS()
-endif()
-
-if(DD4HEP_USE_TBB)
-  MESSAGE(STATUS "@CMAKE_PROJECT_NAME@ uses TBB")
-  find_dependency(TBB REQUIRED CONFIG)
 endif()
 
 if(NOT CMAKE_PROJECT_NAME STREQUAL @CMAKE_PROJECT_NAME@)
@@ -94,6 +90,11 @@ ENDIF()
 
 #---- build with xercesc or tinyxml ?
 INCLUDE( ${@CMAKE_PROJECT_NAME@_DIR}/cmake/DD4hep_XML_setup.cmake )
+
+#----- APPLE ? -------
+
+set( USE_DYLD @USE_DYLD@ )
+MARK_AS_ADVANCED( USE_DYLD )
 
 # ---------- final checking ---------------------------------------------------
 INCLUDE( FindPackageHandleStandardArgs )

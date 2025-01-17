@@ -327,71 +327,6 @@ const TGeoHMatrix& VolumeManagerContext::toElement()  const   {
   return ext->toElement;
 }
 
-/// Transform local coordinates to the DetElement coordinates
-Position VolumeManagerContext::localToElement(const double local[3])  const   {
-  double elt[3];
-  toElement().LocalToMaster(local, elt);
-  return { elt[0], elt[1], elt[2] };
-}
-
-/// Transform local coordinates to the DetElement coordinates
-Position VolumeManagerContext::localToElement(const Position& local)  const   {
-  double loc[3];
-  local.GetCoordinates(loc);
-  return localToElement(loc);
-}
-
-/// Transform local coordinates to the world coordinates
-Position VolumeManagerContext::localToWorld(const double local[3])  const   {
-  double elt[3];
-  toElement().LocalToMaster(local, elt);
-  return element.nominal().localToWorld(elt);
-}
-
-/// Transform local coordinates to the world coordinates
-Position VolumeManagerContext::localToWorld(const Position& local)  const   {
-  double l[3];
-  local.GetCoordinates(l);
-  return localToWorld(l);
-}
-
-/// Transform world coordinates to the DetElement coordinates
-Position VolumeManagerContext::worldToElement(const double world[3])  const    {
-  return element.nominal().worldToLocal(world);
-}
-
-/// Transform world coordinates to the DetElement coordinates
-Position VolumeManagerContext::worldToElement(const Position& world)  const    {
-  return element.nominal().worldToLocal(world);
-}
-
-/// Transform world coordinates to the DetElement coordinates
-void VolumeManagerContext::worldToElement(const double world[3], double elt[3])  const    {
-  element.nominal().worldToLocal(world, elt);
-}
-
-/// Transform world coordinates to the local coordinates
-Position VolumeManagerContext::worldToLocal(const double world[3])  const    {
-  double elt[3], local[3];
-  worldToElement(world, elt);
-  toElement().MasterToLocal(elt, local);
-  return { local[0], local[1], local[2] };
-}
-
-/// Transform world coordinates to the local coordinates
-Position VolumeManagerContext::worldToLocal(const Position& world)  const    {
-  double global[3];
-  world.GetCoordinates(global);
-  return worldToLocal(global);
-}
-
-/// Transform world coordinates to the DetElement coordinates
-void VolumeManagerContext::worldToLocal(const double world[3], double local[3])  const    {
-  double elt[3];
-  worldToElement(world, elt);
-  toElement().MasterToLocal(elt, local);
-}
-
 /// Initializing constructor to create a new object
 VolumeManager::VolumeManager(const Detector& description, const string& nam, DetElement elt, Readout ro, int flags) {
   printout(INFO, "VolumeManager", " - populating volume ids - be patient ..."  );
@@ -454,19 +389,19 @@ VolumeManager VolumeManager::addSubdetector(DetElement det, Readout ro) {
 
       i = o.subdetectors.emplace(det, VolumeManager(det,ro)).first;
       const auto& id = (*vit);
-      VolumeManager mgr = (*i).second;
+      VolumeManager m = (*i).second;
       const BitFieldElement* field = ro.idSpec().field(id.first);
       if (!field) {
         throw runtime_error("dd4hep: VolumeManager::addSubdetector: IdDescriptor of " + 
                             string(det.name()) + " has no field " + id.first);
       }
-      Object& mo = mgr._data();
+      Object& mo = m._data();
       mo.top     = o.top;
       mo.flags   = o.flags;
       mo.system  = field;
       mo.sysID   = id.second;
       mo.detMask = mo.sysID;
-      o.managers[mo.sysID] = mgr;
+      o.managers[mo.sysID] = m;
       det.callAtUpdate(DetElement::PLACEMENT_CHANGED|DetElement::PLACEMENT_DETECTOR,
                        &mo,&Object::update);
     }
@@ -586,8 +521,8 @@ bool VolumeManager::adoptPlacement(VolumeManagerContext* context) {
           return top.adoptPlacement(context);
         }
         for( auto& j : o.managers )  {
-          Object& mgr = j.second._data();
-          VolumeID sid = mgr.system->value(context->identifier);
+          Object& m = j.second._data();
+          VolumeID sid = m.system->value(context->identifier);
           if ( j.first == sid ) {
             return j.second.adoptPlacement(sid, context);
           }
@@ -686,8 +621,8 @@ VolumeManager::worldTransformation(const ConditionsMap& mapping,
 }
 
 /// Enable printouts for debugging
-std::ostream& dd4hep::operator<<(std::ostream& os, const VolumeManager& mgr) {
-  const VolumeManager::Object& o = *mgr.data<VolumeManager::Object>();
+std::ostream& dd4hep::operator<<(std::ostream& os, const VolumeManager& m) {
+  const VolumeManager::Object& o = *m.data<VolumeManager::Object>();
   VolumeManager::Object* top = dynamic_cast<VolumeManager::Object*>(o.top);
   bool isTop = top == &o;
   //bool hasTop = (o.flags & VolumeManager::ONE) == VolumeManager::ONE;

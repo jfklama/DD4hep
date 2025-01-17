@@ -9,9 +9,7 @@
 #
 #==========================================================================
 SET_PROPERTY(DIRECTORY . PROPERTY PACKAGE_NAME DDDigi)
-file(GLOB DDDigi_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-                         ${CMAKE_CURRENT_SOURCE_DIR}/src/noise/*.cpp
-                         ${CMAKE_CURRENT_SOURCE_DIR}/src/segmentations/*.cpp)
+file(GLOB DDDigi_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_library(DDDigi ${DDDigi_SOURCES})
 add_library(DD4hep::DDDigi ALIAS DDDigi)
 
@@ -22,76 +20,42 @@ target_include_directories(DDDigi
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-)
-#
-if(DD4HEP_USE_TBB)
-  dd4hep_print( "|++> TBB_IMPORTED_TARGETS -->  ${TBB_IMPORTED_TARGETS}")
+  )
+
+FIND_PACKAGE(TBB QUIET)
+if(TBB_FOUND)
+  dd4hep_print( "|++> TBB_INCLUDE_DIR -->  ${TBB_INCLUDE_DIR}")
+  dd4hep_print( "|++> TBB_LIBRARY     -->  ${TBB_LIBRARY}")
   dd4hep_print( "|++> TBB found. DDDigi will run multi threaded.")
   target_compile_definitions(DDDigi PUBLIC DD4HEP_USE_TBB)
-  target_link_libraries(DDDigi PUBLIC ${TBB_IMPORTED_TARGETS})
+  target_link_libraries(DDDigi ${TBB_LIBRARY})
+  target_include_directories(DDDigi ${TBB_INCLUDE_DIRS})
 else()
-  dd4hep_print( "|++> TBB not used. DDDigi will only work single threaded.")
+  dd4hep_print( "|++> TBB not found. DDDigi will only work single threaded.")
 endif()
-#
+
 #---------------------------  Legacy libraries -------------------------------------
 dd4hep_add_dictionary(G__DDDigi
   SOURCES ../DDCore/include/ROOT/Warnings.h python/DDDigiDict.C
   LINKDEF ../DDCore/include/ROOT/LinkDef.h
   USES    DD4hep::DDCore ROOT::Core ROOT::Geom ROOT::GenVector ROOT::RIO Boost::boost
-)
+  )
 #---------------------------  Plugin library for the digitization framework  -------
 dd4hep_add_plugin(DDDigiPlugins
   SOURCES        plugins/*.cpp
   GENERATED      G__DDDigi.cxx
   USES           DD4hep::DDDigi
-)
-#
-#----------------  I/O Plugin library to read/write DDG4 and edm4hep files ---------
-set(DDDigiIO_USES        "DD4hep::DDDigi;DD4hep::DDCore")
-set(DDDigiIO_SOURCES     "io/DigiIO.cpp;io/Digi2ROOT.cpp")
-set(DDDigiIO_GENERATED)
-set(DDDigiIO_DEFINITIONS)
-if(DD4HEP_USE_GEANT4)
-  list(APPEND DDDigiIO_DEFINITIONS "DD4HEP_USE_DDG4=1")
-  dd4hep_add_dictionary(G__DDDigi_DDG4_IO
-    SOURCES     ../DDCore/include/ROOT/Warnings.h io/DDG4IO.cpp
-    LINKDEF     ../DDCore/include/ROOT/LinkDef.h
-    USES        DD4hep::DDG4 DD4hep::DDCore
-    DEFINITIONS ${DDDigiIO_DEFINITIONS}
   )
-  list(APPEND DDDigiIO_GENERATED   G__DDDigi_DDG4_IO.cxx)
-  list(APPEND DDDigiIO_SOURCES     "io/DDG4IO.cpp;io/DigiDDG4Input.cpp")
-  list(APPEND DDDigiIO_USES        "DD4hep::DDG4")
-else()
-  dd4hep_print( "|++> Geant4 not used. DDDigi will not be able to read DDG4 output.")
-endif()
-#
-if(DD4HEP_USE_EDM4HEP)
-  list(APPEND DDDigiIO_SOURCES      "io/DigiEdm4hepOutput.cpp;io/DigiEdm4hepInput.cpp")
-  list(APPEND DDDigiIO_DEFINITIONS  "DD4HEP_USE_EDM4HEP=1")
-  list(APPEND DDDigiIO_USES         "EDM4HEP::edm4hep;EDM4HEP::edm4hepDict;podio::podio;podio::podioDict;podio::podioRootIO")
-else()
-  dd4hep_print( "|++> EDM4HEP not used. DDDigi will not be able to write EDM4HEP output.")
-endif()
-#
-list(REMOVE_DUPLICATES DDDigiIO_USES)
-dd4hep_add_plugin(DDDigi_IO
-    SOURCES        ${DDDigiIO_SOURCES}
-    GENERATED      ${DDDigiIO_GENERATED}
-    USES           ${DDDigiIO_USES}
-    DEFINITIONS    ${DDDigiIO_DEFINITIONS}
-  )
-  set_target_properties(DDDigi_IO PROPERTIES VERSION ${DD4hep_VERSION} SOVERSION ${DD4hep_SOVERSION})
-  install(TARGETS DDDigi_IO EXPORT DD4hep ARCHIVE DESTINATION lib LIBRARY DESTINATION lib)
-#
+
 #---Package installation procedure(s) ----------------------------------------------
+
 set_target_properties(DDDigi DDDigiPlugins PROPERTIES VERSION ${DD4hep_VERSION} SOVERSION ${DD4hep_SOVERSION})
-#
-file(GLOB DDDigi_python python/*.py python/*.C)
-install(FILES ${DDDigi_python} DESTINATION ${DD4HEP_PYTHON_INSTALL_DIR})
-#
+
+file(GLOB DDigi_python python/*.py python/*.C)
+install(FILES ${DDigi_python} DESTINATION ${DD4HEP_PYTHON_INSTALL_DIR})
 install(TARGETS DDDigi DDDigiPlugins EXPORT DD4hep
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-)
+  )
 install(DIRECTORY include/DDDigi DESTINATION include)
+

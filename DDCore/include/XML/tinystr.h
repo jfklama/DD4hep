@@ -1,6 +1,3 @@
-#ifndef XML_TINYSTR_H
-#define XML_TINYSTR_H
-
 /*
   www.sourceforge.net/projects/tinyxml
   Original file by Yves Berquin.
@@ -67,7 +64,8 @@
   The buffer allocation is made by a simplistic power of 2 like mechanism : if we increase
   a string and there's no more room, we allocate a buffer twice as big as we need.
 */
-class TiXmlString{
+class TiXmlString
+{
 public :
   // The size type used
   typedef size_t size_type;
@@ -319,5 +317,3 @@ public :
 
 #endif  // TIXML_STRING_INCLUDED
 #endif  // TIXML_USE_STL
-
-#endif

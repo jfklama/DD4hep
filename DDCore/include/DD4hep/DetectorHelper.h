@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DD4HEP_DETECTORHELPER_H
-#define DD4HEP_DETECTORHELPER_H
+#ifndef DD4HEP_DDCORE_DETECTORHELPER_H
+#define DD4HEP_DDCORE_DETECTORHELPER_H
 
 #include "DD4hep/Detector.h"
 
@@ -47,9 +47,9 @@ namespace dd4hep {
     DetectorHelper& operator=(const DetectorHelper& c) = default;
     /// Access the sensitive detector of a given subdetector (if the sub-detector is sensitive!)
     SensitiveDetector sensitiveDetector(const std::string& detector) const;
-    /// Given a detector element, access its sensitive detector (if the sub-detector is sensitive!)
+    /// Given a detector element, access it's sensitive detector (if the sub-detector is sensitive!)
     SensitiveDetector sensitiveDetector(DetElement detector) const;      
-    /// Find a detector element by its system ID
+    /// Find a detector element by it's system ID
     DetElement detectorByID(int id)  const;
     /// Access an element from the element table by name
     Atom element(const std::string& name)  const;
@@ -58,4 +58,4 @@ namespace dd4hep {
   };
 
 }       /* End namespace dd4hep               */
-#endif // DD4HEP_DETECTORHELPER_H
+#endif  /* DD4HEP_DDCORE_DETECTORHELPER_H     */

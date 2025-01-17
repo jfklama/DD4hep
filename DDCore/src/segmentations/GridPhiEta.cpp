@@ -55,9 +55,7 @@ double GridPhiEta::phi(const CellID& cID) const {
   CellID phiValue = _decoder->get(cID, m_phiID);
   return binToPosition(phiValue, 2.*M_PI/(double)m_phiBins, m_offsetPhi);
 }
+REGISTER_SEGMENTATION(GridPhiEta)
 }
 }
 
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(GridPhiEta,create_segmentation<dd4hep::DDSegmentation::GridPhiEta>)

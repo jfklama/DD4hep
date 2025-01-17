@@ -24,13 +24,11 @@ namespace ROOT {  namespace Math {
     }
   }}
 
-template struct std::less<ROOT::Math::PxPyPzEVector>;
-
 // ============================================================================
 namespace dd4hep {
   namespace Parsers {
 
-    template <> int parse(ROOT::Math::PxPyPzEVector& result, const std::string& input) {
+    int parse(ROOT::Math::PxPyPzEVector& result, const std::string& input) {
       return parse_(result, input);
     }
 

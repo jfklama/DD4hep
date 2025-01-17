@@ -10,14 +10,12 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_DETECTORDATA_H
-#define DDREC_DETECTORDATA_H
+#ifndef rec_DetectorData_H_
+#define rec_DetectorData_H_
 
 #include <map>
 #include <bitset>
 #include <ostream>
-
-#include <boost/variant.hpp>
 
 #include "DD4hep/DetElement.h"
 
@@ -486,13 +484,13 @@ namespace dd4hep {
     struct NeighbourSurfacesStruct {
 
       /// map of all neighbours in the same layer
-      std::map<dd4hep::CellID , std::vector<dd4hep::CellID > > sameLayer ; 
+      std::map<dd4hep::long64 , std::vector<dd4hep::long64 > > sameLayer ; 
 
       /// map of all neighbours in the previous layer
-      std::map<dd4hep::CellID , std::vector<dd4hep::CellID > > prevLayer ;
+      std::map<dd4hep::long64 , std::vector<dd4hep::long64 > > prevLayer ;
 
       /// map of all neighbours in the next layer
-      std::map<dd4hep::CellID , std::vector<dd4hep::CellID > > nextLayer ;
+      std::map<dd4hep::long64 , std::vector<dd4hep::long64 > > nextLayer ;
 
     } ;
     typedef StructExtension<NeighbourSurfacesStruct> NeighbourSurfacesData ;
@@ -503,57 +501,10 @@ namespace dd4hep {
       std::map<std::string, double> doubleParameters{};
     };
     using DoubleParameters = StructExtension<MapStringDoubleStruct>;
+
     std::ostream& operator<<( std::ostream& io , const DoubleParameters& d ) ;
-
-    /** Data structure that holds a map of string keys to a typesafe union of double, int, string or bool.
-     *  It can be used as an extension object for detector elements to attach arbitrary information 
-     *  @author P.Gessinger, CERN
-     *  @date May, 25 2022
-     */
-    struct MapStringVariantStruct {
-      std::map<std::string, boost::variant<double, int, std::string, bool>> variantParameters{};
-
-      template <typename T>
-      const T& get(const std::string& key) const {
-        auto it = variantParameters.find(key);
-        if(it == variantParameters.end()) {
-          throw std::runtime_error{"Key "+key+" not found"};
-        }
-        return boost::get<T>(it->second);
-      }
-
-      template <typename T>
-      T& get(const std::string& key) {
-        auto it = variantParameters.find(key);
-        if(it == variantParameters.end()) {
-          throw std::runtime_error{"Key "+key+" not found"};
-        }
-        return boost::get<T>(it->second);
-      }
-
-      template <typename T>
-      T value_or(const std::string& key, T alternative) const {
-        auto it = variantParameters.find(key);
-        if(it == variantParameters.end()) {
-          return alternative;
-        }
-        return boost::get<T>(it->second);
-      }
-
-      template <typename T>
-      void set(const std::string& key, T value) {
-        variantParameters[key] = value;
-      }
-
-      bool contains(const std::string& key) const {
-        return variantParameters.find(key) != variantParameters.end();
-      }
-    };
-    using VariantParameters = StructExtension<MapStringVariantStruct>;
-    std::ostream& operator<<( std::ostream& io , const VariantParameters& d ) ;
-
 
   } /* namespace rec */
 } /* namespace dd4hep */
 
-#endif // DDREC_DETECTORDATA_H
+#endif // rec_DetectorData_H_

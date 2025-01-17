@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef PARSERS_SPIRIT_GRAMMARSV2_H
-#define PARSERS_SPIRIT_GRAMMARSV2_H 1
+#ifndef DD4HEPKERNEL_GRAMMARSV2_H
+#define DD4HEPKERNEL_GRAMMARSV2_H 1
 #ifdef __GNUC__
 #pragma GCC system_header
 #endif
@@ -33,18 +33,8 @@
 #include <boost/fusion/include/unused.hpp>
 #include <boost/fusion/include/std_pair.hpp>
 
-// version is like X YYY ZZ (no spaces)
-#if BOOST_VERSION >= 107800
-
-#include <boost/phoenix/core.hpp>
-#include <boost/phoenix/operator.hpp>
-
-#else
-
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
-
-#endif
 
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits.hpp>
@@ -139,9 +129,9 @@ namespace dd4hep {  namespace Parsers {
       typedef bool ResultT;
       BoolGrammar() : BoolGrammar::base_type( boolean_literal ) {
         boolean_literal =
-          (qi::lit("true") | qi::lit("True") | qi::lit("TRUE") | "1")[qi::_val=true]
+          (qi::lit("true") | "True" | "TRUE" | "1")[qi::_val=true]
           |
-	  (qi::lit("false") | qi::lit("False") | qi::lit("FALSE") | "0")[qi::_val=false];
+          (qi::lit("false") | "False" | "FALSE" | "0")[qi::_val=false];
       }
       qi::rule<Iterator, bool(), Skipper> boolean_literal;
     };
@@ -389,7 +379,6 @@ namespace dd4hep {  namespace Parsers {
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
 #include "Math/Vector4D.h"
-#include "Math/RotationZYX.h"
 
 namespace dd4hep {  namespace Parsers {
 
@@ -506,51 +495,6 @@ namespace dd4hep {  namespace Parsers {
     struct Grammar_<Iterator, ROOT::Math::LorentzVector<T1>, Skipper >   {
       typedef Pnt4DGrammar<Iterator, ROOT::Math::LorentzVector<T1>, Skipper> Grammar;
     };
-    // ============================================================================
-    template< typename Iterator, typename PointT, typename Skipper>
-    struct Rot3DGrammar : qi::grammar<Iterator, PointT(), Skipper> {
-      typedef PointT ResultT;
-      typedef std::string Scalar;
-      // ----------------------------------------------------------------------------
-      struct Operations {
-        template <typename A, typename B = boost::fusion::unused_type,
-                  typename C = boost::fusion::unused_type,
-                  typename D = boost::fusion::unused_type>
-        struct result { typedef void type; };
-        void operator()(ResultT& res, const Scalar& value,const char xyz) const{
-          typename PointT::Scalar val = evaluate_string<typename PointT::Scalar>(value);
-          switch(xyz)  {
-          case 'x': res.SetPsi(val); break;
-          case 'y': res.SetPhi(val); break;
-          case 'z': res.SetTheta(val); break;
-          default: break;
-          }
-        }
-      }; //  Operations
-      // ----------------------------------------------------------------------------
-      Rot3DGrammar() : Rot3DGrammar::base_type(point) {
-        point = list | ('(' >> list >> ')') | ('[' >> list >> ']');
-        list = -(enc::no_case[qi::lit("x")]  >> ':')
-          >> scalar[op(qi::_val,qi::_1,'x')] >>
-          ',' >> -(enc::no_case[qi::lit("y")] >> ':')
-          >> scalar[op(qi::_val,qi::_1,'y')] >>
-          ',' >> -(enc::no_case[qi::lit("z")] >> ':')
-          >> scalar[op(qi::_val,qi::_1,'z')];
-      }
-      // ----------------------------------------------------------------------------
-      qi::rule<Iterator, ResultT(), Skipper> point, list;
-      typename Grammar_<Iterator, Scalar, Skipper>::Grammar scalar;
-      ph::function<Operations> op;
-      // ----------------------------------------------------------------------------
-    }; //   Rot3DGrammar
-    // ----------------------------------------------------------------------------
-    // Register Rot3DGrammar for ROOT::Math::PositionVector3D:
-    // ----------------------------------------------------------------------------
-    template <typename Iterator, typename Skipper>
-    struct Grammar_<Iterator, ROOT::Math::RotationZYX, Skipper>{
-      typedef Rot3DGrammar<Iterator, ROOT::Math::RotationZYX, Skipper> Grammar;
-    };
- 
     // ============================================================================
   }} //   dd4hep::Parsers
 #endif

@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DD4HEP_DETECTORDATA_H
-#define DD4HEP_DETECTORDATA_H
+#ifndef DD4HEP_DDCORE_DETECTORDATA_H
+#define DD4HEP_DDCORE_DETECTORDATA_H
 
 // Framework includes
 #include "DD4hep/Printout.h"
@@ -58,23 +58,16 @@ namespace dd4hep {
      */
     class ObjectHandleMap: public Detector::HandleMap {
     public:
-      /// Name the map
-      std::string name;
-    public:
       /// Default constructor
-      ObjectHandleMap() = default;
-      /// Initializing constructor
-      ObjectHandleMap(const std::string& name);
-      /// Append entry to map
+      ObjectHandleMap() {
+      }
       void append(const Handle<NamedObject>& e, bool throw_on_doubles = true) {
         if (e.isValid()) {
           std::string n = e.name();
           std::pair<iterator, bool> r = this->emplace(n, e.ptr());
           if (!throw_on_doubles || r.second) {
             if (not r.second) {
-              printout(WARNING,"Detector",
-		       "+++ Object '%s' is already defined. New value will be ignored",
-		       n.c_str());
+              printout(WARNING,"Detector","+++ Object '%s' is already defined and new one will be ignored", n.c_str());
             }
             return;
           }
@@ -82,7 +75,7 @@ namespace dd4hep {
         }
         throw InvalidObjectError("Attempt to add an invalid object.");
       }
-      /// Append entry to map
+
       template <typename T> void append(const Handle<NamedObject>& e, bool throw_on_doubles = true) {
         T* obj = dynamic_cast<T*>(e.ptr());
         if (obj) {
@@ -150,8 +143,6 @@ namespace dd4hep {
     DetectorData();
     /// Default destructor
     virtual ~DetectorData();
-    /// Move constructor
-    DetectorData(DetectorData&& copy) = delete;
     /// Copy constructor
     DetectorData(const DetectorData& copy) = delete;
     /// Assignment operator
@@ -205,7 +196,7 @@ namespace dd4hep {
     const Detector::HandleMap& readouts() const           {    return m_readouts;         }
     /// Accessor to the map of sub-detectors
     const Detector::HandleMap& detectors() const          {    return m_detectors;        }
-    /// Retrieve a sensitive detector by its name from the detector description
+    /// Retrieve a sensitive detector by it's name from the detector description
     const Detector::HandleMap& sensitiveDetectors() const {    return m_sensitive;        }
     /// Accessor to the map of field entries, which together form the global field
     const Detector::HandleMap& fields() const             {    return m_fields;           }
@@ -213,10 +204,5 @@ namespace dd4hep {
     const Detector::HandleMap& idSpecifications() const   {    return m_idDict;           }
   };
 
-  /// Initializing constructor
-  inline DetectorData::ObjectHandleMap::ObjectHandleMap(const std::string& nam)
-    : name(nam)
-  {
-  }
 }         /* End namespace dd4hep         */
-#endif // DD4HEP_DETECTORDATA_H
+#endif    /* DD4HEP_DDCORE_DETECTORDATA_H */

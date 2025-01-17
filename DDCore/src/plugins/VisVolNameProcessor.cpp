@@ -14,13 +14,8 @@
 #define DD4HEP_DDCORE_VISVOLNAMEPROCESSOR_H
 
 // Framework include files
-#include <DD4hep/VolumeProcessor.h>
+#include "DD4hep/VolumeProcessor.h"
 
-// C/C++ include files
-#include <map>
-#include <regex>
-
-/// Namespace for the AIDA detector description toolkit
 namespace dd4hep  {
   
   /// DD4hep DetElement creator for the CMS geometry.
@@ -32,13 +27,10 @@ namespace dd4hep  {
    */
   class VisVolNameProcessor : public PlacedVolumeProcessor  {
   public:
-    typedef std::map<std::string,std::regex> Matches;
-    Detector&                description;
-    Matches                  matches;
-    std::string              name;
-    size_t                   numApplied = 0;
-    bool                     show = false;
-    VisAttr                  visattr;
+    Detector&              description;
+    std::string            name;
+    size_t                 numApplied = 0;
+    bool                   show = false;
     /// Print properties
     void _show();
   public:
@@ -46,8 +38,6 @@ namespace dd4hep  {
     VisVolNameProcessor(Detector& desc);
     /// Default destructor
     virtual ~VisVolNameProcessor();
-    /// Set volume matches
-    void set_match(const std::vector<std::string>& matches);
     /// Callback to output PlacedVolume information of an single Placement
     virtual int operator()(PlacedVolume pv, int level);
   };
@@ -67,76 +57,47 @@ namespace dd4hep  {
 //
 //==========================================================================
 
-//#include <DD4hep/VisVolNameProcessor.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/DetectorTools.h>
-#include <DD4hep/DetectorHelper.h>
-#include <DD4hep/DetFactoryHelper.h>
+//#include "DD4hep/VisVolNameProcessor.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/DetectorTools.h"
+#include "DD4hep/DetectorHelper.h"
+#include "DD4hep/DetFactoryHelper.h"
 #include <sstream>
 
 using namespace std;
 using namespace dd4hep;
 
 /// Initializing constructor
-VisVolNameProcessor::VisVolNameProcessor(Detector& desc)
-  : description(desc), name()
+VisVolNameProcessor::VisVolNameProcessor(Detector& desc) : description(desc), name("VisVolNameProcessor")
 {
 }
 
 /// Default destructor
 VisVolNameProcessor::~VisVolNameProcessor()   {
   if ( show )  {
-    printout(ALWAYS,name,"++       %8ld vis-attrs '%s' applied.",
-	     numApplied, visattr.isValid() ? visattr.name() : "");
+    printout(ALWAYS,name,"++       %8ld vis-attrs applied.", numApplied);
   }
-}
-
-/// Set volume matches
-void VisVolNameProcessor::set_match(const std::vector<std::string>& vals)  {
-  for( const auto& v : vals )
-    matches[v] = regex(v);
 }
 
 /// Callback to output PlacedVolume information of an single Placement
 int VisVolNameProcessor::operator()(PlacedVolume pv, int /* level */)   {
-  Volume vol = pv.volume();
-  if ( vol.visAttributes().ptr() != visattr.ptr() )   {
-    string vol_nam = vol.name();
-    for ( const auto& match : matches )   {
-      if ( std::regex_match(vol_nam, match.second) )  {
-	printout(ALWAYS,match.first,"++       Set visattr %s to %s",
-		 visattr.isValid() ? visattr.name() : "", vol_nam.c_str());
-	vol.setVisAttributes(visattr);
-	++numApplied;
-	return 1;
-      }
-      //printout(ALWAYS,m.first,"++       FAILED %s",vol_nam.c_str());
-    }
+  Volume   vol = pv.volume();
+  VisAttr  vis = description.visAttributes(vol.name());
+  if ( vol.visAttributes().ptr() != vis.ptr() )  {
+    vol.setVisAttributes(vis);
+    ++numApplied;
   }
   return 1;
 }
 
 static void* create_object(Detector& description, int argc, char** argv)   {
-  string         vis_name;
-  vector<string> vol_names;
   DetectorHelper helper(description);
   VisVolNameProcessor*  proc = new VisVolNameProcessor(description);
   for ( int i=0; i<argc; ++i )   {
     if ( argv[i] )    {
       if ( ::strncmp(argv[i],"-name",4) == 0 )   {
-	proc->name = argv[++i];
-        vol_names.push_back(proc->name);
-	if ( vis_name.empty() ) vis_name = proc->name;
-        continue;
-      }
-      else if ( ::strncmp(argv[i],"-match",4) == 0 )   {
-        vol_names.push_back(argv[++i]);
-	if ( vis_name.empty()   ) vis_name = vol_names.back();
-	if ( proc->name.empty() ) proc->name = vol_names.back();
-        continue;
-      }
-      else if ( ::strncmp(argv[i],"-vis",4) == 0 )   {
-        vis_name = argv[++i];
+        string     name = argv[++i];
+        proc->name = name;
         continue;
       }
       else if ( ::strncmp(argv[i],"-show",4) == 0 )   {
@@ -145,16 +106,11 @@ static void* create_object(Detector& description, int argc, char** argv)   {
       }
       cout <<
         "Usage: DD4hep_VisVolNameProcessor -arg [-arg]                                       \n"
-        "     -match <regex>           Regular expression matching volume name               \n"
+        "     -min-density  <number>   Minimal density to show the volume.                   \n"
         "     -show                    Print setup to output device (stdout)                 \n"
         "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
-  }
-  proc->set_match(vol_names);
-  proc->visattr = description.visAttributes(vis_name);
-  if ( !proc->visattr.ptr() )   {
-    except(proc->name,"+++ Unknown visual attribute: %s",vis_name.c_str());
   }
   PlacedVolumeProcessor* placement_proc = proc;
   return (void*)placement_proc;

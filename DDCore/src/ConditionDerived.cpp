@@ -49,13 +49,13 @@ std::vector<Condition> ConditionUpdateContext::getByItem(Condition::itemkey_type
 
 /// Access to condition object by dependency key
 Condition ConditionUpdateContext::condition(const ConditionKey& key_value)  const  {
-  Condition c = this->resolver->get(key_value, this->dependency, true);
+  Condition c = resolver->get(key_value);
   if ( c.isValid() )  {
     /// Update result IOV according by and'ing the new iov structure
     iov->iov_intersection(c.iov());
     return c;
   }
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
+#ifdef DD4HEP_CONDITIONS_DEBUG
   except("ConditionUpdateCall:","Failed to access non-existing condition:"+key_value.name);
 #else
   ConditionKey::KeyMaker key(key_value.hash);
@@ -117,7 +117,7 @@ ConditionResolver::~ConditionResolver()  {
 
 /// Throw exception on conditions access failure
 void ConditionUpdateContext::accessFailure(const ConditionKey& key_value)  const   {
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
+#ifdef DD4HEP_CONDITIONS_DEBUG
   except("ConditionUpdateCall",
          "%s [%016llX]: FAILED to access non-existing item:%s [%016llX]",
          dependency->target.name.c_str(), dependency->target.hash,
@@ -132,10 +132,31 @@ void ConditionUpdateContext::accessFailure(const ConditionKey& key_value)  const
 }
 
 /// Initializing constructor
+ConditionDependency::ConditionDependency(Condition::key_type  key,
+                                         std::shared_ptr<ConditionUpdateCall> call)
+  : m_refCount(0), target(key), callback(std::move(call))
+{
+  InstanceCount::increment(this);
+}
+
+/// Initializing constructor
+ConditionDependency::ConditionDependency(Condition::detkey_type det_key,
+                                         Condition::itemkey_type item_key,
+                                         std::shared_ptr<ConditionUpdateCall> call)
+  : m_refCount(0), target(det_key, item_key), callback(std::move(call))
+{
+  InstanceCount::increment(this);
+}
+
+/// Initializing constructor
 ConditionDependency::ConditionDependency(DetElement              de,
                                          Condition::itemkey_type item_key,
                                          std::shared_ptr<ConditionUpdateCall> call)
-  : m_refCount(0), detector(de), target(de, item_key), callback(std::move(call))
+  : m_refCount(0), 
+#ifdef DD4HEP_CONDITIONS_DEBUG
+  detector(de),
+#endif
+  target(de, item_key), callback(std::move(call))
 {
   InstanceCount::increment(this);
 }
@@ -145,7 +166,10 @@ ConditionDependency::ConditionDependency(DetElement de,
                                          const std::string&   item, 
                                          std::shared_ptr<ConditionUpdateCall> call)
   : 
-  detector(de), target(de, item), callback(std::move(call))
+#ifdef DD4HEP_CONDITIONS_DEBUG
+  detector(de),
+#endif
+  target(de, item), callback(std::move(call))
 {
   InstanceCount::increment(this);
 }

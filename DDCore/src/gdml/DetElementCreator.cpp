@@ -96,7 +96,7 @@ namespace dd4hep {
                       int sd_lvl,
                       PrintLevel p);
     /// Default destructor
-    virtual ~DetElementCreator() noexcept(false);
+    virtual ~DetElementCreator();
     /// Callback to output PlacedVolume information of an single Placement
     virtual int operator()(PlacedVolume pv, int level);
     /// Callback to output PlacedVolume information of an entire Placement
@@ -140,7 +140,7 @@ DetElementCreator::DetElementCreator(Detector& desc,
 }
 
 /// Default destructor
-DetElementCreator::~DetElementCreator() noexcept(false)  {
+DetElementCreator::~DetElementCreator()   {
   Count total;
   stringstream str, id_str;
   const char* pref = detector_volume_match.c_str();
@@ -226,21 +226,13 @@ DetElementCreator::~DetElementCreator() noexcept(false)  {
   printout(INFO,"",str.str().c_str());
   char volid[32];
   for(auto& p : all_placements )  {
-    try  {
-      PlacedVolume place = p.first;
-      Volume vol = place.volume();
-      ::snprintf(volid,sizeof(volid),"Lv%d", p.second.first);
-      printout(DEBUG,pref, "DetElementCreator: ++ Set volid (%-24s): %-6s = %3d  -> %s  (%p)",
-	       vol.isSensitive() ? vol.sensitiveDetector().name() : "Not Sensitive",
-	       volid, p.second.second, place.name(), place.ptr());
-      place.addPhysVolID(volid, p.second.second);
-    }
-    catch(const exception& e)   {
-      except(pref, "DetElementCreator: Exception on destruction: %s", e.what());
-    }
-    catch(...)   {
-      except(pref, "DetElementCreator: UNKNOWN Exception on destruction.");
-    }
+    PlacedVolume place = p.first;
+    Volume vol = place.volume();
+    ::snprintf(volid,sizeof(volid),"Lv%d", p.second.first);
+    printout(DEBUG,pref, "DetElementCreator: ++ Set volid (%-24s): %-6s = %3d  -> %s  (%p)",
+             vol.isSensitive() ? vol.sensitiveDetector().name() : "Not Sensitive",
+             volid, p.second.second, place.name(), place.ptr());
+    place.addPhysVolID(volid, p.second.second);
   }
   printout(ALWAYS, pref, "DetElementCreator: ++ Instrumented %ld subdetectors with %d "
            "DetElements %d sensitives out of %d volumes and %ld sensitive placements.",
@@ -315,7 +307,7 @@ int DetElementCreator::operator()(PlacedVolume pv, int vol_level)   {
 
 /// Callback to output PlacedVolume information of an entire Placement
 int DetElementCreator::process(PlacedVolume pv, int lvl, bool recursive)   {
-  int ret = 1;
+  int ret = 0;
   string pv_nam = pv.name();
   if ( detector_volume_level > 0 ||
        ( (!detector_volume_match.empty() &&

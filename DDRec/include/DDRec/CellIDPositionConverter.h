@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_CELLIDPOSITIONCONVERTER_H
-#define DDREC_CELLIDPOSITIONCONVERTER_H
+#ifndef CellIDPositionConverter_H_
+#define CellIDPositionConverter_H_
 
 #include "DD4hep/Detector.h"
 #include "DD4hep/Readout.h"
@@ -48,7 +48,7 @@ namespace dd4hep {
     public:
       
       /// The constructor - takes the main description object.
-      CellIDPositionConverter(const Detector& description ) : _description( &description )  {
+      CellIDPositionConverter( Detector& description ) : _description( &description )  {
         _volumeManager = VolumeManager::getVolumeManager(description);
       }
 
@@ -131,4 +131,4 @@ namespace dd4hep {
 
 
 
-#endif // DDREC_CELLIDPOSITIONCONVERTER_H
+#endif /* CellIDPositionConverter_H_ */

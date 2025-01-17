@@ -11,10 +11,10 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4CALLBACK_H
-#define DDG4_GEANT4CALLBACK_H
+#ifndef DD4HEP_DDG4_GEANT4CALLBACK_H
+#define DD4HEP_DDG4_GEANT4CALLBACK_H
 
 // Just forward header for dd4hep callbacks
 #include "DD4hep/Callback.h"
 
-#endif // DDG4_GEANT4CALLBACK_H
+#endif  // DD4HEP_DDG4_GEANT4CALLBACK_H

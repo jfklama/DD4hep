@@ -1,9 +1,11 @@
 """Helper object for configuring the LCIO output file (meta)"""
 
+from __future__ import absolute_import, unicode_literals
 from DDSim.Helper.ConfigHelper import ConfigHelper
 import datetime
 import os
 import logging
+import ddsix as six
 from io import open
 
 logger = logging.getLogger(__name__)
@@ -20,14 +22,11 @@ class Meta(ConfigHelper):
                                    'nargs': '+'}
     self.eventParameters = []
     self._runNumberOffset_EXTRA = {'help': "The run number offset to write in slcio output file. "
-                                           "E.g setting it to 42 will start counting runs from 42 instead of 0",
-                                   'type': int}
+                                           "E.g setting it to 42 will start counting runs from 42 instead of 0"}
     self.runNumberOffset = 0
     self._eventNumberOffset_EXTRA = {'help': "The event number offset to write in slcio output file."
-                                             " E.g setting it to 42 will start counting events from 42 instead of 0",
-                                     'type': int}
+                                             " E.g setting it to 42 will start counting events from 42 instead of 0"}
     self.eventNumberOffset = 0
-    # no closeProperties, allow adding arbitrary information to runHeader
 
   def parseEventParameters(self):
     """
@@ -66,10 +65,10 @@ class Meta(ConfigHelper):
     """add the parameters to the (lcio) run Header"""
     runHeader = {}
     parameters = vars(sim)
-    for parName, parameter in parameters.items():
+    for parName, parameter in six.iteritems(parameters):
       if isinstance(parameter, ConfigHelper):
         options = parameter.getOptions()
-        for opt, optionsDict in options.items():
+        for opt, optionsDict in six.iteritems(options):
           runHeader["%s.%s" % (parName, opt)] = str(optionsDict['default'])
       else:
         runHeader[parName] = str(parameter)
@@ -100,9 +99,6 @@ class Meta(ConfigHelper):
 
     # add User
     import getpass
-    try:
-        runHeader["User"] = getpass.getuser()
-    except KeyError:
-        runHeader["User"] = str(os.getuid())
+    runHeader["User"] = getpass.getuser()
 
     return runHeader

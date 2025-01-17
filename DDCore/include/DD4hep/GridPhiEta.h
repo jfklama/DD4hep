@@ -12,12 +12,13 @@
 //  \version  1.0
 //
 //==========================================================================
-#ifndef DD4HEP_GRIDPHIETA_H
-#define DD4HEP_GRIDPHIETA_H 1
+#ifndef DD4HEP_DDCORE_GRIDPHIETA_H
+#define DD4HEP_DDCORE_GRIDPHIETA_H 1
 
 // Framework includes
 #include "DDSegmentation/GridPhiEta.h"
 #include "DD4hep/Segmentations.h"
+#include "DD4hep/detail/SegmentationsInterna.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -114,4 +115,4 @@ namespace dd4hep {
     }
   };
 }       /* End namespace dd4hep                */
-#endif // DD4HEP_GRIDPHIETA_H
+#endif  // DD4HEP_DDCORE_POLARGRIDRPHI_H

@@ -12,20 +12,17 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/InstanceCount.h>
-#include <DD4hep/Primitives.h>
-#include <DD4hep/Printout.h>
-#include <DDG4/Geant4Particle.h>
-
-#include <G4ChargedGeantino.hh>
-#include <G4Geantino.hh>
-#include <G4IonTable.hh>
-#include <G4ParticleDefinition.hh>
-#include <G4ParticleTable.hh>
-#include <G4VProcess.hh>
-
-#include <TDatabasePDG.h>
-#include <TParticlePDG.h>
+#include "DD4hep/Printout.h"
+#include "DD4hep/Primitives.h"
+#include "DD4hep/InstanceCount.h"
+#include "DDG4/Geant4Particle.h"
+#include "TDatabasePDG.h"
+#include "TParticlePDG.h"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4VProcess.hh"
+#include "G4ChargedGeantino.hh"
+#include "G4Geantino.hh"
 
 #include <sstream>
 #include <iostream>
@@ -109,40 +106,14 @@ Geant4Particle& Geant4Particle::get_data(Geant4Particle& c)   {
 
 /// Remove daughter from set
 void Geant4Particle::removeDaughter(int id_daughter)  {
-  if ( std::set<int>::iterator j = daughters.find(id_daughter); j != daughters.end() )
-    daughters.erase(j);
+  std::set<int>::iterator j = daughters.find(id_daughter);
+  if ( j != daughters.end() ) daughters.erase(j);
 }
 
 /// Access the Geant4 particle definition object (expensive!)
 const G4ParticleDefinition* Geant4ParticleHandle::definition() const   {
   G4ParticleTable*      tab = G4ParticleTable::GetParticleTable();
   G4ParticleDefinition* def = tab->FindParticle(particle->pdgID);
-  if( 1000000000 < particle->pdgID) {
-    // creating ions here
-    // ion encoding is 10 L ZZZ AAA I
-    int id = particle->pdgID - 1000000000;  // leading 10 is just identifier
-    const int L = id / 10000000; id %= 10000000;  // strange-quark content
-    const int Z = id / 10000;    id %= 10000;
-    const int A = id / 10;       id %= 10;
-    const int lvl = id;
-    G4IonTable* tab_ion = G4IonTable::GetIonTable();
-    // Have to look for existing Ions, excited or not
-    G4ParticleDefinition* def_ion = tab_ion->FindIon(Z, A, L, lvl);
-    if(def_ion) {
-      //We found an existing Ion, we are good to go
-      printout(VERBOSE,"Geant4Particle","+++ Returning ion with PDG %10d", def_ion->GetPDGEncoding());
-      return def_ion;
-    } else if(lvl == 0) {
-      // GetIon creates the Ion if it does not exist, if this does not work something is seriously wrong
-      printout(VERBOSE,"Geant4Particle","+++ Creating ion with PDG %10d", particle->pdgID);
-      return tab_ion->GetIon(Z, A, L, 0.0);
-    }
-    //Cannot use GetIon with lvl > 0, must give energy, but we don't know where to get energy from
-    printout(WARNING,"Geant4Particle","+++ Cannot find excited ion with PDG %10d, setting excitation level to zero",
-             particle->pdgID);
-    return tab_ion->GetIon(Z, A, L, /* E= */ 0.0);
-  } // finished with ions
-
   if ( 0 == def && 0 == particle->pdgID )   {
     if ( 0 == particle->charge )
       return G4Geantino::Definition();
@@ -153,8 +124,11 @@ const G4ParticleDefinition* Geant4ParticleHandle::definition() const   {
 
 /// Access to the Geant4 particle name
 std::string Geant4ParticleHandle::particleName() const   {
-  if ( const G4ParticleDefinition* def = definition() )
+  const G4ParticleDefinition* def = definition();
+  if ( def )   {
+    //particle->definition = def;
     return def->GetParticleName();
+  }
 #if 0
   TDatabasePDG* db = TDatabasePDG::Instance();
   TParticlePDG* pdef = db->GetParticle(particle->pdgID);
@@ -167,8 +141,11 @@ std::string Geant4ParticleHandle::particleName() const   {
 
 /// Access to the Geant4 particle type
 std::string Geant4ParticleHandle::particleType() const   {
-  if ( const G4ParticleDefinition* def = definition() )
+  const G4ParticleDefinition* def = definition();
+  if ( def )   {
+    //particle->definition = def;
     return def->GetParticleType();
+  }
 #if 0
   TDatabasePDG* db = TDatabasePDG::Instance();
   TParticlePDG* pdef = db->GetParticle(particle->pdgID);
@@ -185,36 +162,28 @@ std::vector<G4ParticleDefinition*> Geant4ParticleHandle::g4DefinitionsRegEx(cons
   std::string exp = expression;   //'^'+expression+"$";
   G4ParticleTable* pt = G4ParticleTable::GetParticleTable();
   G4ParticleTable::G4PTblDicIterator* iter = pt->GetIterator();
-
+  char msgbuf[128];
+  regex_t reg;
+  int ret = ::regcomp(&reg, exp.c_str(), 0);
+  if (ret) {
+    throw std::runtime_error(format("Geant4ParticleHandle", "REGEX: Failed to compile particle name %s", exp.c_str()));
+  }
+  results.clear();
   iter->reset();
-  if ( expression == "*" || expression == ".(*)" )   {
-    while ((*iter)()) {
-      G4ParticleDefinition* p = iter->value();
+  while ((*iter)()) {
+    G4ParticleDefinition* p = iter->value();
+    ret = ::regexec(&reg, p->GetParticleName().c_str(), 0, NULL, 0);
+    if (!ret)
       results.emplace_back(p);
+    else if (ret == REG_NOMATCH)
+      continue;
+    else {
+      ::regerror(ret, &reg, msgbuf, sizeof(msgbuf));
+      ::regfree(&reg);
+      throw std::runtime_error(format("Geant4ParticleHandle", "REGEX: Failed to match particle name %s err=%s", exp.c_str(), msgbuf));
     }
   }
-  else   {
-    regex_t reg;
-    int ret = ::regcomp(&reg, exp.c_str(), 0);
-    if (ret) {
-      throw std::runtime_error(format("Geant4ParticleHandle", "REGEX: Failed to compile particle name %s", exp.c_str()));
-    }
-    while ((*iter)()) {
-      G4ParticleDefinition* p = iter->value();
-      ret = ::regexec(&reg, p->GetParticleName().c_str(), 0, NULL, 0);
-      if (!ret)
-	results.emplace_back(p);
-      else if (ret == REG_NOMATCH)
-	continue;
-      else {
-	char msgbuf[128];
-	::regerror(ret, &reg, msgbuf, sizeof(msgbuf));
-	::regfree(&reg);
-	throw std::runtime_error(format("Geant4ParticleHandle", "REGEX: Failed to match particle name %s err=%s", exp.c_str(), msgbuf));
-      }
-    }
-    ::regfree(&reg);
-  }
+  ::regfree(&reg);
   return results;
 }
 
@@ -254,11 +223,13 @@ void Geant4ParticleHandle::offset(int off)  const   {
 
   temp = p->daughters;
   p->daughters.clear();
-  for(auto i : temp) p->daughters.insert(i+off);
+  for(std::set<int>::iterator i=temp.begin(); i != temp.end(); ++i)
+    p->daughters.insert((*i)+off);
 
   temp = p->parents;
   p->parents.clear();
-  for(auto i : temp ) p->parents.insert(i+off);
+  for(std::set<int>::iterator i=temp.begin(); i != temp.end(); ++i)
+    p->parents.insert((*i)+off);
 }
 
 /// Output type 1:+++ <tag>   10 def:0xde4eaa8 [gamma     ,   gamma] reason:      20 E:+1.017927e+03  \#Par:  1/4    \#Dau:  2
@@ -270,8 +241,8 @@ void Geant4ParticleHandle::dump1(int level, const std::string& src, const char* 
     ::snprintf(text,sizeof(text),"/%d",*(p->parents.begin()));
   else if ( p->parents.size() >  1 )   {
     text[0]='/';text[1]=0;
-    for(int  i : p->parents )
-      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",i);
+    for(std::set<int>::const_iterator i=p->parents.begin(); i!=p->parents.end(); ++i)
+      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",*i);
   }
   printout((dd4hep::PrintLevel)level,src,
            "+++ %s %4d def [%-11s,%8s] reason:%8d E:%+.2e %3s #Dau:%3d #Par:%3d%-5s",
@@ -314,8 +285,8 @@ void Geant4ParticleHandle::dumpWithVertex(int level, const std::string& src, con
     ::snprintf(text,sizeof(text),"/%d",*(p->parents.begin()));
   else if ( p->parents.size() >  1 )   {
     text[0]='/';text[1]=0;
-    for(int i : p->parents )
-      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",i);
+    for(std::set<int>::const_iterator i=p->parents.begin(); i!=p->parents.end(); ++i)
+      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",*i);
   }
   printout((dd4hep::PrintLevel)level,src,
            "+++ %s ID:%3d %-12s status:%08X PDG:%6d Vtx:(%+.2e,%+.2e,%+.2e)[mm] "
@@ -337,8 +308,8 @@ void Geant4ParticleHandle::dumpWithMomentum(int level, const std::string& src, c
     ::snprintf(text,sizeof(text),"/%d",*(p->parents.begin()));
   else if ( p->parents.size() >  1 )   {
     text[0]='/';text[1]=0;
-    for(int i : p->parents )
-      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",i);
+    for(std::set<int>::const_iterator i=p->parents.begin(); i!=p->parents.end(); ++i)
+      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",*i);
   }
   printout((dd4hep::PrintLevel)level,src,
            "+++%s ID:%3d %-12s stat:%08X PDG:%6d Mom:(%+.2e,%+.2e,%+.2e)[MeV] "
@@ -359,8 +330,8 @@ void Geant4ParticleHandle::dumpWithMomentumAndVertex(int level, const std::strin
     ::snprintf(text,sizeof(text),"/%d",*(p->parents.begin()));
   else if ( p->parents.size() >  1 )   {
     text[0]='/';text[1]=0;
-    for(int i : p->parents )
-      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",i);
+    for(std::set<int>::const_iterator i=p->parents.begin(); i!=p->parents.end(); ++i)
+      ::snprintf(text+strlen(text),sizeof(text)-strlen(text),"%d ",*i);
   }
   printout((dd4hep::PrintLevel)level,src,
            "+++%s %3d %-12s stat:%08X PDG:%6d Mom:(%+.2e,%+.2e,%+.2e)[MeV] "
@@ -500,8 +471,8 @@ void Geant4ParticleMap::dump()  const  {
 
   cnt = 0;
   cout << "Particle map:" << endl;
-  for( const auto& p : m->particleMap )  {
-    ::snprintf(text,sizeof(text)," [%-4d:%p]",p.second->id,(void*)p.second);
+  for(Geant4ParticleMap::ParticleMap::const_iterator i=m->particleMap.begin(); i!=m->particleMap.end();++i)  {
+    ::snprintf(text,sizeof(text)," [%-4d:%p]",(*i).second->id,(void*)(*i).second);
     cout << text;
     if ( ++cnt == 8 ) {
       cout << endl;
@@ -512,8 +483,8 @@ void Geant4ParticleMap::dump()  const  {
 
   cnt = 0;
   cout << "Equivalents:" << endl;
-  for( const auto& p : m->equivalentTracks )  {
-    ::snprintf(text,sizeof(text)," [%-5d : %-5d]",p.first,p.second);
+  for(Geant4ParticleMap::TrackEquivalents::const_iterator i=m->equivalentTracks.begin(); i!=m->equivalentTracks.end();++i)  {
+    ::snprintf(text,sizeof(text)," [%-5d : %-5d]",(*i).first,(*i).second);
     cout << text;
     if ( ++cnt == 8 ) {
       cout << endl;

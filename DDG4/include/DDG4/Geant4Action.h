@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4ACTION_H
-#define DDG4_GEANT4ACTION_H
+#ifndef DD4HEP_DDG4_GEANT4ACTION_H
+#define DD4HEP_DDG4_GEANT4ACTION_H
 
 // Framework include files
 #include "DD4hep/Printout.h"
@@ -111,20 +111,20 @@ namespace dd4hep {
     class Geant4Action {
     protected:
       /// Reference to the Geant4 context
-      Geant4Context*     m_context  {nullptr};
+      Geant4Context*     m_context = 0;
       /// Control directory of this action
-      Geant4UIMessenger* m_control  {nullptr};
+      Geant4UIMessenger* m_control = 0;
 
       /// Default property: Output level
-      int                m_outputLevel  {3};
+      int                m_outputLevel = 3;
       /// Default property: Flag to create control instance
-      bool               m_needsControl {false};
+      bool               m_needsControl = false;
       /// Action name
       std::string        m_name;
       /// Property pool
       PropertyManager    m_properties;
       /// Reference count. Initial value: 1
-      long               m_refCount     {1};
+      long               m_refCount = 1;
 
     public:
       /// Functor to update the context of a Geant4Action object
@@ -135,8 +135,8 @@ namespace dd4hep {
        */
       class ContextSwap   {
         /// reference to the context;
-        Geant4Context* context {nullptr};
-        Geant4Action*  action  {nullptr};
+        Geant4Context* context = 0;
+        Geant4Action*  action = 0;
       public:
         /// Constructor
         ContextSwap(Geant4Action* a,Geant4Context* c) : action(a)  {
@@ -195,56 +195,66 @@ namespace dd4hep {
         }
         /// NON-CONST actions
         template <typename R, typename Q> void operator()(R (Q::*pmf)()) {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)();
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)();
         }
         template <typename R, typename Q, typename A0> void operator()(R (Q::*pmf)(A0), A0 a0) {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)(a0);
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0);
         }
         template <typename R, typename Q, typename A0, typename A1> void operator()(R (Q::*pmf)(A0, A1), A0 a0, A1 a1) {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)(a0, a1);
+          if (m_v.empty())
+            return;
+          for (typename _V::iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0, a1);
         }
         /// CONST actions
         template <typename R, typename Q> void operator()(R (Q::*pmf)() const) const {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)();
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)();
         }
         template <typename R, typename Q, typename A0> void operator()(R (Q::*pmf)(A0) const, A0 a0) const {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)(a0);
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0);
         }
-        template <typename R, typename Q, typename A0, typename A1> void operator()(R (Q::*pmf)(A0, A1) const, A0 a0, A1 a1) const {
-	  if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      (o->*pmf)(a0, a1);
+        template <typename R, typename Q, typename A0, typename A1> void operator()(R (Q::*pmf)(A0, A1) const, A0 a0,
+                                                                                    A1 a1) const {
+          if (m_v.empty())
+            return;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            ((*i)->*pmf)(a0, a1);
         }
         /// CONST filters
         template <typename Q> bool filter(bool (Q::*pmf)() const) const {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      if ( !(o->*pmf)() )
-		return false;
+          if (!m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)())
+              return false;
           return true;
         }
         template <typename Q, typename A0> bool filter(bool (Q::*pmf)(A0) const, A0 a0) const {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      if ( !(o->*pmf)(a0) )
-		return false;
+          if (m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)(a0))
+              return false;
           return true;
         }
         template <typename Q, typename A0, typename A1> bool filter(bool (Q::*pmf)(A0, A1) const, A0 a0, A1 a1) const {
-          if ( !m_v.empty() )
-	    for (const auto& o : m_v)
-	      if ( !(o->*pmf)(a0,a1) )
-		return false;
+          if (m_v.empty())
+            return true;
+          for (typename _V::const_iterator i = m_v.begin(); i != m_v.end(); ++i)
+            if (!((*i)->*pmf)(a0, a1))
+              return false;
           return true;
         }
       };
@@ -308,6 +318,9 @@ namespace dd4hep {
       bool hasProperty(const std::string& name) const;
       /// Access single property
       Property& property(const std::string& name);
+      /// Set object properties
+      Geant4Action& setProperties(PropertyConfigurator& setup);
+
       /// Install property control messenger if wanted
       virtual void installMessengers();
       /// Install command control messenger if wanted
@@ -326,8 +339,6 @@ namespace dd4hep {
       /// Support for messages with variable output level using output level+2
       void printP2(const char* fmt, ...) const;
 
-      /// Support of always printed messages.
-      void always(const char* fmt, ...) const;
       /// Support of debug messages.
       void debug(const char* fmt, ...) const;
       /// Support of info messages.
@@ -374,4 +385,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4ACTION_H
+#endif // DD4HEP_DDG4_GEANT4ACTION_H

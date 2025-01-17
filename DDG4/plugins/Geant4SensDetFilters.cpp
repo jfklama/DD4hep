@@ -11,13 +11,10 @@
 //
 //==========================================================================
 
-/// Framework include files
+// Framework include files
 #include "DDG4/Geant4SensDetAction.h"
-#include "DDG4/Geant4FastSimSpot.h"
 
-/// Geant4 include files
-
-/// Forward declarations
+// Forward declarations
 class G4ParticleDefinition;
 
 /// Namespace for the AIDA detector description toolkit
@@ -49,18 +46,6 @@ namespace dd4hep {
       bool isSameType(const G4Track* track)  const;
       /// Check if the particle is a geantino
       bool isGeantino(const G4Track* track) const;
-      /// Access to the track from step
-      const G4Track* getTrack(const G4Step* step)   const   {
-	return step->GetTrack();
-      }
-      /// Access to the track from step
-      const G4Track* getTrack(const Geant4FastSimSpot* spot)   const   {
-	return spot->primary;
-      }
-      /// Access originator track from G4 fast track
-      const G4Track* getTrack(const G4FastTrack* fast)   const   {
-	return fast->GetPrimaryTrack();
-      }
     };
 
     /// Geant4 sensitive detector filter implementing a particle rejector
@@ -75,13 +60,7 @@ namespace dd4hep {
       /// Standard destructor
       virtual ~ParticleRejectFilter();
       /// Filter action. Return true if hits should be processed
-      virtual bool operator()(const G4Step* step) const  override  final   {
-	return !isSameType(getTrack(step));
-      }
-      /// GFlash/FastSim interface: Filter action. Return true if hits should be processed
-      virtual bool operator()(const Geant4FastSimSpot* spot) const  override  final   {
-	return !isSameType(getTrack(spot));
-      }
+      virtual bool operator()(const G4Step* step) const  final;
     };
 
     /// Geant4 sensitive detector filter implementing a particle selector
@@ -96,13 +75,7 @@ namespace dd4hep {
       /// Standard destructor
       virtual ~ParticleSelectFilter();
       /// Filter action. Return true if hits should be processed
-      virtual bool operator()(const G4Step* step) const  override  final   {
-	return isSameType(getTrack(step));
-      }
-      /// GFlash/FastSim interface: Filter action. Return true if hits should be processed
-      virtual bool operator()(const Geant4FastSimSpot* spot) const  override  final   {
-	return isSameType(getTrack(spot));
-      }
+      virtual bool operator()(const G4Step* step) const  final;
     };
 
     /// Geant4 sensitive detector filter implementing a Geantino rejector
@@ -117,13 +90,7 @@ namespace dd4hep {
       /// Standard destructor
       virtual ~GeantinoRejectFilter();
       /// Filter action. Return true if hits should be processed
-      virtual bool operator()(const G4Step* step) const  override  final   {
-	return !isGeantino(getTrack(step));
-      }
-      /// GFlash/FastSim interface: Filter action. Return true if hits should be processed
-      virtual bool operator()(const Geant4FastSimSpot* spot) const  override  final   {
-	return !isGeantino(getTrack(spot));
-      }
+      virtual bool operator()(const G4Step* step) const  final;
     };
 
     /// Geant4 sensitive detector filter implementing an energy cut.
@@ -141,13 +108,7 @@ namespace dd4hep {
       /// Standard destructor
       virtual ~EnergyDepositMinimumCut();
       /// Filter action. Return true if hits should be processed
-      virtual bool operator()(const G4Step* step) const  override  final  {
-	return step->GetTotalEnergyDeposit() > m_energyCut;
-      }
-      /// GFlash/FastSim interface: Filter action. Return true if hits should be processed
-      virtual bool operator()(const Geant4FastSimSpot* spot) const  override  final  {
-	return spot->energy() > m_energyCut;
-      }
+      virtual bool operator()(const G4Step* step) const  final;
     };
   }
 }
@@ -226,6 +187,11 @@ GeantinoRejectFilter::~GeantinoRejectFilter() {
   InstanceCount::decrement(this);
 }
 
+/// Filter action. Return true if hits should be processed
+bool GeantinoRejectFilter::operator()(const G4Step* step) const   {
+  return !isGeantino(step->GetTrack());
+}
+
 /// Constructor.
 ParticleRejectFilter::ParticleRejectFilter(Geant4Context* c, const std::string& n)
   : ParticleFilter(c,n) {
@@ -235,6 +201,11 @@ ParticleRejectFilter::ParticleRejectFilter(Geant4Context* c, const std::string& 
 /// Standard destructor
 ParticleRejectFilter::~ParticleRejectFilter() {
   InstanceCount::decrement(this);
+}
+
+/// Filter action. Return true if hits should be processed
+bool ParticleRejectFilter::operator()(const G4Step* step) const   {
+  return isSameType(step->GetTrack());
 }
 
 /// Constructor.
@@ -248,6 +219,11 @@ ParticleSelectFilter::~ParticleSelectFilter() {
   InstanceCount::decrement(this);
 }
 
+/// Filter action. Return true if hits should be processed
+bool ParticleSelectFilter::operator()(const G4Step* step) const   {
+  return !isSameType(step->GetTrack());
+}
+
 /// Constructor.
 EnergyDepositMinimumCut::EnergyDepositMinimumCut(Geant4Context* c, const std::string& n)
   : Geant4Filter(c,n) {
@@ -258,5 +234,10 @@ EnergyDepositMinimumCut::EnergyDepositMinimumCut(Geant4Context* c, const std::st
 /// Standard destructor
 EnergyDepositMinimumCut::~EnergyDepositMinimumCut() {
   InstanceCount::decrement(this);
+}
+
+/// Filter action. Return true if hits should be processed
+bool EnergyDepositMinimumCut::operator()(const G4Step* step) const  {
+  return step->GetTotalEnergyDeposit() > m_energyCut;
 }
 

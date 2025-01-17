@@ -103,12 +103,7 @@ namespace {
     return 1;
   }
   
-#if defined(DD4HEP_MINIMAL_CONDITIONS)
-  int createText(const string& output, const AllConditions&, char)
-#else
-  int createText(const string& output, const AllConditions& all, char sep)
-#endif
-  {
+  int createText(const string& output, const AllConditions& all, char sep)   {
     ofstream out(output);
 #if !defined(DD4HEP_MINIMAL_CONDITIONS)
     size_t siz_nam=0, siz_add=0, siz_tot=0;
@@ -149,34 +144,26 @@ namespace {
 
   /// Load the repository from file and fill user passed data structory
   int readText(const string& input, ConditionsRepository::Data& data)    {
-    size_t   idx, siz_nam, siz_add, siz_tot;
-    char     sep, c, text[2*PATH_MAX];
+    size_t idx;
     ConditionsRepository::Entry e;
+    long siz_nam, siz_add, siz_tot;
+    char sep, c, text[2*PATH_MAX+64];
     ifstream in(input);
-
     in >> c >> c >> c >> c >> c >> c >> c >> sep 
        >> c >> siz_nam
        >> c >> siz_add
        >> c >> siz_tot;
     text[0] = 0;
-    siz_nam = std::min(siz_nam, 1024UL);
-    siz_add = std::min(siz_add, 1024UL);
     in.getline(text,sizeof(text),'\n');
-    text[sizeof(text)-1] = 0;
     do {
       text[0] = 0;
       in.getline(text,sizeof(text),'\n');
       if ( in.good() )  {
-	text[sizeof(text)-1] = 0;
         if ( siz_tot )  {
-	  text[8] = 0;
           // Direct access mode with fixed record size
-          if ( 9+siz_nam < sizeof(text) )  {
-            text[9+siz_nam] = 0;
+          if ( siz_nam+9 < (long)sizeof(text) )  {
+            text[8] = text[9+siz_nam] = text[10+siz_nam+siz_add] = 0;
             e.name = text+9;
-	  }
-          if ( 10+siz_nam+siz_add < (long)sizeof(text) )  {
-            text[10+siz_nam+siz_add] = 0;
             e.address = text+10+siz_nam;  
             if ( (idx=e.name.find(' ')) != string::npos && idx < e.name.length() )
               e.name[idx] = 0;
@@ -190,7 +177,7 @@ namespace {
         else  {
           // Variable record size
           e.name=text+9;
-          if ( (idx=e.name.find(sep)) != string::npos && idx < sizeof(text)-10 )
+          if ( (idx=e.name.find(sep)) != string::npos && idx < sizeof(text)-9 )
             text[9+idx] = 0, e.address=text+idx+10, e.name=text+9;
           if ( (idx=e.address.find(sep)) != string::npos && idx < e.address.length() )
             e.address[idx] = 0;
@@ -219,7 +206,7 @@ int ConditionsRepository::save(ConditionsManager manager, const string& output) 
         for( const auto& cp : pool->elements )   {
           RangeConditions rc;
           cp.second->select_all(rc);
-          for( const auto& cond : rc )
+          for( const auto cond : rc )
             all[cond.key()] = cond;
         }
       }

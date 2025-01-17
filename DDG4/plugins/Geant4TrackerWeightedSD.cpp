@@ -1,5 +1,5 @@
 //==========================================================================
-//  AIDA Detector description implementation
+//  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
 // Copyright (C) Organisation europeenne pour la Recherche nucleaire (CERN)
 // All rights reserved.
@@ -130,7 +130,7 @@ namespace dd4hep {
         post.truth.deposit = 0.0;
         current = pre.truth.trackID;
         sensitive->mark(step->GetTrack());
-        post.copyFrom(pre);
+        post = pre;
         parent = step->GetTrack()->GetParentID();
         g4ID = step->GetTrack()->GetTrackID();
 
@@ -233,9 +233,11 @@ namespace dd4hep {
           
           Geant4Tracker::Hit* hit = new Geant4Tracker::Hit(pre.truth.trackID,
                                                            pre.truth.pdgID,
-                                                           deposit,time, step_length,
-							   pos, mom);
+                                                           deposit,time);
           hit->flag     = hit_flag;
+          hit->position = pos;
+          hit->momentum = mom;
+          hit->length   = step_length;
           hit->cellID   = cell;
           hit->g4ID     = g4ID;
 
@@ -364,11 +366,11 @@ namespace dd4hep {
           hit_flag |= Geant4Tracker::Hit::HIT_KILLED_TRACK;
           extractHit(post_inside);
         }
-        // Avoid dangling hits if the track leaves the sensitive volume
+        // Avoid danglich hits if the track leaves the sensitive volume
         else if ( post_inside == kSurface )  {
           extractHit(post_inside);
         }
-        // Avoid dangling hits if the track leaves the sensitive volume
+        // Avoid danglich hits if the track leaves the sensitive volume
         else if ( thisSD == preSD && (preSD != postSD || prePV != postPV) )  {
           extractHit(post_inside);
         }
@@ -424,12 +426,6 @@ namespace dd4hep {
             << ", PDG: " << s->GetTrack()->GetDefinition()->GetPDGEncoding();
         std::cout << str.str() << std::endl;
       }
-
-      /// GFLash processing callback
-      G4bool process(const Geant4FastSimSpot* , G4TouchableHistory* ) {
-        sensitive->except("GFlash/FastSim action is not implemented for SD: %s", sensitive->c_name());
-        return false;
-      }
     };
 
     /// Initialization overload for specialization
@@ -462,15 +458,10 @@ namespace dd4hep {
 
     /// Method for generating hit(s) using the information of G4Step object.
     template <> G4bool
-    Geant4SensitiveAction<TrackerWeighted>::process(const G4Step* step, G4TouchableHistory* history) {
+    Geant4SensitiveAction<TrackerWeighted>::process(G4Step* step, G4TouchableHistory* history) {
       return m_userData.process(step, history);
     }
 
-    /// Method for generating hit(s) using the information of the Geant4FastSimSpot object.
-    template <> bool
-    Geant4SensitiveAction<TrackerWeighted>::processFastSim(const Geant4FastSimSpot* spot, G4TouchableHistory* history) {
-      return m_userData.process(spot, history);
-    }
     typedef Geant4SensitiveAction<TrackerWeighted>  Geant4TrackerWeightedAction;
   }
 }

@@ -1,6 +1,3 @@
-#ifndef DD4HEP_CONDITIONTYPES_H
-#define DD4HEP_CONDITIONTYPES_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -16,5 +13,3 @@
 
 #define DD4HEP_INSTANTIATE_GRAMMAR_TYPE(x)  \
 namespace dd4hep {template<> const BasicGrammar& BasicGrammar::instance<x>()  { static Grammar<x> s; return s;}}
-
-#endif

@@ -16,6 +16,7 @@
 #include "DD4hep/Primitives.h"
 #include "DD4hep/OpaqueData.h"
 #include "DD4hep/InstanceCount.h"
+#include "DD4hep/detail/OpaqueData_inl.h"
 
 // C/C++ header files
 #include <cstring>
@@ -66,13 +67,7 @@ OpaqueDataBlock::OpaqueDataBlock(const OpaqueDataBlock& c)
   grammar = 0;
   pointer = 0;
   this->bind(c.grammar);
-  if ( this->grammar->specialization.copy )  {
-    this->grammar->specialization.copy(pointer, c.pointer);
-  }
-  else  {
-    except("OpaqueDataBlock","Grammar type %s does not support object copy. Operation not allowed.",
-	   this->grammar->type_name().c_str());
-  }
+  this->grammar->copy(pointer,c.pointer);
   InstanceCount::increment(this);
 }
 
@@ -103,12 +98,8 @@ OpaqueDataBlock& OpaqueDataBlock::operator=(const OpaqueDataBlock& c)   {
       type = c.type;
       grammar = 0;
       if ( c.grammar )   {
-	if ( !c.grammar->specialization.copy )  {
-	  except("OpaqueDataBlock","Grammar type %s does not support object copy. Operation not allowed.",
-		 c.grammar->type_name().c_str());
-	}
         bind(c.grammar);
-        grammar->specialization.copy(pointer,c.pointer);
+        grammar->copy(pointer,c.pointer);
         return *this;
       }
       else if ( (c.type&EXTERN_DATA) == EXTERN_DATA )   {
@@ -119,6 +110,19 @@ OpaqueDataBlock& OpaqueDataBlock::operator=(const OpaqueDataBlock& c)   {
     except("OpaqueData","You may not bind opaque data multiple times!");
   }
   return *this;
+}
+
+/// Move the data content: 'from' will be reset to NULL
+bool OpaqueDataBlock::move(OpaqueDataBlock& from)   {
+  pointer = from.pointer;
+  grammar = from.grammar;
+  ::memcpy(data,from.data,sizeof(data));
+  type = from.type;
+  ::memset(from.data,0,sizeof(data));
+  from.type = PLAIN_DATA;
+  from.pointer = 0;
+  from.grammar = 0;
+  return true;
 }
 
 /// Bind data value
@@ -141,18 +145,6 @@ void* OpaqueDataBlock::bind(const BasicGrammar* g)   {
   }
   typeinfoCheck(grammar->type(),g->type(),"Opaque data blocks may not be assigned.");
   return 0;
-}
-
-/// Bind external data value to the pointer
-void OpaqueDataBlock::bindExtern(void* ptr, const BasicGrammar* gr)    {
-  if ( grammar != 0 && type != EXTERN_DATA )  {
-    // We cannot ingore secondary requests for data bindings.
-    // This leads to memory leaks in the caller!
-    except("OpaqueData","You may not bind opaque data multiple times!");
-  }
-  pointer = ptr;
-  grammar = gr;
-  type    = EXTERN_DATA;
 }
 
 /// Set data value
@@ -180,5 +172,40 @@ void* OpaqueDataBlock::bind(void* ptr, size_t size, const BasicGrammar* g)   {
   return 0;
 }
 
-#include "DD4hep/GrammarUnparsed.h"
-static auto s_registry = GrammarRegistry::pre_note<OpaqueDataBlock>(1);
+/// Bind external data value to the pointer
+void OpaqueDataBlock::bindExtern(void* ptr, const BasicGrammar* gr)    {
+  if ( grammar != 0 && type != EXTERN_DATA )  {
+    // We cannot ingore secondary requests for data bindings.
+    // This leads to memory leaks in the caller!
+    except("OpaqueData","You may not bind opaque data multiple times!");
+  }
+  pointer = ptr;
+  grammar = gr;
+  type    = EXTERN_DATA;
+}
+
+/// Set data value
+void OpaqueDataBlock::assign(const void* ptr, const type_info& typ)  {
+  if ( !grammar )   {
+    except("OpaqueData","Opaque data block is unbound. Cannot copy data.");
+  }
+  else if ( grammar->type() != typ )  {
+    except("OpaqueData","Bad data binding binding");
+  }
+  grammar->copy(pointer,ptr);
+}
+
+/// print Conditions object
+std::ostream& operator << (std::ostream& s, const OpaqueDataBlock& data)   {
+  s << data.str();
+  return s;
+}
+
+#include "Parsers/Parsers.h"
+DD4HEP_DEFINE_PARSER_DUMMY(OpaqueDataBlock)
+
+#include "DD4hep/detail/BasicGrammar_inl.h"
+#include "DD4hep/detail/ConditionsInterna.h"
+DD4HEP_DEFINE_PARSER_GRAMMAR(OpaqueDataBlock,eval_none<OpaqueDataBlock>)
+DD4HEP_DEFINE_CONDITIONS_TYPE(OpaqueDataBlock)
+

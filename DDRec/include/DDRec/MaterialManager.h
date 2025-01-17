@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_MATERIALMANAGER_H
-#define DDREC_MATERIALMANAGER_H
+#ifndef rec_MaterialManager_H_
+#define rec_MaterialManager_H_
 
 #include "DD4hep/Detector.h"
 #include "DD4hep/Objects.h"
@@ -112,4 +112,4 @@ namespace dd4hep {
 
 
 
-#endif // DDREC_MATERIALMANAGER_H
+#endif // rec_MaterialManager_H_

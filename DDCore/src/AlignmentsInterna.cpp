@@ -37,7 +37,7 @@ AlignmentObject::AlignmentObject()
 {
   InstanceCount::increment(this);
   flags  = Condition::ALIGNMENT_DERIVED;
-  AlignmentData& d = data.construct<AlignmentData>();
+  AlignmentData& d = data.bind<AlignmentData>();
   alignment_data   = &d;
 }
 
@@ -67,5 +67,19 @@ void AlignmentObject::clear()   {
   flags = Condition::ALIGNMENT_DERIVED;
 }
 
-#include "DD4hep/GrammarUnparsed.h"
-static auto s_registry = GrammarRegistry::pre_note<AlignmentObject>();
+
+#include "Parsers/Parsers.h"
+DD4HEP_DEFINE_PARSER_DUMMY(AlignmentObject)
+
+#include "DD4hep/detail/BasicGrammar_inl.h"
+#include "DD4hep/detail/ConditionsInterna.h"
+namespace dd4hep {
+  template <> bool Grammar<AlignmentObject>::fromString(void*, const std::string&) const {return true;}
+  template <> void Grammar<AlignmentObject>::copy(void*, const void*) const {}
+  namespace Utils {
+    template <> std::ostream& toStream(const AlignmentObject&, std::ostream& s) { return s; }
+  }
+}
+DD4HEP_DEFINE_PARSER_GRAMMAR(AlignmentObject,eval_none<AlignmentObject>)
+DD4HEP_DEFINE_CONDITIONS_TYPE(AlignmentObject)
+

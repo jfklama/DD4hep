@@ -16,11 +16,11 @@
  *      Author: Christian Grefe, CERN
  */
 
-#ifndef DDSEGMENTATION_SEGMENTATION_H
-#define DDSEGMENTATION_SEGMENTATION_H
+#ifndef DDSegmentation_SEGMENTATION_H_
+#define DDSegmentation_SEGMENTATION_H_
 
-#include "DD4hep/detail/SegmentationsInterna.h"
 #include "DDSegmentation/BitFieldCoder.h"
+#include "DDSegmentation/SegmentationFactory.h"
 #include "DDSegmentation/SegmentationParameter.h"
 
 #include <map>
@@ -43,6 +43,10 @@ namespace dd4hep {
     typedef TypedSegmentationParameter<std::vector<double> >* DoubleVecParameter;
     typedef TypedSegmentationParameter<std::vector<std::string> >* StringVecParameter;
     typedef SegmentationParameter::UnitType UnitType;
+
+    /// Useful typedefs to differentiate cell IDs and volume IDs
+    typedef long long int CellID;
+    typedef long long int VolumeID;
 
     /// Simple container for a physics vector
     struct Vector3D {
@@ -145,12 +149,12 @@ namespace dd4hep {
                               const std::string& defaultVal);
 
       /// Helper method to convert a bin number to a 1D position
-      static double binToPosition(FieldID bin, double cellSize, double offset = 0.);
+      static double binToPosition(CellID bin, double cellSize, double offset = 0.);
       /// Helper method to convert a 1D position to a cell ID
       static int positionToBin(double position, double cellSize, double offset = 0.);
 
       /// Helper method to convert a bin number to a 1D position given a vector of binBoundaries
-      static double binToPosition(FieldID bin, std::vector<double> const& cellBoundaries, double offset = 0.);
+      static double binToPosition(CellID bin, std::vector<double> const& cellBoundaries, double offset = 0.);
       /// Helper method to convert a 1D position to a cell ID given a vector of binBoundaries
       static int positionToBin(double position, std::vector<double> const& cellBoundaries, double offset = 0.);
 
@@ -173,6 +177,10 @@ namespace dd4hep {
       Segmentation(const Segmentation&);
     };
 
+    /// Macro to instantiate a new SegmentationCreator by its type name
+#define REGISTER_SEGMENTATION(classname)                                \
+    static const SegmentationCreator<classname> classname##_creator(#classname);
+
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-#endif // DDSEGMENTATION_SEGMENTATION_H
+#endif /* DDSegmentation_SEGMENTATION_H_ */

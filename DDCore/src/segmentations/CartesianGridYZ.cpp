@@ -76,10 +76,7 @@ std::vector<double> CartesianGridYZ::cellDimensions(const CellID&) const {
 #endif
 }
 
+REGISTER_SEGMENTATION(CartesianGridYZ)
 
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(CartesianGridYZ,create_segmentation<dd4hep::DDSegmentation::CartesianGridYZ>)

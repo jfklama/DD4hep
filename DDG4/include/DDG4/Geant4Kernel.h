@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4KERNEL_H
-#define DDG4_GEANT4KERNEL_H
+#ifndef DD4HEP_DDG4_GEANT4KERNEL_H
+#define DD4HEP_DDG4_GEANT4KERNEL_H
 
 // Framework include files
 #include "DDG4/Geant4ActionContainer.h"
@@ -19,7 +19,6 @@
 // C/C++ include files
 #include <map>
 #include <typeinfo>
-#include <functional>
 
 class DD4hep_End_Of_File : public std::exception {
 public:
@@ -57,7 +56,6 @@ namespace dd4hep {
       typedef std::map<std::string, Geant4Action*>      GlobalActions;
       typedef std::map<std::string,int>                 ClientOutputLevels;
       typedef std::pair<void*, const std::type_info*>   UserFramework;
-      using UserCallbacks = std::vector<std::function<void()> >;
 
     protected:
       /// Reference to the run manager
@@ -102,15 +100,6 @@ namespace dd4hep {
       //bool        m_multiThreaded;
       /// Master property: Number of execution threads in multi threaded mode.
       int         m_numThreads;
-
-      /// Registered action callbacks on configure
-      UserCallbacks m_actionConfigure;
-      /// Registered action callbacks on initialize
-      UserCallbacks m_actionInitialize;
-      /// Registered action callbacks on terminate
-      UserCallbacks m_actionTerminate;
-
-
       /// Flag: Master instance (id<0) or worker (id >= 0)
       unsigned long      m_id, m_ident;
       /// Access to geometry world
@@ -234,13 +223,6 @@ namespace dd4hep {
       /// Retrieve the global output level of a named object.
       PrintLevel getOutputLevel(const std::string object) const;
 
-      /// Register configure callback. Signature:   (function)()
-      void register_configure(const std::function<void()>& callback);
-      /// Register initialize callback. Signature:  (function)()
-      void register_initialize(const std::function<void()>& callback);
-      /// Register terminate callback. Signature:   (function)()
-      void register_terminate(const std::function<void()>& callback);
-
       /// Register action by name to be retrieved when setting up and connecting action objects
       /** Note: registered actions MUST be unique.
        *  However, not all actions need to registered....
@@ -297,7 +279,7 @@ namespace dd4hep {
       /** Geant4 Multi threading support */
       /// Create identified worker instance
       virtual Geant4Kernel& createWorker();
-      /// Access worker instance by its identifier
+      /// Access worker instance by it's identifier
       Geant4Kernel& worker(unsigned long thread_identifier, bool create_if=false);
       /// Access number of workers
       int numWorkers() const;
@@ -340,4 +322,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4KERNEL_H
+#endif // DD4HEP_DDG4_GEANT4KERNEL_H

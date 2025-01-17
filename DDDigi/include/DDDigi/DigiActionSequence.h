@@ -10,12 +10,11 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDDIGI_DIGIACTIONSEQUENCE_H
-#define DDDIGI_DIGIACTIONSEQUENCE_H
+#ifndef DD4HEP_DDDIGI_DIGIACTIONSEQUENCE_H
+#define DD4HEP_DDDIGI_DIGIACTIONSEQUENCE_H
 
 // Framework include files
-#include <DD4hep/Callback.h>
-#include <DDDigi/DigiSynchronize.h>
+#include "DDDigi/DigiSynchronize.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -24,7 +23,7 @@ namespace dd4hep {
   namespace digi {
 
     // Forward declarations
-    class DigiEventAction;
+    class DigiAction;
     class DigiActionSequence;
 
     /// Concrete implementation of the Digitization event action sequence
@@ -54,55 +53,25 @@ namespace dd4hep {
 
     public:
       /// Standard constructor
-      DigiActionSequence(const kernel_t& kernel, const std::string& nam);
+      DigiActionSequence(const DigiKernel& kernel, const std::string& nam);
       /// Default destructor
       virtual ~DigiActionSequence();
       /// Adopt a new action as part of the sequence. Sequence takes ownership.
-      virtual void adopt(DigiEventAction* action)  override;
+      void adopt(DigiAction* action);
       /// Register external listener callbacks before starting the sequence
       template <typename Q, typename T>
-      void begin(Q* p, void (T::*f)(context_t* context)) {
+      void begin(Q* p, void (T::*f)(DigiContext* context)) {
         m_begin.add(p, f);
       }
       /// Register external listener callbacks after finishing the sequence
       template <typename Q, typename T>
-      void end(Q* p, void (T::*f)(context_t* context))  {
+      void end(Q* p, void (T::*f)(DigiContext* context))  {
         m_end.add(p, f);
       }
       /// Begin-of-event callback
-      virtual void execute(context_t& context)  const override;
-    };
-
-    /// Definitiaon of the sequential action sequence
-    /** Definitiaon of the sequential action sequence
-     *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_DIGITIZATION
-     */
-    class DigiSequentialActionSequence : public DigiActionSequence {
-    public:
-      /// Standard constructor
-      DigiSequentialActionSequence(const kernel_t& kernel, const std::string& nam);
-      /// Default destructor
-      virtual ~DigiSequentialActionSequence();
-    };
-
-    /// Definitiaon of the parallel action sequence
-    /** Definitiaon of the parallel action sequence
-     *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_DIGITIZATION
-     */
-    class DigiParallelActionSequence : public DigiActionSequence {
-    public:
-      /// Standard constructor
-      DigiParallelActionSequence(const kernel_t& kernel, const std::string& nam);
-      /// Default destructor
-      virtual ~DigiParallelActionSequence();
+      virtual void execute(DigiContext& context)  const override;
     };
 
   }    // End namespace digi
 }      // End namespace dd4hep
-#endif // DDDIGI_DIGIACTIONSEQUENCE_H
+#endif // DD4HEP_DDDIGI_DIGIACTIONSEQUENCE_H

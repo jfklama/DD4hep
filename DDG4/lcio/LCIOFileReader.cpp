@@ -17,6 +17,7 @@
   \package LCIOFileReader
  * \brief Plugin to read lcio files
  *
+ And here we can put a longer description, parameters, examples...
  *
 @}
  */
@@ -26,9 +27,7 @@
 
 // Framework include files
 #include "LCIOEventReader.h"
-
-#include "DDG4/EventParameters.h"
-
+#include "LCIOEventParameters.h"
 #include "lcio.h"
 
 using namespace lcio ;
@@ -41,28 +40,6 @@ namespace dd4hep  {
 
   /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
   namespace sim  {
-
-    /// get the parameters from the input LCIO Event and store them in the EventParameters extension
-    template <class T=EVENT::LCParameters> void EventParameters::ingestParameters(T const& source) {
-      EVENT::StringVec intKeys; source.getIntKeys(intKeys);
-      EVENT::StringVec floatKeys; source.getFloatKeys(floatKeys);
-      EVENT::StringVec stringKeys; source.getStringKeys(stringKeys);
-      for(auto const& key: intKeys) {
-        EVENT::IntVec intVec;
-        source.getIntVals(key,intVec);
-        m_intValues[key] = intVec;
-      }
-      for(auto const& key: floatKeys) {
-        EVENT::FloatVec floatVec;
-        source.getFloatVals(key,floatVec);
-        m_fltValues[key] = floatVec;
-      }
-      for(auto const& key: stringKeys) {
-        EVENT::StringVec stringVec;
-        source.getStringVals(key,stringVec);
-        m_strValues[key] = stringVec;
-      }
-    }
 
     /// Base class to read lcio event files
     /**
@@ -150,11 +127,9 @@ dd4hep::sim::LCIOFileReader::readParticleCollection(int /*event_number*/, EVENT:
       // Create input event parameters context
       try {
         Geant4Context* ctx = context();
-        EventParameters *parameters = new EventParameters();
-        parameters->setRunNumber(evt->getRunNumber());
-        parameters->setEventNumber(evt->getEventNumber());
-        parameters->ingestParameters(evt->parameters());
-        ctx->event().addExtension<EventParameters>(parameters);
+        LCIOEventParameters *parameters = new LCIOEventParameters();
+        parameters->setParameters(evt->getRunNumber(), evt->getEventNumber(), evt->parameters());
+        ctx->event().addExtension<LCIOEventParameters>( parameters );        
       }
       catch(std::exception &) 
       {

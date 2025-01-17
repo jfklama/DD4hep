@@ -80,10 +80,7 @@ double ProjectiveCylinder::phi(const CellID& cID) const {
 	return 2. * M_PI * ((double) phiIndex + 0.5) / (double) _phiBins;
 }
 
+REGISTER_SEGMENTATION(ProjectiveCylinder)
 
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(ProjectiveCylinder,create_segmentation<dd4hep::DDSegmentation::ProjectiveCylinder>)

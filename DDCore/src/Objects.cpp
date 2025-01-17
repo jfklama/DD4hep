@@ -165,7 +165,7 @@ string Constant::toString() const {
 /// Constructor to be used when creating a new DOM tree
 Atom::Atom(const string& nam, const string& formula, int Z, int N, double density) {
   TGeoElementTable* t = TGeoElement::GetElementTable();
-  TGeoElement*      e = t->FindElement(nam.c_str());
+  TGeoElement* e = t->FindElement(nam.c_str());
   if (!e) {
     t->AddElement(nam.c_str(), formula.c_str(), Z, N, density);
     e = t->FindElement(nam.c_str());
@@ -177,9 +177,9 @@ Atom::Atom(const string& nam, const string& formula, int Z, int N, double densit
 double  Material::Z() const {
   Handle < TGeoMedium > val(*this);
   if (val.isValid()) {
-    TGeoMaterial* mat = val->GetMaterial();
-    if ( mat )
-      return mat->GetZ();
+    TGeoMaterial* m = val->GetMaterial();
+    if (m)
+      return m->GetZ();
     throw runtime_error("dd4hep: The medium " + string(val->GetName()) + " has an invalid material reference!");
   }
   throw runtime_error("dd4hep: Attempt to access proton number from invalid material handle!");
@@ -188,9 +188,9 @@ double  Material::Z() const {
 /// atomic number of the underlying material
 double  Material::A() const {
   if ( isValid() ) {
-    TGeoMaterial* mat = ptr()->GetMaterial();
-    if ( mat )
-      return mat->GetA();
+    TGeoMaterial* m = ptr()->GetMaterial();
+    if (m)
+      return m->GetA();
     throw runtime_error("dd4hep: The medium " + string(ptr()->GetName()) + " has an invalid material reference!");
   }
   throw runtime_error("dd4hep: Attempt to access atomic number from invalid material handle!");
@@ -199,9 +199,9 @@ double  Material::A() const {
 /// density of the underlying material
 double  Material::density() const {
   if ( isValid() )  {
-    TGeoMaterial* mat = ptr()->GetMaterial();
-    if ( mat )
-      return mat->GetDensity();
+    TGeoMaterial* m = ptr()->GetMaterial();
+    if (m)
+      return m->GetDensity();
     throw runtime_error("dd4hep: The medium " + string(ptr()->GetName()) + " has an invalid material reference!");
   }
   throw runtime_error("dd4hep: Attempt to access density from invalid material handle!");
@@ -210,9 +210,9 @@ double  Material::density() const {
 /// Access the radiation length of the underlying material
 double Material::radLength() const {
   if ( isValid() ) {
-    TGeoMaterial* mat = ptr()->GetMaterial();
-    if ( mat )
-      return mat->GetRadLen();
+    TGeoMaterial* m = ptr()->GetMaterial();
+    if (m)
+      return m->GetRadLen();
     throw runtime_error("dd4hep: The medium " + string(ptr()->GetName()) + " has an invalid material reference!");
   }
   throw runtime_error("dd4hep: Attempt to access radiation length from invalid material handle!");
@@ -221,9 +221,9 @@ double Material::radLength() const {
 /// Access the radiation length of the underlying material
 double Material::intLength() const {
   if ( isValid() ) {
-    TGeoMaterial* mat = ptr()->GetMaterial();
-    if ( mat )
-      return mat->GetIntLen();
+    TGeoMaterial* m = ptr()->GetMaterial();
+    if (m)
+      return m->GetIntLen();
     throw runtime_error("The medium " + string(ptr()->GetName()) + " has an invalid material reference!");
   }
   throw runtime_error("Attempt to access interaction length from invalid material handle!");
@@ -232,20 +232,20 @@ double Material::intLength() const {
 /// Access the fraction of an element within the material
 double Material::fraction(Atom atom) const    {
   double frac = 0e0, tot = 0e0;
-  TGeoElement*  elt = atom.access();
-  TGeoMaterial* mat = access()->GetMaterial();
-  for ( int i=0, n=mat->GetNelements(); i<n; ++i )  {
-    TGeoElement* e = mat->GetElement(i);
-    if ( mat->IsMixture() )  {
-      TGeoMixture* mix = (TGeoMixture*)mat;
+  TGeoElement* elt = atom.access();
+  TGeoMaterial* m = access()->GetMaterial();
+  for ( int i=0, n=m->GetNelements(); i<n; ++i )  {
+    TGeoElement* e = m->GetElement(i);
+    if ( m->IsMixture() )  {
+      TGeoMixture* mix = (TGeoMixture*)m;
       tot  += mix->GetWmixt()[i];
     }
     else {
       tot = 1e0;
     }
     if ( e == elt )   {
-      if ( mat->IsMixture() )  {
-        TGeoMixture* mix = (TGeoMixture*)mat;
+      if ( m->IsMixture() )  {
+        TGeoMixture* mix = (TGeoMixture*)m;
         frac += mix->GetWmixt()[i];
       }
       else  {
@@ -266,31 +266,6 @@ Material::Property Material::property(const char* nam)  const    {
 Material::Property Material::property(const std::string& nam)  const   {
   return access()->GetMaterial()->GetProperty(nam.c_str());
 }
-
-/// Access string property value from the material table
-std::string Material::propertyRef(const std::string& name, const std::string& default_value)    {
-  auto* o = access()->GetMaterial();
-  const char* p = o->GetPropertyRef(name.c_str());
-  if ( p ) return p;
-  return default_value;
-}
-
-/// Access to tabular properties of the optical surface
-double Material::constProperty(const std::string& nam)  const   {
-  Bool_t err = kFALSE;
-  auto* o = access()->GetMaterial();
-  double value = o->GetConstProperty(nam.c_str(), &err);
-  if ( err != kTRUE ) return value;
-  throw runtime_error("Attempt to access non existing material const property: "+nam);
-}
-
-/// Access string property value from the material table
-std::string Material::constPropertyRef(const std::string& name, const std::string& default_value)    {
-  auto* o = access()->GetMaterial();
-  const char* p = o->GetConstPropertyRef(name.c_str());
-  if ( p ) return p;
-  return default_value;
-}
 #endif
 
 /// String representation of this object
@@ -310,24 +285,22 @@ string Material::toString() const {
 VisAttr::VisAttr(const string& nam) {
   Object* obj = new Object();
   assign(obj, nam, "vis");
-  obj->color = gROOT->GetColor(kWhite);
-  obj->alpha = 0.9f;
+  obj->color = 2;
   setLineStyle (SOLID);
   setDrawingStyle(SOLID);
   setShowDaughters(true);
-  setColor(1e0, 1e0, 1e0, 1e0);
+  setAlpha(0.9f);
 }
 
 /// Constructor to be used when creating a new entity
 VisAttr::VisAttr(const char* nam) {
   Object* obj = new Object();
   assign(obj, nam, "vis");
-  obj->color = gROOT->GetColor(kWhite);
-  obj->alpha = 0.9f;
+  obj->color = 2;
   setLineStyle (SOLID);
   setDrawingStyle(SOLID);
   setShowDaughters(true);
-  setColor(1e0, 1e0, 1e0, 1e0);
+  setAlpha(0.9f);
 }
 
 /// Get Flag to show/hide daughter elements
@@ -372,49 +345,36 @@ void VisAttr::setDrawingStyle(int value) {
 
 /// Get alpha value
 float VisAttr::alpha() const {
+  //NamedObject* obj = first_value<NamedObject>(*this);
+  //obj->SetAlpha(value);
   return object<Object>().alpha;
+}
+
+/// Set alpha value
+void VisAttr::setAlpha(float value) {
+  object<Object>().alpha = value;
+  //NamedObject* obj = first_value<NamedObject>(*this);
+  //obj->SetAlpha(value);
 }
 
 /// Get object color
 int VisAttr::color() const {
-  return object<Object>().color->GetNumber();
+  return object<Object>().color;
 }
 
 /// Set object color
-void VisAttr::setColor(float alpha, float red, float green, float blue) {
-  Object& o  = object<Object>();
-  Int_t col  = TColor::GetColor(red, green, blue);
-  o.alpha    = alpha;
-  o.color    = gROOT->GetColor(col);
-  if ( !o.color )    {
-    except("VisAttr","+++ %s Failed to allocate Color: r:%02X g:%02X b:%02X",
-	   this->name(), int(red*255.), int(green*255.), int(blue*255));
-  }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,34,25)
-  o.colortr = new TColor(gROOT->GetListOfColors()->GetLast()+1,
-			 o.color->GetRed(), o.color->GetGreen(), o.color->GetBlue());
-  o.colortr->SetAlpha(alpha);
-#else
-  o.colortr = o.color;
-#endif
+void VisAttr::setColor(float red, float green, float blue) {
+  Object& o = object<Object>();
+  o.color = TColor::GetColor(red, green, blue);
+  o.col = gROOT->GetColor(o.color);
 }
 
 /// Get RGB values of the color (if valid)
 bool VisAttr::rgb(float& red, float& green, float& blue) const {
   Object& o = object<Object>();
-  if ( o.color )  {
-    o.color->GetRGB(red, green, blue);
-    return true;
-  }
-  return false;
-}
-
-/// Get alpha and RGB values of the color (if valid)
-bool VisAttr::argb(float& alpha, float& red, float& green, float& blue) const {
-  Object& o = object<Object>();
-  if ( o.color )  {
-    alpha = o.alpha;
-    o.color->GetRGB(red, green, blue);
+  if (o.col) {
+    TColor* c = (TColor*) o.col;
+    c->GetRGB(red, green, blue);
     return true;
   }
   return false;
@@ -423,10 +383,10 @@ bool VisAttr::argb(float& alpha, float& red, float& green, float& blue) const {
 /// String representation of this object
 string VisAttr::toString() const {
   const VisAttr::Object* obj = &object<Object>();
-  TColor* c = obj->color;
+  TColor* col = gROOT->GetColor(obj->color);
   char text[256];
   ::snprintf(text, sizeof(text), "%-20s RGB:%-8s [%d] %7.2f  Style:%d %d ShowDaughters:%3s Visible:%3s", ptr()->GetName(),
-             c->AsHexString(), c->GetNumber(), c->GetAlpha(), int(obj->drawingStyle), int(obj->lineStyle),
+             col->AsHexString(), obj->color, col->GetAlpha(), int(obj->drawingStyle), int(obj->lineStyle),
              yes_no(obj->showDaughters), yes_no(obj->visible));
   return text;
 }
@@ -452,7 +412,7 @@ string Limit::toString() const {
   string res = name + " = " + content;
   if (!unit.empty())
     res += unit + " ";
-  res += " (" + particles + ")";
+  res + " (" + particles + ")";
   return res;
 }
 

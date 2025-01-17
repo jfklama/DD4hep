@@ -12,58 +12,20 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/DetFactoryHelper.h>
-#include <DD4hep/Printout.h>
-#include <XML/Utilities.h>
-#include <DD4hep/ShapeTags.h>
-#include <TGeoScaledShape.h>
-#include <TGeoShapeAssembly.h>
-#include <TSystem.h>
-#include <TClass.h>
+#include "DD4hep/DetFactoryHelper.h"
+#include "DD4hep/Printout.h"
+#include "XML/Utilities.h"
+#include "TGeoShapeAssembly.h"
+#include "TSystem.h"
+#include "TClass.h"
 
 // C/C++ include files
 #include <fstream>
-#include <memory>
 
 using namespace std;
 using namespace dd4hep;
 using namespace dd4hep::detail;
 
-/// Plugin to create a scaled shape
-/**
- *  The xml entity 'e' must look like the following: 
- *  - name is optional, x,y,z are the values of scaling.
- *  - <shape>: some shape understood by a DD4hep factory.
- * 
- *  <some-tag name="my-solid" x="1.0" y="2.0" z="3.0" ... further xml-attributes not looked at .... >
- *       <shape>  ......  </shape>
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_Scaled(Detector&, xml_h e)   {
-  xml_dim_t scale(e);
-  Solid shape(xml_comp_t(scale.child(_U(shape))).createShape());
-  Solid solid = Scale(shape.ptr(), scale.x(1.0), scale.y(1.0), scale.z(1.0));
-  if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
-  return solid;
-}
-DECLARE_XML_SHAPE(Scale__shape_constructor,create_Scaled)
-
-/// Plugin to create an assembly shape
-/**
- *  The xml entity 'e' must look like the following: 
- *  - name is optional
- *
- *  <some-tag name="my-assembly"  ......further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Assembly(Detector&, xml_h e)   {
   xml_dim_t dim(e);
   Solid solid = Handle<TNamed>(new TGeoShapeAssembly());
@@ -72,18 +34,6 @@ static Handle<TObject> create_Assembly(Detector&, xml_h e)   {
 }
 DECLARE_XML_SHAPE(Assembly__shape_constructor,create_Assembly)
 
-/// Plugin to create a 3D box
-/**
- *  The xml entity 'e' must look like the following: 
- *  - name is optional, x,y,z are the dimensions
- * 
- *  <some-tag name="my-box" x="1.0*cm" y="2.0*cm" z="3.0*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Box(Detector&, xml_h e)   {
   xml_dim_t dim(e);
   Solid solid = Box(dim.dx(),dim.dy(),dim.dz());
@@ -92,20 +42,6 @@ static Handle<TObject> create_Box(Detector&, xml_h e)   {
 }
 DECLARE_XML_SHAPE(Box__shape_constructor,create_Box)
 
-/// Plugin to create a half-space
-/**
- *  The xml entity 'e' must look like the following: 
- *  - name is optional
- * 
- *  <some-tag name="my-box" ... further xml-attributes not looked at .... >
- *     <point  x="1.0*cm" y="2.0*cm" z="3.0*cm"/>
- *     <normal x="1.0" y="0.0" z="0.0"/>
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_HalfSpace(Detector&, xml_h e)   {
   xml_dim_t dim(e);
   xml_dim_t point  = e.child(_U(point));
@@ -118,44 +54,6 @@ static Handle<TObject> create_HalfSpace(Detector&, xml_h e)   {
 }
 DECLARE_XML_SHAPE(HalfSpace__shape_constructor,create_HalfSpace)
 
-/// Plugin to create a cone
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin is optional
- *  <some-tag name="my-cone" z="10*cm" rmin1="1*cm" rmax1="2.cm" rmin2="2*cm" rmax2="4*cm" 
- *                           ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_Cone(Detector&, xml_h element)   {
-  xml_dim_t e(element);
-  double rmi1 = e.rmin1(0.0), rma1 = e.rmax1();
-  Solid solid = Cone(e.z(0.0), rmi1, rma1, e.rmin2(rmi1), e.rmax2(rma1));
-  if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
-  return solid;
-}
-DECLARE_XML_SHAPE(Cone__shape_constructor,create_Cone)
-
-/// Plugin to create a poly-cone
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, startphi, deltaphi are optional
- * 
- *  <some-tag name="my-polycone" startphi="0*rad" deltaphi="pi" ... further xml-attributes not looked at .... >
- *     <zplane rmin="1.0*cm" rmax="2.0*cm"/>
- *     <zplane rmin="2.0*cm" rmax="4.0*cm"/>
- *     <zplane rmin="3.0*cm" rmax="6.0*cm"/>
- *     <zplane rmin="4.0*cm" rmax="8.0*cm"/>
- *     <zplane rmin="5.0*cm" rmax="10.0*cm"/>
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Polycone(Detector&, xml_h element)   {
   xml_dim_t e(element);
   int num = 0;
@@ -163,7 +61,7 @@ static Handle<TObject> create_Polycone(Detector&, xml_h element)   {
   double start = e.startphi(0e0), deltaphi = e.deltaphi(2*M_PI);
   for(xml_coll_t c(e,_U(zplane)); c; ++c, ++num)  {
     xml_comp_t plane(c);
-    rmin.emplace_back(plane.rmin(0.0));
+    rmin.emplace_back(plane.rmin());
     rmax.emplace_back(plane.rmax());
     z.emplace_back(plane.z());
   }
@@ -176,78 +74,20 @@ static Handle<TObject> create_Polycone(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Polycone__shape_constructor,create_Polycone)
 
-/// Plugin to create a cone-segment
-/**
- *  This shape implements for historical reasons two alternative constructors,
- *  which are automatically recognized depending on the supplied attributes.
- *
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin1, rmin2, startphi, deltaphi are optional
- *  <some-tag name="my-polycone" rmin1="1*cm" rmax1="2.cm"  rmin1="2*cm" rmax1="3.cm" 
- *                               startphi="0*rad" deltaphi="pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *  OR (deprecated):
- *  - name is optional, rmin1, rmin2, (phi1 or phi2) are optional
- *  <some-tag name="my-polycone" rmin1="1*cm" rmax1="2.cm"  rmin1="2*cm" rmax1="3.cm" 
- *                               phi1="0*rad" phi2="pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_ConeSegment(Detector&, xml_h element)   {
-  Solid solid;
   xml_dim_t e(element);
-  xml_attr_t aphi = element.attr_nothrow(_U(phi1));
-  xml_attr_t bphi = element.attr_nothrow(_U(phi2));
-  if ( aphi || bphi )  {
-    double phi1 = e.phi1(0.0);
-    double phi2 = e.phi2(2*M_PI);
-    /// Old naming: angles from [phi1,phi2]
-    solid = ConeSegment(e.dz(),e.rmin1(0.0),e.rmax1(),e.rmin2(0.0),e.rmax2(),phi1,phi2);
-  }
-  else  {
-    double start_phi = e.startphi(0.0);
-    double delta_phi = e.deltaphi(2*M_PI);
-    while ( start_phi > 2.0*M_PI ) start_phi -= 2.0*M_PI;
-    /// New naming: angles from [startphi,startphi+deltaphi]
-    solid = ConeSegment(e.dz(),e.rmin1(0.0),e.rmax1(),e.rmin2(0.0),e.rmax2(),start_phi,start_phi+delta_phi);
-  }
+  Solid solid = ConeSegment(e.dz(),e.rmin1(0.0),e.rmax1(),e.rmin2(0.0),e.rmax2(),e.phi1(0.0),e.phi2(2*M_PI));
   if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
   return solid;
 }
 DECLARE_XML_SHAPE(ConeSegment__shape_constructor,create_ConeSegment)
 
-/// Plugin to create a tube
-/**
- *  This shape implements for historical reasons two alternative constructors,
- *  which are automatically recognized depending on the supplied attributes.
- *
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin, startphi, deltaphi are optional
- *  <some-tag name="my-tube" rmin="1*cm" rmax="2.cm" 
- *                           startphi="0*rad" deltaphi="pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *  OR (deprecated):
- *  - name is optional, rmin, (phi1 or phi2) are optional
- *  <some-tag name="my-tube" rmin="1*cm" rmax="2.cm" 
- *                           phi1="0*rad" phi2="pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Tube(Detector&, xml_h element)   {
-  Solid solid;
   xml_dim_t e(element);
+  Solid solid;
   xml_attr_t aphi = element.attr_nothrow(_U(phi1));
-  xml_attr_t bphi = element.attr_nothrow(_U(phi2));
-  if ( aphi || bphi )  {
-    double phi1 = e.phi1(0.0);
+  if ( aphi )  {
+    double phi1 = e.phi1();
     double phi2 = e.phi2(2*M_PI);
     solid = Tube(e.rmin(0.0),e.rmax(),e.dz(0.0),phi1, phi2);
   }
@@ -261,40 +101,6 @@ static Handle<TObject> create_Tube(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Tube__shape_constructor,create_Tube)
 
-/// Plugin to create a twisted tube
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_TwistedTube(Detector&, xml_h element)   {
-  xml_dim_t e(element);
-  Solid solid;
-  int nseg = 1;
-  double zpos = 0.0, zneg = 0.0;
-  if ( element.attr_nothrow(_U(nsegments)) )  {
-    nseg = e.nsegments();
-  }
-  if ( element.attr_nothrow(_U(dz)) )  {
-    zneg = -1.0*(zpos = e.dz());
-  }
-  else   {
-    zpos = e.zpos();
-    zneg = e.zneg();
-  }
-  solid = TwistedTube(e.twist(0.0), e.rmin(0.0),e.rmax(),zneg, zpos, nseg, e.deltaphi(2*M_PI));
-
-  if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
-  return solid;
-}
-DECLARE_XML_SHAPE(TwistedTube__shape_constructor,create_TwistedTube)
-
-/// Plugin to create a cut tube
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_CutTube(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = CutTube(e.rmin(0.0),e.rmax(),e.dz(),
@@ -311,12 +117,6 @@ static Handle<TObject> create_CutTube(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(CutTube__shape_constructor,create_CutTube)
 
-/// Plugin to create an elliptical tube
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_EllipticalTube(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = EllipticalTube(e.a(),e.b(),e.dz());
@@ -325,16 +125,10 @@ static Handle<TObject> create_EllipticalTube(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(EllipticalTube__shape_constructor,create_EllipticalTube)
 
-/// Plugin to create an ttruncated tube
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_TruncatedTube(Detector&, xml_h element)   {
   xml_dim_t e(element);
   double sp = e.startphi(0.0), dp = e.deltaphi(2*M_PI);
-  Solid solid = TruncatedTube(e.dz(), e.rmin(0.0), e.rmax(), sp, dp,
+  Solid solid = TruncatedTube(e.zhalf(), e.rmin(0.0), e.rmax(), sp, dp,
                               e.attr<double>(xml_tag_t("cutAtStart")),
                               e.attr<double>(xml_tag_t("cutAtDelta")),
                               e.attr<bool>(xml_tag_t("cutInside")));
@@ -343,26 +137,15 @@ static Handle<TObject> create_TruncatedTube(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(TruncatedTube__shape_constructor,create_TruncatedTube)
 
-/// Plugin to create a trap
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin is optional
- *  <some-tag name="my-trap" dx="1*cm" dy="2.cm" dz="2*cm" pLTX="..." ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *  This constructor is a reduces form for a subset of trap shapes.
- *
- *  OR:
- *  name is optional, z, theta, phi, alpha1, alpha2, x3, x4, y2 is optional
- *  <some-tag name="my-trap" z="2*cm" theta="0" phi="0"
- *                           y1="1*cm" x1="1*cm" x2="2.cm" alpha1="0" 
- *                           y2="2.cm" x3="2*cm" x4="2*cm" alpha2="pi"
- *                            ... further xml-attributes not looked at .... >
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
+static Handle<TObject> create_Cone(Detector&, xml_h element)   {
+  xml_dim_t e(element);
+  double rmi1 = e.rmin1(0.0), rma1 = e.rmax1();
+  Solid solid = Cone(e.z(0.0),rmi1,rma1,e.rmin2(rmi1),e.rmax2(rma1));
+  if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
+  return solid;
+}
+DECLARE_XML_SHAPE(Cone__shape_constructor,create_Cone)
+
 static Handle<TObject> create_Trap(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid;
@@ -384,12 +167,6 @@ static Handle<TObject> create_Trap(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Trap__shape_constructor,create_Trap)
 
-/// Plugin to create a pseudo trap
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_PseudoTrap(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = PseudoTrap(e.x1(),e.x2(),e.y1(),e.y2(),e.z(),e.radius(),e.attr<bool>(xml_tag_t("minusZ")));
@@ -398,17 +175,6 @@ static Handle<TObject> create_PseudoTrap(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(PseudoTrap__shape_constructor,create_PseudoTrap)
 
-/// Plugin to create a trd1
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, z is optional
- *  <some-tag name="my-trd1" x1="1*cm" x2="2*cm" y="1*cm" z="2*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Trd1(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = Trd1(e.x1(),e.x2(),e.y(),e.z(0.0));
@@ -417,17 +183,6 @@ static Handle<TObject> create_Trd1(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Trd1__shape_constructor,create_Trd1)
 
-/// Plugin to create a trd2
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, z is optional
- *  <some-tag name="my-trd2" x1="1*cm" x2="2*cm" y1="1*cm" y2="2*cm" z="2*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Trd2(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = Trd2(e.x1(),e.x2(),e.y1(),e.y2(),e.z(0.0));
@@ -437,104 +192,22 @@ static Handle<TObject> create_Trd2(Detector&, xml_h element)   {
 DECLARE_XML_SHAPE(Trapezoid__shape_constructor,create_Trd2)
 DECLARE_XML_SHAPE(Trd2__shape_constructor,create_Trd2)
 
-/// Plugin to create a torus
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin, startphi, deltaphi are optional
- *  <some-tag name="my-torus" r="10*cm" rmin="1*cm" rmax="2.cm" 
-                              startphi="0*rad" deltaphi="pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *  OR (deprecated):
- *  - name is optional, rmin, (phi1 or phi2) are optional
- *  <some-tag name="my-tube" r="10*cm" rmin="1*cm" rmax="2.cm" 
- *                           phi1="0*rad" phi2="2*pi" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Torus(Detector&, xml_h element)   {
-  Solid      solid;
-  xml_dim_t  e(element);
-  xml_attr_t aphi = element.attr_nothrow(_U(phi1));
-  xml_attr_t bphi = element.attr_nothrow(_U(phi2));
-  if ( aphi || bphi )  {
-    double phi1 = e.phi1(0.0);
-    double phi2 = e.phi2(2*M_PI);
-    /// Old naming: angles from [phi1,phi2]
-    solid = Torus(e.r(), e.rmin(0.0), e.rmax(), phi1, phi2-phi1);
-  }
-  else  {
-    double start_phi = e.startphi(0.0);
-    double delta_phi = e.deltaphi(2*M_PI);
-    while ( start_phi > 2.0*M_PI ) start_phi -= 2.0*M_PI;
-    /// TGeo naming: angles from [startphi,startphi+deltaphi]
-    solid = Torus(e.r(), e.rmin(0.0), e.rmax(), start_phi, delta_phi);
-  }
+  xml_dim_t e(element);
+  Solid solid = Torus(e.r(),e.rmin(),e.rmax(),e.phi(M_PI),e.deltaphi(2.*M_PI));
   if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
   return solid;
 }
 DECLARE_XML_SHAPE(Torus__shape_constructor,create_Torus)
 
-/// Sphere creation
-/** Allow for xml fragments of the form
- *  <sphere rmin="..." rmax="..."/>
- *  <sphere rmin="..." rmax="..." starttheta="..." endtheta="..."   startphi="..." endphi="..."/>
- *  <sphere rmin="..." rmax="..." starttheta="..." deltatheta="..." startphi="..." deltaphi="..."/>
- *
- *  Defaults:
- *  starttheta = 0e0
- *  endtheta   = starttheta + pi
- *  startphi   = 0e0
- *  endphi     = startphi + 2*pi
- * 
- *  \date   04/09/2020
- *  \author M.Frank
- */
 static Handle<TObject> create_Sphere(Detector&, xml_h element)   {
   xml_dim_t e(element);
-  double startphi   = e.phi(0e0);
-  double endphi     = startphi + 2.*M_PI;
-  double starttheta = e.theta(0e0);
-  double endtheta   = starttheta + M_PI;
-
-  if ( e.hasAttr(_U(startphi)) )  {
-    startphi = e.startphi();
-    endphi   = startphi + 2.*M_PI;
-  }
-  if ( e.hasAttr(_U(endphi))   )
-    endphi = e.endphi();
-  else if ( e.hasAttr(_U(deltaphi)) )
-    endphi = startphi + e.deltaphi();
-
-  if ( e.hasAttr(_U(starttheta)) )   {
-    starttheta = e.starttheta();
-    endtheta = starttheta + M_PI;
-  }
-  if ( e.hasAttr(_U(endtheta))   )
-    endtheta = e.endtheta();
-  else if ( e.hasAttr(_U(deltatheta)) )
-    endtheta = starttheta + e.deltatheta();
-
-  Solid solid = Sphere(e.rmin(0e0), e.rmax(), starttheta, endtheta, startphi, endphi);
+  Solid solid = Sphere(e.rmin(),e.rmax(),e.theta(0e0),e.deltatheta(M_PI),e.phi(0e0),e.deltaphi(2.*M_PI));
   if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
   return solid;
 }
 DECLARE_XML_SHAPE(Sphere__shape_constructor,create_Sphere)
 
-/// Plugin to create a paraboloid
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin is optional
- *  <some-tag name="my-paraboloid" rmin="1*cm" rmax="2*cm" dz="1*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Paraboloid(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = Paraboloid(e.rmin(0.0),e.rmax(),e.dz());
@@ -543,19 +216,6 @@ static Handle<TObject> create_Paraboloid(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Paraboloid__shape_constructor,create_Paraboloid)
 
-/// Plugin to create a hyperboloid
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional, rmin is optional
- *  <some-tag name="my-hyperboloid" rmin="1*cm" inner_stereo="pi/2" 
- *                                  rmax="2*cm" outer_stereo="pi/2"
- *                                  dz="5*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Hyperboloid(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = Hyperboloid(e.rmin(), e.inner_stereo(), e.rmax(), e.outer_stereo(), e.dz());
@@ -564,18 +224,6 @@ static Handle<TObject> create_Hyperboloid(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Hyperboloid__shape_constructor,create_Hyperboloid)
 
-/// Plugin to create a regular polyhedron
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional
- *  <some-tag name="my-polyhedron"  numsides="5" rmin="1*cm" rmax="2*cm" dz="5*cm"
- *                                  dz="5*cm" ... further xml-attributes not looked at .... >
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_PolyhedraRegular(Detector&, xml_h element)   {
   xml_dim_t e(element);
   Solid solid = PolyhedraRegular(e.numsides(),e.rmin(),e.rmax(),e.dz());
@@ -584,20 +232,6 @@ static Handle<TObject> create_PolyhedraRegular(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(PolyhedraRegular__shape_constructor,create_PolyhedraRegular)
 
-/// Plugin to create a irregular polyhedron
-/**
- *  The xml entity 'element' must look like the following: 
- *  - name is optional
- *  <some-tag name="my-polyhedron"  numsides="5" startphi="0" deltaphi="2*pi" ... further xml-attributes not looked at .... >
- *    <plane rmin="1*cm" rmax="2*cm" z="1*cm"/>
- *    <plane rmin="2*cm" rmax="3*cm" z="2*cm"/>
- *    <plane rmin="2*cm" rmax="4*cm" z="4*cm"/>
- *       ... further optional xml-elements not looked at .... 
- *  </some-tag>
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_Polyhedra(Detector&, xml_h element)   {
   xml_dim_t e(element);
   std::vector<double> z, rmin, rmax;
@@ -613,12 +247,6 @@ static Handle<TObject> create_Polyhedra(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(Polyhedra__shape_constructor,create_Polyhedra)
 
-/// Plugin factory to create extruded polygons
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_ExtrudedPolygon(Detector&, xml_h element)   {
   xml_dim_t e(element);
   std::vector<double> pt_x, pt_y, sec_z, sec_x, sec_y, sec_scale;
@@ -640,12 +268,6 @@ static Handle<TObject> create_ExtrudedPolygon(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(ExtrudedPolygon__shape_constructor,create_ExtrudedPolygon)
 
-/// Plugin factory to create arbitrary 8-point solids
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 static Handle<TObject> create_EightPointSolid(Detector&, xml_h element)   {
   xml_dim_t e(element);
   double v[8][2];
@@ -662,41 +284,6 @@ static Handle<TObject> create_EightPointSolid(Detector&, xml_h element)   {
 }
 DECLARE_XML_SHAPE(EightPointSolid__shape_constructor,create_EightPointSolid)
 
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-/// Plugin factory to create tessellated shapes
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_TessellatedSolid(Detector&, xml_h element)   {
-  xml_dim_t e(element);
-  std::vector<TessellatedSolid::Vertex> vertices;
-  for ( xml_coll_t vtx(element, _U(vertex)); vtx; ++vtx )   {
-    xml_dim_t v(vtx);
-    vertices.emplace_back(v.x(), v.y(), v.z());
-  }
-  int num_facets = 0;
-  for ( xml_coll_t facet(element, _U(facet)); facet; ++facet ) ++num_facets;
-  TessellatedSolid solid = TessellatedSolid(num_facets);
-  if ( e.hasAttr(_U(name)) ) solid->SetName(e.attr<string>(_U(name)).c_str());
-  for ( xml_coll_t facet(element, _U(facet)); facet; ++facet )   {
-    xml_dim_t f(facet);
-    size_t i0 = f.attr<size_t>(_U(v0));
-    size_t i1 = f.attr<size_t>(_U(v1));
-    size_t i2 = f.attr<size_t>(_U(v2));
-    if ( f.hasAttr(_U(v3)) )   {
-      size_t i3 = f.attr<size_t>(_U(v3));
-      solid.addFacet(vertices[i0], vertices[i1], vertices[i2], vertices[i3]);
-    }
-    else   {
-      solid.addFacet(vertices[i0], vertices[i1], vertices[i2]);
-    }
-  }
-  return solid;
-}
-DECLARE_XML_SHAPE(TessellatedSolid__shape_constructor,create_TessellatedSolid)
-#endif
 
 /** Plugin function for creating a boolean solid from an xml element <shape type=\"BooleanShape\"/>. 
  *  Expects exactly two child elements <shape/> and a string attribute 'operation', which is one of
@@ -900,32 +487,6 @@ static Handle<TObject> create_BooleanMulti(Detector& description, xml_h element)
 }
 DECLARE_XML_SHAPE(BooleanShape__shape_constructor,create_BooleanMulti)
 
-/// Plugin factory to create arbitrary volumes using the xml::createStdVolume utility
-/**
- *  For details see the implementation in DDCore/src/XML/Utilities.cpp
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_std_volume(Detector& description, xml_h element)   {
-  return xml::createStdVolume(description, element);
-}
-DECLARE_XML_VOLUME(DD4hep_StdVolume,create_std_volume)
-
-/// Plugin factory to create arbitrary volumes using the xml::createVolume utility
-/**
- *  For details see the implementation in DDCore/src/XML/Utilities.cpp
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Handle<TObject> create_gen_volume(Detector& description, xml_h element)   {
-  xml_dim_t elt = element;
-  string    typ = elt.attr<string>(_U(type));
-  return xml::createVolume(description, typ, element);
-}
-DECLARE_XML_VOLUME(DD4hep_GenericVolume,create_gen_volume)
-
 TGeoCombiTrans* createPlacement(const Rotation3D& iRot, const Position& iTrans) {
   double elements[9];
   iRot.GetComponents(elements);
@@ -935,158 +496,102 @@ TGeoCombiTrans* createPlacement(const Rotation3D& iRot, const Position& iTrans) 
   return new TGeoCombiTrans(t, r);
 }
 
-/// Plugin factory to create shapes for shape check tests
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
-static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens)  {
+static Ref_t create_shape(Detector& description, xml_h e, Ref_t /* sens */)  {
   xml_det_t    x_det     = e;
   string       name      = x_det.nameStr();
   xml_dim_t    x_reflect = x_det.child(_U(reflect), false);
+  xml_comp_t   x_test    = x_det.child(xml_tag_t("test"), false);
   DetElement   det         (name,x_det.id());
-  Material     mat       = description.air();
   Assembly     assembly    (name);
   PlacedVolume pv;
   int count = 0;
-  
-  if ( x_det.hasChild(_U(material)) )  {
-    mat = description.material(x_det.child(_U(material)).attr<string>(_U(name)));
-    printout(INFO,"TestShape","+++ Volume material is %s", mat.name());      
-  }
   for ( xml_coll_t itm(e, _U(check)); itm; ++itm, ++count )   {
-    xml_dim_t  x_check  = itm;
-    xml_comp_t shape      (x_check.child(_U(shape)));
-    xml_dim_t  pos        (x_check.child(_U(position), false));
-    xml_dim_t  rot        (x_check.child(_U(rotation), false));
-    bool       reflect  = x_check.hasChild(_U(reflect));
-    bool       reflectZ = x_check.hasChild(_U(reflect_z));
-    bool       reflectY = x_check.hasChild(_U(reflect_y));
-    bool       reflectX = x_check.hasChild(_U(reflect_x));
-    string     shape_type = shape.typeStr();
-    Solid      solid;
-    Volume     volume;
+    xml_dim_t  x_check = itm;
+    xml_comp_t shape    (x_check.child(_U(shape)));
+    xml_dim_t  pos      (x_check.child(_U(position), false));
+    xml_dim_t  rot      (x_check.child(_U(rotation), false));
+    bool       reflect = x_check.hasChild(_U(reflect));
+    Solid      solid    (shape.createShape());
+    Volume     volume   (name+_toString(count,"_vol_%d"),solid, description.air());
 
-    if ( shape_type == "CAD_Assembly" || shape_type == "CAD_MultiVolume" )   {
-      volume = xml::createVolume(description, shape_type, shape);
-      solid  = volume->GetShape();
-    }
-    else   {
-      solid  = xml::createShape(description, shape_type, shape);
-      volume = Volume(name+_toString(count,"_vol_%d"),solid, mat);
-    }
-    if ( x_det.hasChild(_U(sensitive)) )  {
-      string sens_type = x_det.child(_U(sensitive)).attr<string>(_U(type));
-      volume.setSensitiveDetector(sens);
-      sens.setType(sens_type);
-      printout(INFO,"TestShape","+++ Sensitive type is %s", sens_type.c_str());
-    }
     volume.setVisAttributes(description, x_check.visStr());
-    solid->SetName(shape_type.c_str());
+    solid->SetName(shape.typeStr().c_str());
 
-    Transform3D tr;
     if ( pos.ptr() && rot.ptr() )  {
       Rotation3D  rot3D(RotationZYX(rot.z(0),rot.y(0),rot.x(0)));
       Position    pos3D(pos.x(0),pos.y(0),pos.z(0));
-      tr = Transform3D(rot3D, pos3D);
+      if ( reflect )
+        rot3D = Rotation3D(1., 0., 0., 0., 1., 0., 0., 0., -1.) * rot3D;
+      Transform3D tr(rot3D, pos3D);
+      pv = assembly.placeVolume(volume,tr);
     }
     else if ( pos.ptr() )  {
-      tr = Transform3D(Rotation3D(),Position(pos.x(0),pos.y(0),pos.z(0)));
+      pv = assembly.placeVolume(volume,Position(pos.x(0),pos.y(0),pos.z(0)));
     }
     else if ( rot.ptr() )  {
       Rotation3D rot3D(RotationZYX(rot.z(0),rot.y(0),rot.x(0)));
-      tr = Transform3D(rot3D,Position());
+      if ( reflect )
+        rot3D = Rotation3D(1., 0., 0., 0., 1., 0., 0., 0., -1.) * rot3D;
+      pv = assembly.placeVolume(volume,rot3D);
     }
-
-    if ( reflect )  {
-      tr = tr * Rotation3D(1., 0., 0., 0., 1., 0., 0., 0., -1.);
+    else {
+      pv = assembly.placeVolume(volume);
     }
-    if ( reflectX )   {
-      tr = tr * Rotation3D(-1.,0.,0.,0.,1.,0.,0.,0.,1.);
-    }
-    if ( reflectY )   {
-      tr = tr * Rotation3D(1.,0.,0.,0.,-1.,0.,0.,0.,1.);
-    }
-    if ( reflectZ )   {
-      tr = tr * Rotation3D(1.,0.,0.,0.,1.,0.,0.,0.,-1.);
-    }
-    pv = assembly.placeVolume(volume,tr);
 
     if ( x_check.hasAttr(_U(id)) )  {
       pv.addPhysVolID("check",x_check.id());
-      printout(INFO,"TestShape","+++ Volume id is %d", x_check.id());      
     }
-    const char* nam = solid->GetName();
-    printout(INFO,"TestShape","Created successfull shape of type: %s %c%s%c",
-	     shape_type.c_str(), nam ? '[' : ' ', nam ? nam : "" ,nam ? ']' : ' ');
-      
+
+    printout(INFO,"TestShape","Created successfull shape of type: %s",
+             shape.typeStr().c_str());
     bool instance_test = false;
-    if ( shape_type == "CAD_Assembly" || shape_type == "CAD_MultiVolume" )   {
-      solid->SetTitle(shape_type.c_str());
-      instance_test = true;
-    }
-    else if ( 0 == strcasecmp(solid->GetTitle(),BOX_TAG) )
+    if ( 0 == strcasecmp(solid->GetTitle(),"box") )
       instance_test = isInstance<Box>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),TUBE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Tube") )
       instance_test = isInstance<Tube>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),CUTTUBE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"CutTube") )
       instance_test = isInstance<CutTube>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),CONE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Cone") )
       instance_test = isInstance<Cone>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),TRD1_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Trd1") )
       instance_test = isInstance<Trd1>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),TRD2_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Trd2") )
       instance_test = isInstance<Trd2>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),TORUS_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Torus") )
       instance_test = isInstance<Torus>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),SPHERE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Sphere") )
       instance_test = isInstance<Sphere>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),HALFSPACE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"HalfSpace") )
       instance_test = isInstance<HalfSpace>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),CONESEGMENT_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"ConeSegment") )
       instance_test = isInstance<ConeSegment>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),PARABOLOID_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Paraboloid") )
       instance_test = isInstance<Paraboloid>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),HYPERBOLOID_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Hyperboloid") )
       instance_test = isInstance<Hyperboloid>(solid);
     else if ( 0 == strcasecmp(solid->GetTitle(),"PolyhedraRegular") )
       instance_test = isInstance<PolyhedraRegular>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),POLYHEDRA_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Polyhedra") )
       instance_test = isInstance<Polyhedra>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),ELLIPTICALTUBE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"EllipticalTube") )
       instance_test = isInstance<EllipticalTube>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),EXTRUDEDPOLYGON_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"ExtrudedPolygon") )
       instance_test = isInstance<ExtrudedPolygon>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),SCALE_TAG) )
-      instance_test = isInstance<Scale>(solid);
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-    else if ( 0 == strcasecmp(solid->GetTitle(),TESSELLATEDSOLID_TAG) )  {
-      instance_test = isInstance<TessellatedSolid>(solid);
-      shape_type = TESSELLATEDSOLID_TAG;
-    }
-#endif
-    else if ( 0 == strcasecmp(solid->GetTitle(),POLYCONE_TAG) )
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Polycone") )
       instance_test = isInstance<Polycone>(solid);
-    else if ( 0 == strcasecmp(solid->GetTitle(),TWISTEDTUBE_TAG) )   {
-      instance_test  =  isInstance<TwistedTube>(solid);
-      instance_test &=  isInstance<Tube>(solid);
-      instance_test &=  isA<TwistedTube>(solid);
-      instance_test &= !isA<Tube>(solid);
-    }
-    else if ( 0 == strcasecmp(solid->GetTitle(),EIGHTPOINTSOLID_TAG) )   {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"EightPointSolid") )   {
       instance_test  =  isInstance<EightPointSolid>(solid);
       instance_test &= !isInstance<Trap>(solid);
       instance_test &=  isA<EightPointSolid>(solid);
       instance_test &= !isA<Trap>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),TRAP_TAG) )   {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"Trap") )   {
       instance_test  =  isInstance<EightPointSolid>(solid);
       instance_test &=  isInstance<Trap>(solid);
       instance_test &=  isA<Trap>(solid);
       instance_test &= !isA<EightPointSolid>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),SUBTRACTION_TAG) )  {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"SubtractionSolid") )  {
       instance_test  =  isInstance<BooleanSolid>(solid);
       instance_test &=  isInstance<SubtractionSolid>(solid);
       instance_test &= !isA<IntersectionSolid>(solid);
@@ -1094,7 +599,7 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
       instance_test &=  isA<SubtractionSolid>(solid);
       instance_test &= !isA<PseudoTrap>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),UNION_TAG) )  {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"UnionSolid") )  {
       instance_test  =  isInstance<BooleanSolid>(solid);
       instance_test &=  isInstance<UnionSolid>(solid);
       instance_test &= !isA<IntersectionSolid>(solid);
@@ -1102,7 +607,7 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
       instance_test &= !isA<SubtractionSolid>(solid);
       instance_test &= !isA<PseudoTrap>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),INTERSECTION_TAG) )  {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"IntersectionSolid") )  {
       instance_test  =  isInstance<BooleanSolid>(solid);
       instance_test &=  isInstance<IntersectionSolid>(solid);
       instance_test &=  isA<IntersectionSolid>(solid);
@@ -1110,7 +615,7 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
       instance_test &= !isA<SubtractionSolid>(solid);
       instance_test &= !isA<PseudoTrap>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),TRUNCATEDTUBE_TAG) )  {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"TruncatedTube") )  {
       instance_test  =  isInstance<BooleanSolid>(solid);
       instance_test &=  isInstance<TruncatedTube>(solid);
       instance_test &=  isA<TruncatedTube>(solid);
@@ -1119,7 +624,7 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
       instance_test &= !isA<UnionSolid>(solid);
       instance_test &= !isA<SubtractionSolid>(solid);
     }
-    else if ( 0 == strcasecmp(solid->GetTitle(),PSEUDOTRAP_TAG) )  {
+    else if ( 0 == strcasecmp(solid->GetTitle(),"PseudoTrap") )  {
       instance_test  =  isInstance<BooleanSolid>(solid);
       instance_test &=  isInstance<PseudoTrap>(solid);
       instance_test &=  isA<PseudoTrap>(solid);
@@ -1129,20 +634,20 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
       instance_test &= !isA<SubtractionSolid>(solid);
     }
 
-    if ( !instance_test || ::strcasecmp(shape_type.c_str(),solid->GetTitle()) != 0 )   {
+    if ( !instance_test || ::strcasecmp(shape.typeStr().c_str(),solid->GetTitle()) != 0 )   {
       printout(ERROR,"TestShape","BAD shape type: %s <-> %s Instance test: %s",
-               shape_type.c_str(), solid->GetTitle(),
+               shape.typeStr().c_str(), solid->GetTitle(),
                instance_test ? "OK" : "FAILED");
     }
     else   {
-      printout(INFO,"TestShape","Correct shape type: %s %s <-> %s Instance test: %s",
-               solid->GetName(), shape_type.c_str(), solid->GetTitle(), "OK");
+      printout(INFO,"TestShape","Correct shape type: %s <-> %s Instance test: %s",
+               shape.typeStr().c_str(), solid->GetTitle(), "OK");
     }
   }
   if ( x_reflect )   {
     xml_dim_t   x_pos(x_reflect.child(_U(position), false));
     xml_dim_t   x_rot(x_reflect.child(_U(rotation), false));
-    DetElement  full_detector(name+"_full",100+x_det.id());
+    DetElement  full_detector(name+"_full",x_det.id());
     Assembly    full_assembly(name+"_full");
     RotationZYX refl_rot;
     Position    refl_pos;
@@ -1157,7 +662,7 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
     det.setPlacement(pv);
 
     /// Place reflected object
-    auto reflected = det.reflect(name+"_reflected",100+x_det.id());
+    auto reflected = det.reflect(name+"_reflected",x_det.id());
     pv = full_assembly.placeVolume(reflected.second, refl_trafo);
     full_detector.add(reflected.first);
     reflected.first.setPlacement(pv);
@@ -1170,12 +675,10 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
   }
   else  {
     pv = description.worldVolume().placeVolume(assembly);
-    pv.addPhysVolID("system", x_det.id());
     det.setPlacement(pv);
   }
-  /// Execute test plugin(s) on the placed volume if desired
-  for ( xml_coll_t itm(e, xml_tag_t("test")); itm; ++itm, ++count )   {
-    xml_comp_t   x_test = itm;
+
+  if ( x_test.ptr() )  {
     string typ = x_test.typeStr();
     const void* argv[] = { &e, &pv, 0};
     Ref_t result = (NamedObject*)PluginService::Create<void*>(typ, &description, 2, (char**)argv);
@@ -1200,12 +703,6 @@ static Ref_t create_shape(Detector& description, xml_h e, SensitiveDetector sens
 // first argument is the type from the xml file
 DECLARE_DETELEMENT(DD4hep_TestShape_Creator,create_shape)
 
-/// Plugin factory to check shape meshes against a reference file
-/**
- *
- *  \author  M.Frank
- *  \version 1.0
- */
 void* shape_mesh_verifier(Detector& description, int argc, char** argv)    {
   if ( argc != 2 )   {  }
   xml_det_t    x_det  = *(xml_h*)argv[0];
@@ -1223,14 +720,8 @@ void* shape_mesh_verifier(Detector& description, int argc, char** argv)    {
   Volume v = pv.volume();
   for (Int_t ipv=0, npv=v->GetNdaughters(); ipv < npv; ipv++) {
     PlacedVolume place = v->GetNode(ipv);
-    auto vol   = place.volume();
-    auto solid = vol.solid();
     os << "ShapeCheck[" << ipv << "] ";
     os << toStringMesh(place, 2);
-    printout(INFO,"Mesh_Verifier","+++ Checking mesh of %s %s [%s] vol:%s.",
-	     solid->IsA()->GetName(),
-	     solid->GetName(), solid->GetTitle(),
-	     vol->GetName());
   }
   gSystem->ExpandPathName(ref);
   if ( ref_cr )   {
@@ -1284,8 +775,6 @@ void* shape_mesh_verifier(Detector& description, int argc, char** argv)    {
       os << toStringMesh(place, 2);
     }
     if ( ref_str != os.str() )  {
-      printout(DEBUG,"Mesh_Verifier","+++ REFERENCE shape mesh:\n%s",ref_str.c_str());
-      printout(DEBUG,"Mesh_Verifier","+++ REDIMENSIONED shape mesh:\n%s",os.str().c_str());
       printout(ERROR,"Mesh_Verifier","+++ Output and reference differ after re-dimension! Please check.");
       return Constant("FAILURE",os.str().c_str()).ptr();
     }
@@ -1293,4 +782,5 @@ void* shape_mesh_verifier(Detector& description, int argc, char** argv)    {
   }
   return Constant("SUCCESS",os.str().c_str()).ptr();
 }
+
 DECLARE_DD4HEP_CONSTRUCTOR(DD4hep_Mesh_Verifier,shape_mesh_verifier)

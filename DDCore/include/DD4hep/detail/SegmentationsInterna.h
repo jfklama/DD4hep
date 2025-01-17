@@ -10,13 +10,14 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETAIL_SEGMENTATIONSINTERNA_H
-#define DD4HEP_DETAIL_SEGMENTATIONSINTERNA_H
+#ifndef DD4HEP_DDCORE_SEGMENTATIONSINTERNA_H
+#define DD4HEP_DDCORE_SEGMENTATIONSINTERNA_H
 
 // Framework include files
 #include "DD4hep/Handle.h"
 #include "DD4hep/Objects.h"
 #include "DD4hep/BitFieldCoder.h"
+#include "DDSegmentation/Segmentation.h"
 
 // C/C++ include files
 
@@ -27,13 +28,6 @@ namespace dd4hep {
   class DetElementObject;
   class SegmentationObject;
   class SensitiveDetectorObject;
-
-  namespace DDSegmentation {
-    class Segmentation;
-    class SegmentationParameter;
-    typedef SegmentationParameter* Parameter;
-    typedef std::vector<Parameter> Parameters;
-  }
 
   /// Implementation class supporting generic Segmentation of sensitive detectors
   /**
@@ -46,7 +40,7 @@ namespace dd4hep {
   class SegmentationObject {
   public:
     /// Standard constructor
-    SegmentationObject(DDSegmentation::Segmentation* seg = 0);
+    SegmentationObject(DDSegmentation::Segmentation* s = 0);
     /// Default destructor
     virtual ~SegmentationObject();
     /// Access the encoding string
@@ -127,13 +121,5 @@ namespace dd4hep {
   /// Default destructor
   template <typename IMP> inline SegmentationWrapper<IMP>::~SegmentationWrapper()  {
   }
-
-  namespace {
-    template<typename T> SegmentationObject*
-    create_segmentation(const BitFieldCoder* decoder)  {
-      return new SegmentationWrapper<T>(decoder);
-    }
-  }
-
 }         /* End namespace dd4hep                       */
-#endif // DD4HEP_DETAIL_SEGMENTATIONSINTERNA_H
+#endif    /* DD4HEP_DDCORE_SEGMENTATIONSINTERNA_H     */

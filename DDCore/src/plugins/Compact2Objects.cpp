@@ -18,42 +18,39 @@
 //==========================================================================
 //
 // Framework includes
-#include <DD4hep/DetFactoryHelper.h>
-#include <DD4hep/DetectorTools.h>
-#include <DD4hep/MatrixHelpers.h>
-#include <DD4hep/PropertyTable.h>
-#include <DD4hep/OpticalSurfaces.h>
-#include <DD4hep/OpticalSurfaceManager.h>
-#include <DD4hep/IDDescriptor.h>
-#include <DD4hep/DD4hepUnits.h>
-#include <DD4hep/FieldTypes.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/Factories.h>
-#include <DD4hep/Path.h>
-#include <DD4hep/Plugins.h>
-#include <DD4hep/detail/SegmentationsInterna.h>
-#include <DD4hep/detail/DetectorInterna.h>
-#include <DD4hep/detail/ObjectsInterna.h>
+#include "DD4hep/DetFactoryHelper.h"
+#include "DD4hep/DetectorTools.h"
+#include "DD4hep/MatrixHelpers.h"
+#include "DD4hep/PropertyTable.h"
+#include "DD4hep/OpticalSurfaces.h"
+#include "DD4hep/OpticalSurfaceManager.h"
+#include "DD4hep/IDDescriptor.h"
+#include "DD4hep/DD4hepUnits.h"
+#include "DD4hep/FieldTypes.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/Plugins.h"
+#include "DD4hep/detail/SegmentationsInterna.h"
+#include "DD4hep/detail/DetectorInterna.h"
+#include "DD4hep/detail/ObjectsInterna.h"
 
-#include <XML/DocumentHandler.h>
-#include <XML/Utilities.h>
+#include "XML/DocumentHandler.h"
+#include "XML/Utilities.h"
 
 // Root/TGeo include files
-#include <TGeoManager.h>
-#include <TGeoMaterial.h>
+#include "TGeoManager.h"
+#include "TGeoMaterial.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,12,0)
-#include <TGeoPhysicalConstants.h>
+#include "TGeoPhysicalConstants.h"
 #endif
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
-#include <TGDMLMatrix.h>
+#include "TGDMLMatrix.h"
 #endif
-#include <TMath.h>
+#include "TMath.h"
 
 // C/C++ include files
-#include <filesystem>
+#include <climits>
 #include <iostream>
 #include <iomanip>
-#include <climits>
 #include <set>
 
 using namespace std;
@@ -68,15 +65,14 @@ namespace dd4hep {
   class Plugin;
   class Compact;
   class Includes;
-  class IncludeFile;
+  class GdmlFile;
   class Property;
   class XMLFile;
   class JsonFile;
   class PropertyConstant;
   class Parallelworld_Volume;
   class DetElementInclude;
-  class STD_Conditions;
-  
+
   /// Converter instances implemented in this compilation unit
   template <> void Converter<Debug>::operator()(xml_h element) const;
   template <> void Converter<World>::operator()(xml_h element) const;
@@ -99,8 +95,7 @@ namespace dd4hep {
   template <> void Converter<PropertyConstant>::operator()(xml_h element) const;
 #endif
   template <> void Converter<DetElement>::operator()(xml_h element) const;
-  template <> void Converter<STD_Conditions>::operator()(xml_h element) const;
-  template <> void Converter<IncludeFile>::operator()(xml_h element) const;
+  template <> void Converter<GdmlFile>::operator()(xml_h element) const;
   template <> void Converter<JsonFile>::operator()(xml_h element) const;
   template <> void Converter<XMLFile>::operator()(xml_h element) const;
   template <> void Converter<Header>::operator()(xml_h element) const;
@@ -129,7 +124,6 @@ namespace {
     bool includes     = false;
     bool matrix       = false;
     bool surface      = false;
-    bool include_guard= true;
   } s_debug;
 }
 
@@ -138,7 +132,7 @@ static Ref_t create_ConstantField(Detector& /* description */, xml_h e) {
   xml_comp_t field(e), strength(e.child(_U(strength)));
   string t = e.attr<string>(_U(field));
   ConstantField* ptr = new ConstantField();
-  ptr->field_type = ::toupper(t[0]) == 'E' ? CartesianField::ELECTRIC : CartesianField::MAGNETIC;
+  ptr->type = ::toupper(t[0]) == 'E' ? CartesianField::ELECTRIC : CartesianField::MAGNETIC;
   ptr->direction.SetX(strength.x());
   ptr->direction.SetY(strength.y());
   ptr->direction.SetZ(strength.z());
@@ -159,7 +153,7 @@ static Ref_t create_SolenoidField(Detector& description, xml_h e) {
   CartesianField obj;
   SolenoidField* ptr = new SolenoidField();
   //
-  // This logic is a bit weird, but has its origin in the compact syntax:
+  // This logic is a bit weird, but has it's origin in the compact syntax:
   // If no "inner_radius" is given, the "outer_radius" IS the "inner_radius"
   // and the "outer_radius" is given by one side of the world volume's box
   //
@@ -189,7 +183,6 @@ static Ref_t create_SolenoidField(Detector& description, xml_h e) {
     ptr->minZ = c.attr<double>(_U(zmin));
   else
     ptr->minZ = -ptr->maxZ;
-  ptr->field_type = CartesianField::MAGNETIC;
   obj.assign(ptr, c.nameStr(), c.typeStr());
   return obj;
 }
@@ -221,7 +214,6 @@ static Ref_t create_DipoleField(Detector& /* description */, xml_h e) {
       val = _multiply<double>(coll.text(), mult);
     ptr->coefficents.emplace_back(val);
   }
-  ptr->field_type = CartesianField::MAGNETIC;
   obj.assign(ptr, c.nameStr(), c.typeStr());
   return obj;
 }
@@ -249,7 +241,7 @@ static Ref_t create_MultipoleField(Detector& description, xml_h e) {
     ptr->volume = xml::createShape(description, type, child);
   }
   ptr->B_z = bz;
-  ptr->transform = Transform3D(rot,pos);
+  ptr->transform = Transform3D(rot,pos).Inverse();
   for (xml_coll_t coll(c, _U(coefficient)); coll; ++coll, mult /= lunit) {
     xml_dim_t coeff = coll;
     if ( coll.hasAttr(_U(value)) )
@@ -260,7 +252,6 @@ static Ref_t create_MultipoleField(Detector& description, xml_h e) {
     val = coeff.skew(0.0) * mult;
     ptr->skews.emplace_back(val);
   }
-  ptr->field_type = CartesianField::MAGNETIC;
   obj.assign(ptr, c.nameStr(), c.typeStr());
   return obj;
 }
@@ -273,29 +264,6 @@ static long load_Compact(Detector& description, xml_h element) {
 }
 DECLARE_XML_DOC_READER(lccdd,load_Compact)
 DECLARE_XML_DOC_READER(compact,load_Compact)
-
- // We create out own type to avoid a class over the extension types
-  // attached to the Detector as a set of std::string is common.
-class ProcessedFilesSet: public std::set<std::string> {};
-
-/// Check whether a XML file was already processed
-bool check_process_file(Detector& description, std::string filename) {
-
-  // In order to have a global compact that is kept across plugin invocations
-  // we add it as an extension to the the detector description.
-  auto already_processed = description.extension<ProcessedFilesSet>( false );
-  if ( !already_processed ) {
-    already_processed = new ProcessedFilesSet( );
-    description.addExtension<ProcessedFilesSet>(already_processed );
-  }
-  std::string npath = dd4hep::Path{filename}.normalize();
-  if (already_processed->find(npath) != already_processed->end() ) {
-    printout(INFO, "Compact","++ Already processed xml document %s.", npath.c_str());
-    return true;
-  }
-  already_processed->insert(npath);
-  return false;
-}
 
 /** Convert parser debug flags.
  */
@@ -313,11 +281,9 @@ template <> void Converter<Debug>::operator()(xml_h e) const {
     else if ( nam.substr(0,6) == "segmen" ) s_debug.segmentation = (0 != val);
     else if ( nam.substr(0,6) == "consta" ) s_debug.constants    = (0 != val);
     else if ( nam.substr(0,6) == "define" ) s_debug.constants    = (0 != val);
-    else if ( nam.substr(0,6) == "includ" ) s_debug.includes     = (0 != val);
+    else if ( nam.substr(0,6) == "includ" ) s_debug.includes      = (0 != val);
     else if ( nam.substr(0,6) == "matrix" ) s_debug.matrix       = (0 != val);
     else if ( nam.substr(0,6) == "surfac" ) s_debug.surface      = (0 != val);
-    else if ( nam.substr(0,6) == "incgua" ) s_debug.include_guard= (0 != val);
-
   }
 }
   
@@ -327,15 +293,15 @@ template <> void Converter<Debug>::operator()(xml_h e) const {
  */
 template <> void Converter<Plugin>::operator()(xml_h e) const {
   xml_comp_t plugin(e);
+  vector<char*> argv;
+  vector<string> arguments;
   string name = plugin.nameStr();
   string type = "default";
-
-  if ( xml_attr_t typ_attr = e.attr_nothrow(_U(type)) )   {
-    type = e.attr<string>(typ_attr);
+  xml_attr_t typ_attr = e.attr_nothrow(_U(type));
+  if ( typ_attr )   {
+    type = e.attr<string>(_U(type));
   }
   if ( type == "default" )  {
-    vector<char*> argv;
-    vector<string> arguments;
     for (xml_coll_t coll(e, _U(arg)); coll; ++coll) {
       string val = coll.attr<string>(_U(value));
       arguments.emplace_back(val);
@@ -399,12 +365,12 @@ template <> void Converter<Constant>::operator()(xml_h e) const {
  */
 template <> void Converter<Header>::operator()(xml_h e) const {
   xml_comp_t c(e);
-  Header h(e.attr<string>(_U(name)), e.attr<string>(_U(title), "Undefined"));
-  h.setUrl(e.attr<string>(_U(url), "Undefined"));
-  h.setAuthor(e.attr<string>(_U(author), "Undefined"));
-  h.setStatus(e.attr<string>(_U(status), "development"));
-  h.setVersion(e.attr<string>(_U(version), "Undefined"));
-  h.setComment(e.hasChild(_U(comment)) ? e.child(_U(comment)).text() : "No Comment");
+  Header h(e.attr<string>(_U(name)), e.attr<string>(_U(title)));
+  h.setUrl(e.attr<string>(_U(url)));
+  h.setAuthor(e.attr<string>(_U(author)));
+  h.setStatus(e.attr<string>(_U(status)));
+  h.setVersion(e.attr<string>(_U(version)));
+  h.setComment(e.child(_U(comment)).text());
   description.setHeader(h);
 }
 
@@ -426,13 +392,13 @@ template <> void Converter<Header>::operator()(xml_h e) const {
  */
 template <> void Converter<Material>::operator()(xml_h e) const {
   xml_ref_t         x_mat(e);
-  TGeoManager&      mgr     = description.manager();
-  xml_tag_t         mname   = x_mat.name();
+  TGeoManager&      mgr = description.manager();
+  xml_tag_t         mname = x_mat.name();
   const char*       matname = mname.c_str();
-  TGeoElementTable* table   = mgr.GetElementTable();
-  TGeoMaterial*     mat     = mgr.GetMaterial(matname);
-  TGeoMixture*      mix     = dynamic_cast<TGeoMixture*>(mat);
-  xml_coll_t        fractions (x_mat, _U(fraction));
+  TGeoElementTable* table = mgr.GetElementTable();
+  TGeoMaterial*     mat = mgr.GetMaterial(matname);
+  TGeoMixture*      mix = dynamic_cast<TGeoMixture*>(mat);
+  xml_coll_t        fractions(x_mat, _U(fraction));
   xml_coll_t        composites(x_mat, _U(composite));
 
   if (0 == mat) {
@@ -450,16 +416,20 @@ template <> void Converter<Material>::operator()(xml_h e) const {
       dens_unit = density.attr<double>(_U(unit))/xml::_toDouble(_Unicode(gram/cm3));
     }
     if ( dens_unit != 1.0 )  {
+      cout << matname << " Density unit:" << dens_unit;
+      if ( dens_unit != 1.0 ) cout << " " << density.attr<string>(_U(unit));
+      cout << " Density Value raw:" << dens_val << " normalized:" << (dens_val*dens_unit) << endl;
       dens_val *= dens_unit;
-      printout(s_debug.materials ? ALWAYS : DEBUG, "Compact","Density unit: %.3f [%s] raw: %.3f normalized: %.3f ",
-               dens_unit, density.attr<string>(_U(unit)).c_str(), dens_val, (dens_val*dens_unit));
     }
+    printout(s_debug.materials ? ALWAYS : DEBUG, "Compact",
+             "++ Converting material %-16s  Density: %.3f.",matname, dens_val);
+    //throw 1;
     mat = mix = new TGeoMixture(matname, composites.size(), dens_val);
-    size_t         ifrac = 0;
+    size_t ifrac = 0;
     vector<double> composite_fractions;
-    double         composite_fractions_total = 0.0;
+    double composite_fractions_total = 0.0;
     for (composites.reset(); composites; ++composites)   {
-      string nam      = composites.attr<string>(_U(ref));
+      string nam = composites.attr<string>(_U(ref));
       double fraction = composites.attr<double>(_U(n));
       if (0 != (comp_mat = mgr.GetMaterial(nam.c_str())))
         fraction *= comp_mat->GetA();
@@ -471,7 +441,7 @@ template <> void Converter<Material>::operator()(xml_h e) const {
       composite_fractions.emplace_back(fraction);
     }
     for (composites.reset(), ifrac=0; composites; ++composites, ++ifrac) {
-      string nam      = composites.attr<string>(_U(ref));
+      string nam = composites.attr<string>(_U(ref));
       double fraction = composite_fractions[ifrac]/composite_fractions_total;
       if (0 != (comp_mat = mgr.GetMaterial(nam.c_str())))
         mix->AddElement(comp_mat, fraction);
@@ -479,7 +449,7 @@ template <> void Converter<Material>::operator()(xml_h e) const {
         mix->AddElement(comp_elt, fraction);
     }
     for (fractions.reset(); fractions; ++fractions) {
-      string nam      = fractions.attr<string>(_U(ref));
+      string nam = fractions.attr<string>(_U(ref));
       double fraction = fractions.attr<double>(_U(n));
       if (0 != (comp_mat = mgr.GetMaterial(nam.c_str())))
         mix->AddElement(comp_mat, fraction);
@@ -488,33 +458,6 @@ template <> void Converter<Material>::operator()(xml_h e) const {
       else
         throw_print("Compact2Objects[ERROR]: Converting material:" + mname + " Element missing: " + nam);
     }
-    xml_h  temperature = x_mat.child(_U(T), false);
-    double temp_val    = description.stdConditions().temperature;
-    if ( temperature.ptr() )   {
-      double temp_unit = _toDouble("kelvin");
-      if ( temperature.hasAttr(_U(unit)) )
-        temp_unit = temperature.attr<double>(_U(unit));
-      temp_val = temperature.attr<double>(_U(value)) * temp_unit;
-    }
-    xml_h pressure = x_mat.child(_U(P), false);
-    double pressure_val = description.stdConditions().pressure;
-    if ( pressure.ptr() )   {
-      double pressure_unit = _toDouble("pascal");
-      if ( pressure.hasAttr(_U(unit)) )
-        pressure_unit = pressure.attr<double>(_U(unit));
-      pressure_val = pressure.attr<double>(_U(value)) * pressure_unit;
-    }
-#if 0
-    printout(s_debug.materials ? ALWAYS : DEBUG, "Compact",
-             "++ ROOT raw temperature and pressure: %.3g %.3g",
-             mat->GetTemperature(),mat->GetPressure());
-#endif
-    mat->SetTemperature(temp_val);
-    mat->SetPressure(pressure_val);
-    printout(s_debug.materials ? ALWAYS : DEBUG, "Compact",
-             "++ Converting material %-16s  Density: %9.7g  Temperature:%9.7g [K] Pressure:%9.7g [hPa].",
-             matname, dens_val, temp_val/dd4hep::kelvin, pressure_val/dd4hep::pascal/100.0);
-
     mix->SetRadLen(0e0);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,12,0)
     mix->ComputeDerivedQuantities();
@@ -524,7 +467,7 @@ template <> void Converter<Material>::operator()(xml_h e) const {
     for(xml_coll_t properties(x_mat, _U(constant)); properties; ++properties) {
       xml_elt_t p = properties;
       if ( p.hasAttr(_U(ref)) )   {
-        bool   err = kFALSE;
+        bool err = kFALSE;
         string ref = p.attr<string>(_U(ref));
         mgr.GetProperty(ref.c_str(), &err); /// Check existence
         if ( err == kFALSE )  {
@@ -549,14 +492,6 @@ template <> void Converter<Material>::operator()(xml_h e) const {
                  "++            material %-16s  add constant property: %s  ->  %s.",
                  mat->GetName(), prop_nam.c_str(), ref.c_str());
       }
-      else if ( p.hasAttr(_U(option)) )   {
-        string prop_nam = p.attr<string>(_U(name));
-	string prop_typ = p.attr<string>(_U(option));
-        mat->AddConstProperty(prop_nam.c_str(), prop_typ.c_str());
-        printout(s_debug.materials ? ALWAYS : DEBUG, "Compact",
-                 "++            material %-16s  add constant property: %s  ->  %s.",
-                 mat->GetName(), prop_nam.c_str(), prop_typ.c_str());
-      }
     }
     /// In case there were material properties specified: convert them here
     for(xml_coll_t properties(x_mat, _U(property)); properties; ++properties) {
@@ -577,6 +512,18 @@ template <> void Converter<Material>::operator()(xml_h e) const {
       }
     }
 #endif
+    xml_h temp = x_mat.child(_U(T), false);
+    if ( temp.ptr() )   {
+      double temp_val    = temp.attr<double>(_U(value));
+      double temp_unit   = temp.attr<double>(_U(unit), 1.0 /* _toDouble("kelvin") */);
+      mat->SetTemperature(temp_val*temp_unit);
+    }
+    xml_h pressure = x_mat.child(_U(P), false);
+    if ( pressure.ptr() )   {
+      double pressure_val    = pressure.attr<double>(_U(value));
+      double pressure_unit   = pressure.attr<double>(_U(unit),1.0 /* _toDouble("pascal") */);
+      mat->SetPressure(pressure_val*pressure_unit);
+    }
   }
   TGeoMedium* medium = mgr.GetMedium(matname);
   if (0 == medium) {
@@ -609,10 +556,10 @@ template <> void Converter<Material>::operator()(xml_h e) const {
  */
 template <> void Converter<Isotope>::operator()(xml_h e) const {
   xml_dim_t isotope(e);
-  TGeoManager&      mgr = description.manager();
-  string            nam = isotope.nameStr();
-  TGeoElementTable* tab = mgr.GetElementTable();
-  TGeoIsotope*      iso = tab->FindIsotope(nam.c_str());
+  TGeoManager&      mgr  = description.manager();
+  string            nam  = isotope.nameStr();
+  TGeoElementTable* tab  = mgr.GetElementTable();
+  TGeoIsotope*      iso  = tab->FindIsotope(nam.c_str());
 
   // Create the isotope object in the event it is not yet present from the XML data
   if ( !iso )   {
@@ -679,7 +626,7 @@ template <> void Converter<Atom>::operator()(xml_h e) const {
         string ref  = i.attr<string>(_U(ref));
         TGeoIsotope* iso = tab->FindIsotope(ref.c_str());
         if ( !iso )  {
-          except("Compact","Element %s cannot be constructed. Isotope '%s' (fraction: %.3f) missing!",
+          except("Compact","Element %s cannot be constructed. Isotope '%s' (fraction:%f) missing!",
                  name.c_str(), ref.c_str(), frac);
         }
         printout(s_debug.elements ? ALWAYS : DEBUG, "Compact",
@@ -703,43 +650,6 @@ template <> void Converter<Atom>::operator()(xml_h e) const {
   }
 }
 
-/** Convert compact isotope objects
- *
- *   <std_conditions type="STP or NTP"> // type optional
- *     <item name="temperature" unit="kelvin" value="273.15"/>
- *     <item name="pressure"    unit="kPa" value="100"/>
- *   </std_conditions>
- */
-template <> void Converter<STD_Conditions>::operator()(xml_h e) const {
-  xml_dim_t cond(e);
-  // Create the isotope object in the event it is not yet present from the XML data
-  if ( cond.ptr() )   {
-    if ( cond.hasAttr(_U(type)) )   {
-      description.setStdConditions(cond.typeStr());
-    }
-    xml_h  temperature = cond.child(_U(T), false);
-    double temp_val    = description.stdConditions().temperature;
-    if ( temperature.ptr() )   {
-      double temp_unit = _toDouble("kelvin");
-      if ( temperature.hasAttr(_U(unit)) )
-        temp_unit = temperature.attr<double>(_U(unit));
-      temp_val = temperature.attr<double>(_U(value)) * temp_unit;
-    }
-    xml_h pressure = cond.child(_U(P), false);
-    double pressure_val = description.stdConditions().pressure;
-    if ( pressure.ptr() )   {
-      double pressure_unit = _toDouble("pascal");
-      if ( pressure.hasAttr(_U(unit)) )
-        pressure_unit = pressure.attr<double>(_U(unit));
-      pressure_val = pressure.attr<double>(_U(value)) * pressure_unit;
-    }
-    description.setStdConditions(temp_val, pressure_val);
-    printout(s_debug.materials ? ALWAYS : DEBUG, "Compact",
-             "+++ Material standard conditions: Temperature: %.3f Kelvin Pressure: %.3f hPa",
-             temp_val/_toDouble("kelvin"), pressure_val/_toDouble("hPa"));
-  }
-}
-
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
 /** Convert compact optical surface objects (defines)
  *
@@ -758,7 +668,7 @@ template <> void Converter<OpticalSurface>::operator()(xml_h element) const {
   if ( e.hasAttr(_U(value))  ) value  = e.attr<double>(_U(value));
   OpticalSurface surf(description, e.attr<string>(_U(name)), model, finish, type, value);
   if ( s_debug.surface )    {
-    printout(ALWAYS,"Compact","+++ Reading optical surface %s Typ:%d model:%d finish:%d value: %.3f",
+    printout(ALWAYS,"Compact","+++ Reading optical surface %s Typ:%d model:%d finish:%d value:%f",
              e.attr<string>(_U(name)).c_str(), int(type), int(model), int(finish), value);
   }
   for (xml_coll_t props(e, _U(property)); props; ++props)  {
@@ -770,9 +680,8 @@ template <> void Converter<OpticalSurface>::operator()(xml_h element) const {
       }
       continue;
     }
-    size_t     cols = props.attr<long>(_U(coldim));
-    string     nam  = props.attr<string>(_U(name));
-    xml_attr_t opt  = props.attr_nothrow(_U(option));
+    size_t cols = props.attr<long>(_U(coldim));
+    string nam  = props.attr<string>(_U(name));
     stringstream str(props.attr<string>(_U(values))), str_nam;
     string val;
     vector<double> values;
@@ -784,10 +693,6 @@ template <> void Converter<OpticalSurface>::operator()(xml_h element) const {
     }
     /// Create table and register table
     TGDMLMatrix* table = new TGDMLMatrix("",values.size()/cols, cols);
-    if ( opt )   {
-      string tit = e.attr<string>(opt);
-      str_nam << tit << "|";
-    }
     str_nam << nam << "__" << (void*)table;
     table->SetName(str_nam.str().c_str());
     table->SetTitle(nam.c_str());
@@ -810,17 +715,6 @@ template <> void Converter<PropertyConstant>::operator()(xml_h e) const    {
   if ( s_debug.matrix )    {
     printout(ALWAYS,"Compact","+++ Reading property %s : %f",name.c_str(), value);
   }
-#if 0
-  xml_attr_t opt = e.attr_nothrow(_U(title));
-  if ( opt )    {
-    string  val = e.attr<string>(opt);
-    TNamed* nam = description.manager().GetProperty(name.c_str());
-    if ( !nam )   {
-      except("Compact","Failed to access just added manager property: %s",name.c_str());
-    }
-    nam->SetTitle(val.c_str());
-  }
-#endif
 }
 
 /** Convert compact property table objects (defines)
@@ -829,87 +723,57 @@ template <> void Converter<PropertyConstant>::operator()(xml_h e) const    {
  *
  */
 template <> void Converter<PropertyTable>::operator()(xml_h e) const {
-  vector<double> vals;
-  size_t         cols = e.attr<unsigned long>(_U(coldim));
-  stringstream   str(e.attr<string>(_U(values)));
+  string val;
+  vector<double> values;
+  size_t cols = e.attr<unsigned long>(_U(coldim));
+  stringstream str(e.attr<string>(_U(values)));
 
   if ( s_debug.matrix )    {
     printout(ALWAYS,"Compact","+++ Reading property table %s with %d columns.",
              e.attr<string>(_U(name)).c_str(), cols);
   }
-  vals.reserve(1024);
+  values.reserve(1024);
   while ( !str.eof() )   {
-    string item;
-    str >> item;
-    if ( item.empty() && !str.good() ) break;
-    vals.emplace_back(_toDouble(item));
+    val = "";
+    str >> val;
+    if ( val.empty() && !str.good() ) break;
+    values.emplace_back(_toDouble(val));
     if ( s_debug.matrix )    {
-      cout << " state:" << (str.good() ? "OK " : "BAD") << " '" << item << "'";
-      if ( 0 == (vals.size()%cols) ) cout << endl;
+      cout << " state:" << (str.good() ? "OK " : "BAD") << " '" << val << "'";
+      if ( 0 == (values.size()%cols) ) cout << endl;
     }
   }
   if ( s_debug.matrix )    {
     cout << endl;
   }
   /// Create table and register table
-  xml_attr_t    opt = e.attr_nothrow(_U(option));
-  PropertyTable tab(description,
-		    e.attr<string>(_U(name)),
-		    opt ? e.attr<string>(opt).c_str() : "",
-		    vals.size()/cols, cols);
-  for( size_t i=0, n=vals.size(); i < n; ++i )
-    tab->Set(i/cols, i%cols, vals[i]);
-  //if ( s_debug.matrix ) tab->Print();
+  PropertyTable table(description, e.attr<string>(_U(name)), "", values.size()/cols, cols);
+  for (size_t i=0, n=values.size(); i<n; ++i)
+    table->Set(i/cols, i%cols, values[i]);
+  //if ( s_debug.matrix ) table->Print();
 }
 #endif
 
-/** Convert compact visualization attribute to Detector visualization attribute.
+/** Convert compact visualization attribute to Detector visualization attribute
  *
  *  <vis name="SiVertexBarrelModuleVis"
  *       alpha="1.0" r="1.0" g="0.75" b="0.76"
  *       drawingStyle="wireframe"
  *       showDaughters="false"
  *       visible="true"/>
- *
- *  Optionally inherit an already defined VisAttr and override other properties.
- *
- *  <vis name="SiVertexEndcapModuleVis"
- *       ref="SiVertexBarrelModuleVis"
- *       alpha="0.5"/>
  */
 template <> void Converter<VisAttr>::operator()(xml_h e) const {
   VisAttr attr(e.attr<string>(_U(name)));
-  float alpha = 1.0;
-  float red   = 1.0;
-  float green = 1.0;
-  float blue  = 1.0;
-  bool use_ref = false;
-  if(e.hasAttr(_U(ref))) {
-    use_ref = true;
-    auto refName = e.attr<string>(_U(ref));
-    const auto refAttr = description.visAttributes(refName);
-    if(!refAttr.isValid() )  {
-        throw runtime_error("reference VisAttr " + refName + " does not exist");
-    }
-    // Just copying things manually.
-    // I think a handle's copy constructor/assignment would reuse the underlying pointer... maybe?
-    refAttr.argb(alpha,red,green,blue);
-    attr.setColor(alpha,red,green,blue);
-    attr.setDrawingStyle( refAttr.drawingStyle());
-    attr.setLineStyle( refAttr.lineStyle());
-    attr.setShowDaughters(refAttr.showDaughters());
-    attr.setVisible(refAttr.visible());
-  }
-  xml_dim_t dim(e);
-  alpha = dim.alpha(alpha);
-  red   = dim.r(red  );
-  green = dim.g(green);
-  blue  = dim.b(blue );
+  float red   = e.hasAttr(_U(r)) ? e.attr<float>(_U(r)) : 1.0f;
+  float green = e.hasAttr(_U(g)) ? e.attr<float>(_U(g)) : 1.0f;
+  float blue  = e.hasAttr(_U(b)) ? e.attr<float>(_U(b)) : 1.0f;
 
   printout(s_debug.visattr ? ALWAYS : DEBUG, "Compact",
-           "++ Converting VisAttr  structure: %-16s. Alpha=%.2f R=%.3f G=%.3f B=%.3f",
-           attr.name(), alpha, red, green, blue);
-  attr.setColor(alpha, red, green, blue);
+           "++ Converting VisAttr  structure: %-16s. R=%.3f G=%.3f B=%.3f",
+           attr.name(), red, green, blue);
+  attr.setColor(red, green, blue);
+  if (e.hasAttr(_U(alpha)))
+    attr.setAlpha(e.attr<float>(_U(alpha)));
   if (e.hasAttr(_U(visible)))
     attr.setVisible(e.attr<bool>(_U(visible)));
   if (e.hasAttr(_U(lineStyle))) {
@@ -920,8 +784,7 @@ template <> void Converter<VisAttr>::operator()(xml_h e) const {
       attr.setLineStyle(VisAttr::DASHED);
   }
   else {
-    if (!use_ref)
-      attr.setLineStyle(VisAttr::SOLID);
+    attr.setLineStyle(VisAttr::SOLID);
   }
   if (e.hasAttr(_U(drawingStyle))) {
     string ds = e.attr<string>(_U(drawingStyle));
@@ -931,15 +794,12 @@ template <> void Converter<VisAttr>::operator()(xml_h e) const {
       attr.setDrawingStyle(VisAttr::SOLID);
   }
   else {
-    if (!use_ref)
-      attr.setDrawingStyle(VisAttr::SOLID);
+    attr.setDrawingStyle(VisAttr::SOLID);
   }
   if (e.hasAttr(_U(showDaughters)))
     attr.setShowDaughters(e.attr<bool>(_U(showDaughters)));
-  else {
-    if (!use_ref)
-      attr.setShowDaughters(true);
-  }
+  else
+    attr.setShowDaughters(true);
   description.addVisAttribute(attr);
 }
 
@@ -1117,7 +977,7 @@ template <> void Converter<Readout>::operator()(xml_h e) const {
       else   {
         stringstream tree;
         xml::dump_tree(e,tree);
-        throw_print("Readout: Invalid specification for multiple hit collections."+tree.str());
+        throw_print("Reaout: Invalid specificatrion for multiple hit collections."+tree.str());
       }
       printout(s_debug.readout ? ALWAYS : DEBUG,"Compact",
                "++ Readout[%s]: Add hit collection %s [%s]  %d-%d",
@@ -1128,14 +988,6 @@ template <> void Converter<Readout>::operator()(xml_h e) const {
   }
   description.addReadout(ro);
 }
-
-static long load_readout(Detector& description, xml_h element) {
-  Converter<Readout> converter(description);
-  converter(element);
-  return 1;
-}
-DECLARE_XML_DOC_READER(readout,load_readout)
-
 
 /** Specialized converter for compact LimitSet objects.
  *
@@ -1155,10 +1007,6 @@ template <> void Converter<LimitSet>::operator()(xml_h e) const {
     limit.unit      = c.attr<string>(_U(unit));
     limit.value     = _multiply<double>(limit.content, limit.unit);
     ls.addLimit(limit);
-    printout(s_debug.limits ? ALWAYS : DEBUG, "Compact",
-	     "++ %s: add %-6s: [%s] = %s [%s] = %f",
-	     ls.name(), limit.name.c_str(), limit.particles.c_str(),
-	     limit.content.c_str(), limit.unit.c_str(), limit.value);
   }
   limit.name      = "cut";
   for (xml_coll_t c(e, _U(cut)); c; ++c) {
@@ -1167,10 +1015,6 @@ template <> void Converter<LimitSet>::operator()(xml_h e) const {
     limit.unit      = c.attr<string>(_U(unit));
     limit.value     = _multiply<double>(limit.content, limit.unit);
     ls.addCut(limit);
-    printout(s_debug.limits ? ALWAYS : DEBUG, "Compact",
-	     "++ %s: add %-6s: [%s] = %s [%s] = %f",
-	     ls.name(), limit.name.c_str(), limit.particles.c_str(),
-	     limit.content.c_str(), limit.unit.c_str(), limit.value);
   }
   description.addLimitSet(ls);
 }
@@ -1220,7 +1064,7 @@ template <> void Converter<CartesianField>::operator()(xml_h e) const {
     msg = "created";
   }
   type = field.type();
-  // Now update the field structure with the generic part ie. set its properties
+  // Now update the field structure with the generic part ie. set it's properties
   CartesianField::Properties& prp = field.properties();
   for ( xml_coll_t c(e, _U(properties)); c; ++c ) {
     string props_name = c.attr<string>(_U(name));
@@ -1298,7 +1142,7 @@ template <> void Converter<SensitiveDetector>::operator()(xml_h element) const {
     else if (ecut) {   // If no unit is given , we assume the correct Geant4 unit is used!
       sd.setEnergyCutoff(element.attr<double>(ecut));
     }
-    printout(DEBUG, "Compact", "SensitiveDetector-update: %-18s %-24s Hits:%-24s Cutoff:%7.3f", sd.name(),
+    printout(DEBUG, "Compact", "SensitiveDetector-update: %-18s %-24s Hits:%-24s Cutoff:%f7.3f", sd.name(),
              (" [" + sd.type() + "]").c_str(), sd.hitsCollection().c_str(), sd.energyCutoff());
     xml_attr_t sequence = element.attr_nothrow(_U(sequence));
     if (sequence) {
@@ -1420,13 +1264,8 @@ template <> void Converter<DetElement>::operator()(xml_h element) const {
 }
 
 /// Read material entries from a seperate file in one of the include sections of the geometry
-template <> void Converter<IncludeFile>::operator()(xml_h element) const   {
+template <> void Converter<GdmlFile>::operator()(xml_h element) const   {
   xml::DocumentHolder doc(xml::DocumentHandler().load(element, element.attr_value(_U(ref))));
-  if ( s_debug.include_guard) {
-    // Include guard, we check whether this file was already processed
-    if (check_process_file(description, doc.uri()))
-      return;
-  }
   xml_h root = doc.root();
   if ( s_debug.includes )   {
     printout(ALWAYS, "Compact","++ Processing xml document %s.",doc.uri().c_str());
@@ -1444,83 +1283,31 @@ template <> void Converter<IncludeFile>::operator()(xml_h element) const   {
 template <> void Converter<JsonFile>::operator()(xml_h element) const {
   string base = xml::DocumentHandler::system_directory(element);
   string file = element.attr<string>(_U(ref));
-  vector<char*>  argv{&file[0], &base[0]};
+  vector<char*>  argv{&file[0],&base[0]};
   description.apply("DD4hep_JsonProcessor",int(argv.size()), &argv[0]);
 }
 
 /// Read alignment entries from a seperate file in one of the include sections of the geometry
 template <> void Converter<XMLFile>::operator()(xml_h element) const {
-  PrintLevel level = s_debug.includes ? ALWAYS : DEBUG;
-  string fname = element.attr<string>(_U(ref));
-  size_t idx = fname.find("://");
-  std::error_code ec;
-
-  if ( idx == string::npos && filesystem::exists(fname, ec) )  {
-    // Regular file without protocol specification
-    printout(level, "Compact","++ Processing xml document %s.", fname.c_str());
-    this->description.fromXML(fname);
-  }
-  else if ( idx == string::npos )  {
-    // File relative to location of xml tag (protocol specification not possible)
-    string location = xml::DocumentHandler::system_path(element, fname);
-    printout(level, "Compact","++ Processing xml document %s.", location.c_str());
-    this->description.fromXML(location);
-  }
-  else if ( idx > 0 )   {
-    // File with protocol specification: must trust the location and the parser capabilities
-    printout(level, "Compact","++ Processing xml document %s.", fname.c_str());
-    this->description.fromXML(fname);
-  }
-  else  {
-    // Are there any other possibilities ?
-    printout(level, "Compact","++ Processing xml document %s.", fname.c_str());
-    this->description.fromXML(fname);
-  }
+  this->description.fromXML(element.attr<string>(_U(ref)));
 }
 
 /// Read material entries from a seperate file in one of the include sections of the geometry
 template <> void Converter<World>::operator()(xml_h element) const {
-  xml_elt_t  x_world(element);
-  xml_comp_t x_shape = x_world.child(_U(shape), false);
-  xml_attr_t att = x_world.getAttr(_U(material));
-  Material   mat = att ? description.material(x_world.attr<string>(att)) : description.air();
-  Volume world_vol;
+  xml_det_t  world(element);
+  xml_comp_t shape = world.child(_U(shape));
+  VisAttr    vis = description.visAttributes("WorldVis");
+  Material   mat = world.hasAttr(_U(material))
+    ? description.material(world.attr<string>(_U(material))) : description.air();
 
+  if ( !vis.isValid() ) vis = description.invisible();
   /// Create the shape and the corresponding volume
-  if ( x_shape )   {
-    Solid sol(x_shape.createShape());
-    world_vol = Volume("world_volume", sol, mat);
-    printout(INFO, "Compact", "++ Created successfully world volume '%s'. shape: %s material:%s.",
-             world_vol.name(), sol.type(), mat.name());
-    description.manager().SetTopVolume(world_vol.ptr());
-  }
-  else   {
-    world_vol = description.worldVolume();
-    if ( !world_vol && att )   {
-      /// If we require a user configured world, but no shape is given, define the standard box.
-      /// Implicitly assumes that the box dimensions are given in the standard way.
-      Box sol("world_x", "world_y", "world_z");
-      world_vol = Volume("world_volume", sol, mat);
-      printout(INFO, "Compact", "++ Created world volume '%s' as %s (%.2f, %.2f %.2f [cm]) material:%s.",
-               world_vol.name(), sol.type(),
-               sol.x()/dd4hep::cm, sol.y()/dd4hep::cm, sol.z()/dd4hep::cm,
-               mat.name());
-      description.manager().SetTopVolume(world_vol.ptr());
-    }
-    else if ( !world_vol )  {
-      except("Compact", "++ Logical error: "
-	     "You cannot configure the world volume before it is created and not giving creation instructions.");
-    }
-  }
-  // Delegate further configuration o0f the world volume to the xml utilities:
-  if ( world_vol.isValid() )   {
-    xml::configVolume(description, x_world, world_vol, false, true);
-    auto vis = world_vol.visAttributes();
-    if ( !vis.isValid() )  {
-      vis = description.visAttributes("WorldVis");
-      world_vol.setVisAttributes(vis);
-    }
-  }
+  Solid    sol(shape.createShape());
+  Volume   vol("world_volume", sol, mat);
+  vol.setVisAttributes(vis);
+  description.manager().SetTopVolume(vol.ptr());
+  printout(INFO, "Compact", "++ Converted successfully world %s. vis:%s material:%s.",
+           vol.name(), vis.name(), mat.name());
 }
 
 /// Read material entries from a seperate file in one of the include sections of the geometry
@@ -1580,11 +1367,6 @@ template <> void Converter<DetElementInclude>::operator()(xml_h element) const {
   string type = element.hasAttr(_U(type)) ? element.attr<string>(_U(type)) : string("xml");
   if ( type == "xml" )  {
     xml::DocumentHolder doc(xml::DocumentHandler().load(element, element.attr_value(_U(ref))));
-    if ( s_debug.include_guard ) {
-      // Include guard, we check whether this file was already processed
-      if (check_process_file(description, doc.uri()))
-        return;
-    }
     if ( s_debug.includes )   {
       printout(ALWAYS, "Compact","++ Processing xml document %s.",doc.uri().c_str());
     }
@@ -1598,7 +1380,7 @@ template <> void Converter<DetElementInclude>::operator()(xml_h element) const {
       xml_coll_t(node, _U(readout)).for_each(Converter<Readout>(this->description));
     else if ( tag == "regions" )
       xml_coll_t(node, _U(region)).for_each(Converter<Region>(this->description));
-    else if ( tag == "limits" || tag == "limitsets" )
+    else if ( tag == "limitsets" )
       xml_coll_t(node, _U(limitset)).for_each(Converter<LimitSet>(this->description));
     else if ( tag == "display" )
       xml_coll_t(node,_U(vis)).for_each(Converter<VisAttr>(this->description));
@@ -1611,10 +1393,7 @@ template <> void Converter<DetElementInclude>::operator()(xml_h element) const {
     Converter<JsonFile>(this->description)(element);
   }
   else if ( type == "gdml" )  {
-    Converter<IncludeFile>(this->description)(element);
-  }
-  else if ( type == "include" )  {
-    Converter<IncludeFile>(this->description)(element);
+    Converter<GdmlFile>(this->description)(element);
   }
   else if ( type == "xml-extended" )  {
     Converter<XMLFile>(this->description)(element);
@@ -1634,9 +1413,6 @@ template <> void Converter<Compact>::operator()(xml_h element) const {
   bool open_geometry  = true;
   bool close_document = true;
   bool close_geometry = true;
-  bool build_reflections = false;
-  xml_dim_t world = element.child(_U(world), false);
-
 
   if (element.hasChild(_U(debug)))
     (Converter<Debug>(description))(xml_h(compact.child(_U(debug))));
@@ -1647,8 +1423,8 @@ template <> void Converter<Compact>::operator()(xml_h element) const {
       open_geometry  = steer.attr<bool>(_U(open));
     if ( steer.hasAttr(_U(close)) )
       close_document = steer.attr<bool>(_U(close));
-    if ( steer.hasAttr(_U(reflect)) )
-      build_reflections = steer.attr<bool>(_U(reflect));
+    if ( steer.hasAttr(_U(close_geometry)) )
+      close_geometry = steer.attr<bool>(_U(close_geometry));
     for (xml_coll_t clr(steer, _U(clear)); clr; ++clr) {
       string nam = clr.hasAttr(_U(name)) ? clr.attr<string>(_U(name)) : string();
       if ( nam.substr(0,6) == "elemen" )   {
@@ -1679,11 +1455,9 @@ template <> void Converter<Compact>::operator()(xml_h element) const {
     printout(INFO,"Compact","+++ degree:     %8.3g  Units:%8.3g",xml::_toDouble(_Unicode(degree)),dd4hep::degree);
   }
   
-  xml_coll_t(compact, _U(define)).for_each(_U(include),    Converter<DetElementInclude>(description));
-  xml_coll_t(compact, _U(define)).for_each(_U(constant),   Converter<Constant>(description));
-  xml_coll_t(compact, _U(std_conditions)).for_each(        Converter<STD_Conditions>(description));
-  xml_coll_t(compact, _U(includes)).for_each(_U(gdmlFile), Converter<IncludeFile>(description));
-  xml_coll_t(compact, _U(includes)).for_each(_U(file),     Converter<IncludeFile>(description));
+  xml_coll_t(compact, _U(define)).for_each(_U(include), Converter<DetElementInclude>(description));
+  xml_coll_t(compact, _U(define)).for_each(_U(constant), Converter<Constant>(description));
+  xml_coll_t(compact, _U(includes)).for_each(_U(gdmlFile), Converter<GdmlFile>(description));
 
   if (element.hasChild(_U(info)))
     (Converter<Header>(description))(xml_h(compact.child(_U(info))));
@@ -1692,30 +1466,25 @@ template <> void Converter<Compact>::operator()(xml_h element) const {
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
   /// These two must be parsed early, because they are needed by the detector constructors
   xml_coll_t(compact, _U(properties)).for_each(_U(constant), Converter<PropertyConstant>(description));
-  xml_coll_t(compact, _U(properties)).for_each(_U(matrix),   Converter<PropertyTable>(description));
-  xml_coll_t(compact, _U(properties)).for_each(_U(plugin),   Converter<Plugin> (description));
+  xml_coll_t(compact, _U(properties)).for_each(_U(matrix), Converter<PropertyTable>(description));
   xml_coll_t(compact, _U(surfaces)).for_each(_U(opticalsurface), Converter<OpticalSurface>(description));
 #endif
-  xml_coll_t(compact, _U(materials)).for_each(_U(element),  Converter<Atom>(description));
+  xml_coll_t(compact, _U(materials)).for_each(_U(element), Converter<Atom>(description));
   xml_coll_t(compact, _U(materials)).for_each(_U(material), Converter<Material>(description));
-  xml_coll_t(compact, _U(materials)).for_each(_U(plugin),   Converter<Plugin> (description));
   
-  printout(DEBUG, "Compact", "++ Converting visualization attributes...");
-  xml_coll_t(compact, _U(display)).for_each(_U(include),    Converter<DetElementInclude>(description));
-  xml_coll_t(compact, _U(display)).for_each(_U(vis),        Converter<VisAttr>(description));
-  printout(DEBUG, "Compact", "++ Converting limitset structures...");
-  xml_coll_t(compact, _U(limits)).for_each(_U(include),     Converter<DetElementInclude>(description));
-  xml_coll_t(compact, _U(limits)).for_each(_U(limitset),    Converter<LimitSet>(description));
-  printout(DEBUG, "Compact", "++ Converting region   structures...");
-  xml_coll_t(compact, _U(regions)).for_each(_U(include),    Converter<DetElementInclude>(description));
-  xml_coll_t(compact, _U(regions)).for_each(_U(region),     Converter<Region>(description));
+  xml_coll_t(compact, _U(display)).for_each(_U(include), Converter<DetElementInclude>(description));
+  xml_coll_t(compact, _U(display)).for_each(_U(vis), Converter<VisAttr>(description));
   
-  if ( world )  {
-    (Converter<World>(description))(world);
-  }
+  if (element.hasChild(_U(world)))
+    (Converter<World>(description))(xml_h(compact.child(_U(world))));
+
   if ( open_geometry ) description.init();
+  xml_coll_t(compact, _U(limits)).for_each(_U(limitset), Converter<LimitSet>(description));
+
   printout(DEBUG, "Compact", "++ Converting readout  structures...");
   xml_coll_t(compact, _U(readouts)).for_each(_U(readout), Converter<Readout>(description));
+  printout(DEBUG, "Compact", "++ Converting region   structures...");
+  xml_coll_t(compact, _U(regions)).for_each(_U(region), Converter<Region>(description));
   printout(DEBUG, "Compact", "++ Converting included files with subdetector structures...");
   xml_coll_t(compact, _U(detectors)).for_each(_U(include), Converter<DetElementInclude>(description));
   printout(DEBUG, "Compact", "++ Converting detector structures...");
@@ -1732,13 +1501,7 @@ template <> void Converter<Compact>::operator()(xml_h element) const {
     description.addConstant(Constant("compact_checksum", text));
     description.endDocument(close_geometry);
   }
-  if ( build_reflections )   {
-    ReflectionBuilder rb(description);
-    rb.execute();
-  }
-  xml_coll_t(compact, _U(plugins)).for_each(_U(plugin),  Converter<Plugin>  (description));
-  xml_coll_t(compact, _U(plugins)).for_each(_U(include), Converter<XMLFile> (description));
-  xml_coll_t(compact, _U(plugins)).for_each(_U(xml),     Converter<XMLFile> (description));
+  xml_coll_t(compact, _U(plugins)).for_each(_U(plugin), Converter<Plugin> (description));
 }
 
 #ifdef _WIN32

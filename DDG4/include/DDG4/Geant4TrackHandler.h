@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TRACKHANDLER_H
-#define DDG4_GEANT4TRACKHANDLER_H
+#ifndef DD4HEP_DDG4_GEANT4TRACKHANDLER_H
+#define DD4HEP_DDG4_GEANT4TRACKHANDLER_H
 
 // Framework include files
 #include "DDG4/Defs.h"
@@ -136,16 +136,6 @@ namespace dd4hep {
       double time() const {
         return track->GetGlobalTime();
       }
-      /// Track charge
-      double charge() const {
-        G4ParticleDefinition* def = trackDef();
-        return def ? def->GetPDGCharge() : 0;
-      }
-      /// Track charge
-      double mass() const {
-        G4ParticleDefinition* def = trackDef();
-        return def ? def->GetPDGMass() : 0;
-      }
       /// Physical (original) volume of the track
       G4VPhysicalVolume* vol() const {
         return track->GetVolume();
@@ -214,4 +204,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4TRACKHANDLER_H
+#endif // DD4HEP_DDG4_GEANT4TRACKHANDLER_H

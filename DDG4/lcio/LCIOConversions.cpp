@@ -35,7 +35,7 @@
 #include "UTIL/Operators.h"
 #include "UTIL/ILDConf.h"
 
-#include "CLHEP/Units/SystemOfUnits.h"
+#include <G4SystemOfUnits.hh>
 
 using namespace std;
 using namespace lcio ;
@@ -82,7 +82,7 @@ namespace dd4hep {
       if ( coll )  {
         typedef pair<arg_t::first_type,Geant4HitCollection*> _A;
         typedef Geant4Conversion<output_t,_A> _C;
-        const _C& cnv= _C::converter(coll->type().type());
+        const _C& cnv= _C::converter(coll->type().type);
         return cnv(_A(args.first,coll));
       }
       throw unrelated_type_error(typeid(Geant4HitCollection),typeid(*c),
@@ -105,21 +105,13 @@ namespace dd4hep {
                          Geant4Tracker::Hit>::operator()(const arg_t& args)  const   {
 
       Geant4HitCollection*   coll    = args.second;
-      string                 hc_nam  = coll->GetName();
       Geant4Sensitive*       sd      = coll->sensitive();
       size_t                 nhits   = coll->GetSize();
       string                 dsc     = encoding(sd->sensitiveDetector());
       Geant4ParticleMap*     pm      = args.first->event().extension<Geant4ParticleMap>();
       lcio::LCEventImpl*     lc_evt  = args.first->event().extension<lcio::LCEventImpl>();
       EVENT::LCCollection*   lc_part = lc_evt->getCollection(lcio::LCIO::MCPARTICLE);
-      lcio::LCCollectionVec* lc_coll = nullptr;
-      bool isNewCollection           = false;
-      try {
-        lc_coll = static_cast<lcio::LCCollectionVec*>(lc_evt->getCollection(hc_nam));
-      } catch (lcio::DataNotAvailableException &e) {
-        lc_coll = new lcio::LCCollectionVec(lcio::LCIO::SIMTRACKERHIT);
-        isNewCollection = true;
-      }
+      lcio::LCCollectionVec* lc_coll = new lcio::LCCollectionVec(lcio::LCIO::SIMTRACKERHIT);
       UTIL::CellIDEncoder<SimTrackerHit> decoder(dsc,lc_coll);
       int hit_creation_mode = sd->hitCreationMode();
 
@@ -128,7 +120,7 @@ namespace dd4hep {
       else
         lc_coll->setFlag(LCIO::THBIT_ID1);
 
-      lc_coll->reserve(nhits + lc_coll->getNumberOfElements());
+      lc_coll->reserve(nhits);
       for(size_t i=0; i<nhits; ++i)   {
         const Geant4Tracker::Hit* hit = coll->hit(i);
         const Geant4Tracker::Hit::Contribution& t = hit->truth;
@@ -154,11 +146,8 @@ namespace dd4hep {
 	  lc_hit->setProducedBySecondary( (particleIt->second->originalG4ID != t.trackID) );
         }
 #endif
-        lc_coll->addElement(lc_hit);
-      }
 
-      if(isNewCollection) {
-        lc_evt->addCollection(lc_coll, hc_nam);
+        lc_coll->addElement(lc_hit);
       }
       return lc_coll;
     }
@@ -179,21 +168,13 @@ namespace dd4hep {
                          Geant4Calorimeter::Hit>::operator()(const arg_t& args)  const  {
       typedef Geant4HitData::Contributions Contributions;
       Geant4HitCollection*   coll     = args.second;
-      string                 hc_nam   = coll->GetName();
       Geant4Sensitive*       sd       = coll->sensitive();
       size_t                 nhits    = coll->GetSize();
       string                 dsc      = encoding(sd->sensitiveDetector());
       Geant4ParticleMap*     pm       = args.first->event().extension<Geant4ParticleMap>();
       lcio::LCEventImpl*     lc_evt   = args.first->event().extension<lcio::LCEventImpl>();
       EVENT::LCCollection*   lc_parts = lc_evt->getCollection(lcio::LCIO::MCPARTICLE);
-      lcio::LCCollectionVec* lc_coll  = nullptr;
-      bool isNewCollection            = false;
-      try {
-        lc_coll = static_cast<lcio::LCCollectionVec*>(lc_evt->getCollection(hc_nam));
-      } catch (lcio::DataNotAvailableException &e) {
-        lc_coll = new lcio::LCCollectionVec(lcio::LCIO::SIMCALORIMETERHIT);
-        isNewCollection = true;
-      }
+      lcio::LCCollectionVec* lc_coll  = new lcio::LCCollectionVec(lcio::LCIO::SIMCALORIMETERHIT);
       UTIL::CellIDEncoder<SimCalorimeterHit> decoder(dsc,lc_coll);
       int hit_creation_mode = sd->hitCreationMode();
 
@@ -202,13 +183,13 @@ namespace dd4hep {
       else
         lc_coll->setFlag(UTIL::make_bitset32(LCIO::CHBIT_LONG,LCIO::CHBIT_ID1));
 
-      lc_coll->reserve(nhits + lc_coll->getNumberOfElements());
+      lc_coll->reserve(nhits);
       if ( sd->hasProperty("HitCreationMode") )  {
         hit_creation_mode = sd->property("HitCreationMode").value<int>();
       }
       for(size_t i=0; i<nhits; ++i)   {
         const Geant4Calorimeter::Hit* hit = coll->hit(i);
-        float pos[3] = {float(hit->position.x()/CLHEP::mm), float(hit->position.y()/CLHEP::mm), float(hit->position.z()/CLHEP::mm)};
+        float pos[3] = {float(hit->position.x()/mm), float(hit->position.y()/mm), float(hit->position.z()/mm)};
         lcio::SimCalorimeterHitImpl*  lc_hit = new lcio::SimCalorimeterHitImpl;
         lc_hit->setCellID0((hit->cellID >>    0         ) & 0xFFFFFFFF);
         lc_hit->setCellID1((hit->cellID >> sizeof(int)*8) & 0xFFFFFFFF); // ????
@@ -221,20 +202,17 @@ namespace dd4hep {
           int trackID = pm->particleID(c.trackID);
           EVENT::MCParticle* lc_mcp = (EVENT::MCParticle*)lc_parts->getElementAt(trackID);
           if ( hit_creation_mode == Geant4Sensitive::DETAILED_MODE )     {
-            float contrib_pos[] = {float(c.x/CLHEP::mm), float(c.y/CLHEP::mm), float(c.z/CLHEP::mm)};
+            float contrib_pos[] = {float(c.x/mm), float(c.y/mm), float(c.z/mm)};
 #if LCIO_VERSION_GE( 2, 11 )
-            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/CLHEP::GeV, c.time/CLHEP::ns, c.length/CLHEP::mm, c.pdgID, contrib_pos);
+            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/GeV, c.time/ns, c.length/mm, c.pdgID, contrib_pos);
 #else
-            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/CLHEP::GeV, c.time/CLHEP::ns, c.pdgID, contrib_pos);
+            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/GeV, c.time/ns, c.pdgID, contrib_pos);
 #endif
           }
           else    {
-            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/CLHEP::GeV, c.time/CLHEP::ns);
+            lc_hit->addMCParticleContribution(lc_mcp, c.deposit/GeV, c.time/ns);
           }
         }
-      }
-      if(isNewCollection) {
-        lc_evt->addCollection(lc_coll, hc_nam);
       }
       return lc_coll;
     }

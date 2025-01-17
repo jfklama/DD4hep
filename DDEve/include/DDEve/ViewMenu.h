@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_VIEWMENU_H
-#define DDEVE_VIEWMENU_H
+#ifndef DD4HEP_DDEVE_VIEWMENU_H
+#define DD4HEP_DDEVE_VIEWMENU_H
 
 // Framework include files
 #include "DDEve/Display.h"
@@ -48,7 +48,7 @@ namespace dd4hep {
     virtual ~ViewMenu();
 
     /// Add the menu to the menu bar
-    virtual void Build(TGMenuBar* menuBar, int hints=kLHintsNormal)  override;
+    virtual void Build(TGMenuBar* bar, int hints=kLHintsNormal)  override;
 
     /// Import Geometry data and build the view
     void BuildView(View *view)  const;
@@ -68,5 +68,5 @@ namespace dd4hep {
     ClassDefOverride(ViewMenu,0);
   };
 }      /* End namespace dd4hep    */
-#endif // DDEVE_VIEWMENU_H
+#endif /* DD4HEP_DDEVE_VIEWMENU_H */
 

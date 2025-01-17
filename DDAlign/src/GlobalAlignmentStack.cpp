@@ -27,9 +27,9 @@ static dd4hep_ptr<GlobalAlignmentStack>& _stack()  {
   return s;
 }
 static dd4hep_ptr<GlobalAlignmentStack>& _stack(GlobalAlignmentStack* obj)  {
-  dd4hep_ptr<GlobalAlignmentStack>& stk = _stack();
-  stk.adopt(obj);
-  return stk;
+  dd4hep_ptr<GlobalAlignmentStack>& s = _stack();
+  s.adopt(obj);
+  return s;
 }
 
 /// Constructor with partial initialization
@@ -51,7 +51,7 @@ GlobalAlignmentStack::StackEntry::~StackEntry() {
   InstanceCount::decrement(this);
 }
 #if 0
-/// Set flag to reset the entry to its ideal geometrical position
+/// Set flag to reset the entry to it's ideal geometrical position
 GlobalAlignmentStack::StackEntry& GlobalAlignmentStack::StackEntry::setReset(bool new_value)   {
   new_value ? (delta.flags |= RESET_VALUE) : (delta.flags &= ~RESET_VALUE);
   return *this;

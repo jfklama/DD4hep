@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TRACKINGPOSTACTION_H
-#define DDG4_GEANT4TRACKINGPOSTACTION_H
+#ifndef DD4HEP_DDG4_GEANT4TRACKINGPOSTACTION_H
+#define DD4HEP_DDG4_GEANT4TRACKINGPOSTACTION_H
 
 // Framework include files
 #include "DDG4/Geant4TrackingAction.h"
@@ -34,8 +34,7 @@ namespace dd4hep {
       typedef std::vector<std::string> StringV;
       StringV m_requiredProcs;
       StringV m_ignoredProcs;
-      bool    m_storeMarkedTracks;
-
+      bool m_storeMarkedTracks;
     public:
       /// Standard constructor
       Geant4TrackingPostAction(Geant4Context* context, const std::string& name = "");
@@ -46,11 +45,11 @@ namespace dd4hep {
       void saveTrack(const G4Track* track);
 
       /// Begin-of-tracking callback
-      virtual void begin(const G4Track* track)  override;
+      virtual void begin(const G4Track* track);
       /// End-of-tracking callback
-      virtual void end(const G4Track* track)  override;
+      virtual void end(const G4Track* track);
     };
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4TRACKINGPOSTACTION_H
+#endif // DD4HEP_DDG4_GEANT4TRACKINGPOSTACTION_H

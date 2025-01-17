@@ -83,8 +83,8 @@ Transform3D GlobalAlignment::toGlobal(int level) const   {
 Position GlobalAlignment::toGlobal(const Position& localPoint, int level) const   {
   CheckHandle verify_handle(*this);
   Position result;
-  TGeoHMatrix* matrix = ptr()->GetMatrix(level);
-  matrix->LocalToMaster((Double_t*)&localPoint,(Double_t*)&result);
+  TGeoHMatrix* m = ptr()->GetMatrix(level);
+  m->LocalToMaster((Double_t*)&localPoint,(Double_t*)&result);
   return result;
 }
 
@@ -92,8 +92,8 @@ Position GlobalAlignment::toGlobal(const Position& localPoint, int level) const 
 Position GlobalAlignment::globalToLocal(const Position& globalPoint, int level) const   {
   CheckHandle verify_handle(*this);
   Position result;
-  TGeoHMatrix* matrix = ptr()->GetMatrix(level);
-  matrix->MasterToLocal((Double_t*)&globalPoint,(Double_t*)&result);
+  TGeoHMatrix* m = ptr()->GetMatrix(level);
+  m->MasterToLocal((Double_t*)&globalPoint,(Double_t*)&result);
   return result;
 }
 
@@ -115,9 +115,9 @@ Transform3D GlobalAlignment::delta() const   {
   CheckHandle verify_handle(*this);
   TGeoPhysicalNode* n = ptr();
   // T = T_0 * Delta -> Delta = T_0^-1 * T
-  TGeoHMatrix matrix(n->GetOriginalMatrix()->Inverse());
-  matrix.Multiply(n->GetNode()->GetMatrix());
-  return detail::matrix::_transform(&matrix);
+  TGeoHMatrix mat(n->GetOriginalMatrix()->Inverse());
+  mat.Multiply(n->GetNode()->GetMatrix());
+  return detail::matrix::_transform(&mat);
 }
 
 /// Access the inverse of the currently applied correction matrix (delta) (mother to daughter)
@@ -126,7 +126,7 @@ Transform3D GlobalAlignment::invDelta() const   {
   CheckHandle verify_handle(*this);
   TGeoPhysicalNode* n = ptr();
   // T = T_0 * Delta -> Delta^-1 = T^-1 * T_0
-  TGeoHMatrix matrix(n->GetNode()->GetMatrix()->Inverse());
-  matrix.Multiply(n->GetOriginalMatrix());
-  return detail::matrix::_transform(&matrix);
+  TGeoHMatrix mat(n->GetNode()->GetMatrix()->Inverse());
+  mat.Multiply(n->GetOriginalMatrix());
+  return detail::matrix::_transform(&mat);
 }

@@ -10,14 +10,14 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_SEGMENTATIONS_H
-#define DD4HEP_SEGMENTATIONS_H
+#ifndef DD4HEP_DDCORE_SEGMENTATIONS_H
+#define DD4HEP_DDCORE_SEGMENTATIONS_H
 
 // Framework include files
-#include <DD4hep/Handle.h>
-#include <DD4hep/Objects.h>
-#include <DD4hep/BitFieldCoder.h>
-#include <DDSegmentation/Segmentation.h>
+#include "DD4hep/Handle.h"
+#include "DD4hep/Objects.h"
+#include "DD4hep/BitFieldCoder.h"
+#include "DDSegmentation/Segmentation.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -70,18 +70,18 @@ namespace dd4hep {
     DDSegmentation::Parameters parameters() const;
     /// Access to parameter by name
     DDSegmentation::Parameter  parameter(const std::string& parameterName) const;
-    /// Access the main detector element using this segmentation object
+    /// Access the main detector element using this segmetnation object
     Handle<DetElementObject> detector() const;
-    /// Access the sensitive detector using this segmentation object
+    /// Access the sensitive detector using this segmetnation object
     Handle<SensitiveDetectorObject> sensitive() const;
     /// Access the underlying decoder
     const BitFieldCoder* decoder() const;
     /// Set the underlying decoder
     void setDecoder(const BitFieldCoder* decoder) const;
     /// determine the local position based on the cell ID
-    Position position(const CellID& cellID) const;
+    Position position(const long64& cellID) const;
     /// determine the cell ID based on the local position
-    CellID cellID(const Position& localPosition, const Position& globalPosition, const VolumeID& volumeID) const;
+    long64 cellID(const Position& localPosition, const Position& globalPosition, const long64& volumeID) const;
     /// Determine the volume ID from the full cell ID by removing all local fields
     VolumeID volumeID(const CellID& cellID) const;
     /// Calculates the neighbours of the given cell ID and adds them to the list of neighbours
@@ -98,4 +98,4 @@ namespace dd4hep {
     DDSegmentation::Segmentation* segmentation() const;
   };
 } /* End namespace dd4hep                */
-#endif // DD4HEP_SEGMENTATIONS_H
+#endif    /* DD4HEP_DDCORE_SEGMENTATIONS_H     */

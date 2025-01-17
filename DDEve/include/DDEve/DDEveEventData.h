@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_DDEVEEVENTDATA_H
-#define DDEVE_DDEVEEVENTDATA_H
+#ifndef DD4HEP_DDEVE_DDEVEHIT_H
+#define DD4HEP_DDEVE_DDEVEHIT_H
 
 // C/C++ include files
 #include <vector>
@@ -29,11 +29,11 @@ namespace dd4hep {
   class DDEveHit   {
   public:
     /// Track/Particle, which produced this hit
-    int particle {0};
+    int particle;
     /// Hit position
-    float x = 0e0, y = 0e0, z = 0e0; 
+    float x,y,z; 
     /// Energy deposit
-    float deposit {0};
+    float deposit;
     /// Default constructor
     DDEveHit();
     /// Initializing constructor
@@ -71,5 +71,5 @@ namespace dd4hep {
   };
   typedef std::vector<DDEveParticle> DDEveParticles;
 }      /* End namespace dd4hep     */
-#endif // DDEVE_DDEVEEVENTDATA_H
+#endif /* DD4HEP_DDEVE_DDEVEHIT_H  */
 

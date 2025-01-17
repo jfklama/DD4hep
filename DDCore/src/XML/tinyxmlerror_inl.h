@@ -1,6 +1,3 @@
-#ifndef DDCORE_SRC_XML_TINYXMLERROR_INL_H
-#define DDCORE_SRC_XML_TINYXMLERROR_INL_H
-
 /*
   www.sourceforge.net/projects/tinyxml
   Original code (2.0 and earlier )copyright (c) 2000-2006 Lee Thomason (www.grinninglizard.com)
@@ -58,5 +55,3 @@ const char* TiXmlBase::errorString[ TIXML_ERROR_STRING_COUNT ] =
     "Error parsing CDATA.",
     "Error when TiXmlDocument added to document, because TiXmlDocument can only be at the root.",
   };
-
-#endif

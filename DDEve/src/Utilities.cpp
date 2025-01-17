@@ -26,7 +26,6 @@
 #include "TGeoManager.h"
 #include "TGeoShapeAssembly.h"
 
-#include "TEveGeoShape.h"
 #include "TEveGeoNode.h"
 #include "TEveElement.h"
 #include "TEveTrans.h"
@@ -56,31 +55,25 @@ void Utilities::SetRnrAll(TEveElementList* l, bool b)  {
 
 /// Make a set of nodes starting from a top element (in-)visible with a given depth
 void Utilities::MakeNodesVisible(TEveElement* e, bool visible, int level)   {
-  TEveElementList* lst = dynamic_cast<TEveElementList*>(e);
-  if ( !lst )  {
+  TEveElementList* s = dynamic_cast<TEveElementList*>(e);
+  if ( !s )  {
     return;
   }
   else if ( level == 1 )  {
-    SetRnrChildren(lst, visible);
-    lst->SetRnrSelf(true);
+    SetRnrChildren(s, visible);
+    s->SetRnrSelf(true);
   }
   else if ( level == 0 )  {
-    lst->SetRnrSelf(visible);
+    s->SetRnrSelf(visible);
   }
   else   {
-    SetRnrAll(lst, visible);
-    lst->SetRnrSelf(visible);
+    SetRnrAll(s, visible);
+    s->SetRnrSelf(visible);
   }
 }
 
 std::pair<bool,TEveElement*> 
-Utilities::createEveShape(int level,
-                          int max_level,
-                          TEveElement* p,
-                          TGeoNode* n,
-                          const TGeoHMatrix& mat,
-                          const std::string& nam)
-{
+Utilities::createEveShape(int level, int max_level, TEveElement* p, TGeoNode* n, const TGeoHMatrix& mat, const std::string& nam)  {
   TGeoVolume* vol = n ? n->GetVolume() : 0;
   bool created = false;
 
@@ -112,9 +105,9 @@ Utilities::createEveShape(int level,
     shape->SetMainAlpha(0.2);
     shape->SetPickable(kTRUE);
     if ( vis.isValid() )  {
-      float red, green, blue;
-      vis.rgb(red, green, blue);
-      shape->SetMainColorRGB(red, green, blue);
+      float r,g,b;
+      vis.rgb(r,g,b);
+      shape->SetMainColorRGB(r,g,b);
     }
     element = shape;
     created = true;
@@ -126,9 +119,9 @@ Utilities::createEveShape(int level,
     //n->GetName(),geoShape->IsA()->GetName(),n);
     created = true;
     if ( vis.isValid() )  {
-      float red, green, blue;
-      vis.rgb(red, green, blue);
-      shape->SetMainColorRGB(red, green, blue);
+      float r,g,b;
+      vis.rgb(r,g,b);
+      shape->SetMainColorRGB(r,g,b);
     }
     shape->SetMainTransparency(true);
     shape->SetMainAlpha(0.2);
@@ -195,6 +188,8 @@ std::pair<bool,TEveElement*> Utilities::LoadDetElement(DetElement de,int levels,
     if (pv.isValid()) {
       TGeoNode* n = pv.ptr();
       TGeoMatrix* matrix = n->GetMatrix();
+      gGeoManager = 0;
+      gGeoManager = new TGeoManager();
       std::pair<bool,TEveElement*> e = createEveShape(0, levels, parent, n, *matrix, de.name());
       TEveElementList* list = dynamic_cast<TEveElementList*>(e.second);
       if ( list )  {

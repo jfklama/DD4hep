@@ -20,10 +20,10 @@
 using namespace std;
 using namespace dd4hep;
 
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
-DD4HEP_INSTANTIATE_HANDLE_NAMED(detail::ConditionObject);
-#else
+#if defined(DD4HEP_MINIMAL_CONDITIONS)
 DD4HEP_INSTANTIATE_HANDLE_UNNAMED(detail::ConditionObject);
+#else
+DD4HEP_INSTANTIATE_HANDLE_NAMED(detail::ConditionObject);
 #endif
 
 namespace {
@@ -44,12 +44,12 @@ detail::ConditionObject::ConditionObject()
 }
 
 /// Standard constructor
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
-detail::ConditionObject::ConditionObject(const string& nam,const string& tit)
-  : NamedObject(nam, tit), data()
-#else
+#if defined(DD4HEP_MINIMAL_CONDITIONS)
 detail::ConditionObject::ConditionObject(const string& ,const string& )
   : data()
+#else
+detail::ConditionObject::ConditionObject(const string& nam,const string& tit)
+  : NamedObject(nam, tit), data()
 #endif
 {
   InstanceCount::increment(this);
@@ -95,7 +95,3 @@ const dd4hep::IOVType* detail::ConditionObject::iovType() const    {
   invalidHandleError<IOVType>();
   return 0;
 }
-
-
-#include "DD4hep/GrammarUnparsed.h"
-static auto s_registry = GrammarRegistry::pre_note<vector<Condition> >(1);

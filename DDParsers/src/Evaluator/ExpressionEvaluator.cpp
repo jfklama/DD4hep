@@ -10,26 +10,23 @@
 // Author     : M.Frank
 //
 //==========================================================================
-
-/// Framework include files
 #include "Parsers/config.h"
 #include "Evaluator/Evaluator.h"
-#include "Evaluator/detail/Evaluator.h"
 #include "Evaluator/DD4hepUnits.h"
-
-/// C/C++ include files
-
 namespace units = dd4hep;
 
 namespace {
-
-  dd4hep::tools::Evaluator _cgsUnits() {
+  void _init(dd4hep::tools::Evaluator& e) {
+    // Initialize numerical expressions parser with the standard math functions
+    // and the system of units used by Gaudi (Geant4)
+    e.setStdMath();
+  }
+  void _cgsUnits(dd4hep::tools::Evaluator& e) {
     // ===================================================================================
     // CGS units
-    return dd4hep::tools::Evaluator(100., 1000., 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    e.setSystemOfUnits(100., 1000., 1.0, 1.0, 1.0, 1.0, 1.0);
   }
-  
-  dd4hep::tools::Evaluator _tgeoUnits() {
+  void _tgeoUnits(dd4hep::tools::Evaluator& e) {
     // ===================================================================================
     // DDG4 units (TGeo) 1 sec = 10^9 [nsec]
     //                   1 Coulomb = 1/e As
@@ -38,42 +35,59 @@ namespace {
 
     //    e.setSystemOfUnits(1.e+2, 1./1.60217733e-6, 1.0, 1./1.60217733e-19, 1.0, 1.0, 1.0);
     // use the units as defined in DD4hepUnits.h:
-    return dd4hep::tools::Evaluator( units::meter,
-                                     units::kilogram,
-                                     units::second,
-                                     units::ampere,
-                                     units::kelvin,
-                                     units::mole,
-                                     units::candela,
-                                     units::rad );
+    e.setSystemOfUnits( units::meter,
+                        units::kilogram,
+                        units::second,
+                        units::ampere,
+                        units::kelvin,
+                        units::mole,
+                        units::candela,
+                        units::rad );
   }
-  
-  dd4hep::tools::Evaluator _g4Units() {
+  void _g4Units(dd4hep::tools::Evaluator& e) {
     // ===================================================================================
     // Geant4 units
     // Geant4:  kilogram = joule*s*s/(m*m) 1/e_SI * 1e-6 * 1e9 1e9 / 1e3 / 1e3 = 1. / 1.60217733e-25
-    return dd4hep::tools::Evaluator(1.e+3, 1./1.60217733e-25, 1.e+9, 1./1.60217733e-10, 1.0, 1.0, 1.0, 1.0);
+    e.setSystemOfUnits(1.e+3, 1./1.60217733e-25, 1.e+9, 1./1.60217733e-10, 1.0, 1.0, 1.0);
   }
 }
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
 
-  const tools::Evaluator& evaluator() {
-    static const tools::Evaluator e = _tgeoUnits();
-    return e;
+  tools::Evaluator& evaluator() {
+    static tools::Evaluator* e = 0;
+    if ( !e )   {
+      static tools::Evaluator ev;
+      _init(ev);
+      _tgeoUnits(ev);
+      e = &ev;
+    }
+    return *e;
   }
 
   /// Access to G4 evaluator. Note: Uses Geant4 units!
-  const tools::Evaluator& g4Evaluator()   {
-    static const tools::Evaluator e = _g4Units();
-    return e;
+  tools::Evaluator& g4Evaluator()   {
+    static tools::Evaluator* e = 0;
+    if ( !e )   {
+      static tools::Evaluator ev;
+      _init(ev);
+      _g4Units(ev);
+      e = &ev;
+    }
+    return *e;
   }
 
   /// Access to G4 evaluator. Note: Uses cgs units!
-  const tools::Evaluator& cgsEvaluator()   {
-    static const tools::Evaluator e = _cgsUnits();
-    return e;
+  tools::Evaluator& cgsEvaluator()   {
+    static tools::Evaluator* e = 0;
+    if ( !e )   {
+      static tools::Evaluator ev;
+      _init(ev);
+      _cgsUnits(ev);
+      e = &ev;
+    }
+    return *e;
   }
 }
 

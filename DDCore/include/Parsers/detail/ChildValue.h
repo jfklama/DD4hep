@@ -1,6 +1,3 @@
-#ifndef PARSERS_DETAIL_CHILDVALUE_H
-#define PARSERS_DETAIL_CHILDVALUE_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -37,7 +34,7 @@ namespace dd4hep {
      *  very easy way.
      *  - You may assign any xml handle to a childvalue object
      *  - Any child with the name and the value attribute set may then be accessed
-     *    by its natural way. All possible child names are
+     *    by it's natural way. All possible child names are
      *    reflected by the object's member functions.
      *
      *    IMPORTANT NOTE:
@@ -378,5 +375,3 @@ namespace dd4hep {
 
   }       /* End namespace DD4HEP_DIMENSION_NS       */
 }         /* End namespace dd4hep                    */
-
-#endif

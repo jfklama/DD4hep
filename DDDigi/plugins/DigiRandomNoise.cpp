@@ -14,7 +14,7 @@
 #define DD4HEP_DDDIGI_DIGIRANDOMNOISE_H
 
 // Framework include files
-#include <DDDigi/DigiEventAction.h>
+#include "DDDigi/DigiAction.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -35,7 +35,7 @@ namespace dd4hep {
      *  \version 1.0
      *  \ingroup DD4HEP_DIGITIZATION
      */
-    class DigiRandomNoise : public DigiEventAction {
+    class DigiRandomNoise : public DigiAction {
     protected:
       double m_probability = 1.0;
       double m_amplitude   = 1.0;
@@ -75,10 +75,10 @@ namespace dd4hep {
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Printout.h>
-#include <DD4hep/InstanceCount.h>
-#include <DDDigi/DigiFactories.h>
-//#include <DDDigi/DigiRandomNoise.h>
+#include "DD4hep/Printout.h"
+#include "DD4hep/InstanceCount.h"
+#include "DDDigi/DigiFactories.h"
+//#include "DDDigi/DigiRandomNoise.h"
 
 // C/C++ include files
 
@@ -89,7 +89,7 @@ DECLARE_DIGIACTION_NS(dd4hep::digi,DigiRandomNoise)
 
 /// Standard constructor
 DigiRandomNoise::DigiRandomNoise(const DigiKernel& kernel, const string& nam)
-  : DigiEventAction(kernel, nam)
+  : DigiAction(kernel, nam)
 {
   declareProperty("Probability", m_probability);
   declareProperty("Amplitude",   m_amplitude);

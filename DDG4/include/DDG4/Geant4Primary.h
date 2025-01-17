@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4PRIMARY_H
-#define DDG4_GEANT4PRIMARY_H
+#ifndef DD4HEP_GEANT4PRIMARY_H
+#define DD4HEP_GEANT4PRIMARY_H
 
 // Framework include files
 #include "DD4hep/Memory.h"
@@ -167,7 +167,7 @@ namespace dd4hep {
       virtual ~Geant4PrimaryEvent();
       /// Add a new interaction object to the event
       void add(int id, Geant4PrimaryInteraction* interaction);
-      /// Retrieve an interaction by its ID
+      /// Retrieve an interaction by it's ID
       Geant4PrimaryInteraction* get(int id) const;
       /// Number of interaction contained in the primary event
       size_t size()  const      {        return m_interactions.size();      }
@@ -177,4 +177,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4PRIMARY_H
+#endif // DD4HEP_GEANT4PRIMARY_H

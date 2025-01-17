@@ -23,10 +23,7 @@ set ( DD4hepBuild_included ON )
 macro(dd4hep_to_parent_scope val)
   set ( ${val} ${${val}} PARENT_SCOPE )
 endmacro(dd4hep_to_parent_scope)
-#---------------------------------------------------------------------------------------------------
-macro(dd4hep_use_python_executable)
-  dd4hep_print("|++> Using python executable:  ${Python_EXECUTABLE}")
-endmacro(dd4hep_use_python_executable)
+
 #---------------------------------------------------------------------------------------------------
 #  MACRO: dd4hep_set_compiler_flags
 #
@@ -39,13 +36,11 @@ endmacro(dd4hep_use_python_executable)
 macro(dd4hep_set_compiler_flags)
   include(CheckCXXCompilerFlag)
 
-  SET(COMPILER_FLAGS -Wshadow -Wformat-security -Wno-long-long -Wdeprecated -fdiagnostics-color=auto -Wall -Wextra -pedantic )
+  SET(COMPILER_FLAGS -Wall -Wextra -pedantic -Wshadow -Wformat-security -Wno-long-long -Wdeprecated -fdiagnostics-color=auto)
 
   # AppleClang/Clang specific warning flags
   if(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
     set ( COMPILER_FLAGS ${COMPILER_FLAGS} -Winconsistent-missing-override -Wno-c++1z-extensions -Wheader-hygiene )
-  else()
-    set ( COMPILER_FLAGS ${COMPILER_FLAGS} -Wno-psabi)
   endif()
 
   FOREACH( FLAG ${COMPILER_FLAGS} )
@@ -85,55 +80,34 @@ macro(dd4hep_set_compiler_flags)
     message( STATUS "Unknown thread library: CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS}" )
   endif()
 
-  # resolve which linker we use
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -Wl,--version OUTPUT_VARIABLE stdout ERROR_QUIET)
-  if("${stdout}" MATCHES "GNU ")
-    set(LINKER_TYPE "GNU")
-    dd4hep_debug("|DDD> Detected GNU compatible linker: ${stdout}" )
-  else()
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -Wl,-v ERROR_VARIABLE stderr )
-    if(("${stderr}" MATCHES "PROGRAM:ld") AND ("${stderr}" MATCHES "PROJECT:ld64"))
-      set(LINKER_TYPE "APPLE")
-      dd4hep_debug("|DDD> Detected Apple linker: ${stderr}" )
-    else()
-      set(LINKER_TYPE "unknown")
-      dd4hep_debug("|DDD> Detected unknown linker: ${stdout} ${stderr}" )
-    endif()
-  endif()
-
-  if("${LINKER_TYPE}" STREQUAL "APPLE")
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     SET ( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,error")
-  elseif("${LINKER_TYPE}" STREQUAL "GNU")
-    SET ( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined,--as-needed")
+  elseif ( ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") OR ( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" ))
+    SET ( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
   else()
-    MESSAGE( WARNING "No known linker (GNU or Apple) has been detected, pass no flags to linker" )
+    MESSAGE( WARNING "We do not test with the ${CMAKE_CXX_COMPILER_ID} compiler, use at your own discretion" )
   endif()
 
- #---RPATH options-------------------------------------------------------------------------------
- #  When building, don't use the install RPATH already (but later on when installing)
- set(CMAKE_SKIP_BUILD_RPATH FALSE)         # don't skip the full RPATH for the build tree
- set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) # use always the build RPATH for the build tree
- set(CMAKE_MACOSX_RPATH TRUE)              # use RPATH for MacOSX
- set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) # point to directories outside the build tree to the install RPATH
+ #rpath treatment
+ if (APPLE)
+   # use, i.e. don't skip the full RPATH for the build tree
+   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
- # Check whether to add RPATH to the installation (the build tree always has the RPATH enabled)
- if(APPLE)
-   set(CMAKE_INSTALL_NAME_DIR "@rpath")
-   set(CMAKE_INSTALL_RPATH "@loader_path/../lib")    # self relative LIBDIR
+   # when building, don't use the install RPATH already
+   # (but later on when installing)
+   SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+   # add the automatically determined parts of the RPATH
+   # which point to directories outside the build tree to the install RPATH
+   SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
    # the RPATH to be used when installing, but only if it's not a system directory
-   list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-   if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
-   endif("${isSystemDir}" STREQUAL "-1")
- elseif(DD4HEP_SET_RPATH)
-   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib") # install LIBDIR
-   # the RPATH to be used when installing, but only if it's not a system directory
-   list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-   if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-   endif("${isSystemDir}" STREQUAL "-1")
- else()
-   set(CMAKE_SKIP_INSTALL_RPATH TRUE)           # skip the full RPATH for the install tree
+   LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+   IF("${isSystemDir}" STREQUAL "-1")
+     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+   ENDIF("${isSystemDir}" STREQUAL "-1")
  endif()
 endmacro(dd4hep_set_compiler_flags)
 
@@ -250,8 +224,6 @@ function ( dd4hep_print_options )
   dd4hep_print ( "|  XERCESC_ROOT_DIR:   ${XERCESC_ROOT_DIR}                                      " )
   dd4hep_print ( "|  DD4HEP_USE_LCIO:    ${DD4HEP_USE_LCIO}                                       " )
   dd4hep_print ( "|  LCIO_DIR:           ${LCIO_DIR}                                              " )
-  dd4hep_print ( "|  DD4HEP_USE_EDM4HEP: ${DD4HEP_USE_EDM4HEP}                                    " )
-  dd4hep_print ( "|  EDM4HEP_DIR:        ${EDM4HEP_DIR}                                           " )
   dd4hep_print ( "|  DD4HEP_USE_GEANT4:  ${DD4HEP_USE_GEANT4}                                     " )
   dd4hep_print ( "|  Geant4_DIR:         ${Geant4_DIR}                                            " )
   dd4hep_print ( "|  DD4HEP_USE_PYROOT:  ${DD4HEP_USE_PYROOT}                                     " )
@@ -286,9 +258,6 @@ function( dd4hep_print_cmake_options )
   dd4hep_print ( "|  DD4HEP_USE_LCIO    Build lcio extensions                         OFF     |")
   dd4hep_print ( "|                     Requires LCIO_DIR to be set                           |")
   dd4hep_print ( "|                     or LCIO in CMAKE_MODULE_PATH                          |")
-  dd4hep_print ( "|  DD4HEP_USE_EDM4HEP    Build edm4hep extensions                   OFF     |")
-  dd4hep_print ( "|                     Requires EDM4HEP_DIR to be set                        |")
-  dd4hep_print ( "|                     or EDM4HEP in CMAKE_MODULE_PATH                       |")
   dd4hep_print ( "|  DD4HEP_USE_GEAR    Build gear wrapper for backward compatibility OFF     |")
   dd4hep_print ( "|  BUILD_TESTING      Enable and build tests                        ON      |")
   dd4hep_print ( "|  DD4HEP_USE_PYROOT  Enable 'Detector Builders' based on PyROOT    OFF     |")
@@ -480,7 +449,7 @@ function ( dd4hep_add_test_reg test_name )
     endif()
     # Set test dependencies if present
     foreach ( _dep ${ARG_DEPENDS} )
-      set_property( TEST t_${test_name} APPEND PROPERTY DEPENDS t_${_dep} )
+      set_tests_properties( t_${test_name} PROPERTIES DEPENDS t_${_dep} )
     endforeach()
   endif()
 endfunction()
@@ -508,10 +477,6 @@ function ( fill_dd4hep_library_path )
 
   if(${DD4HEP_USE_LCIO})
     SET( ENV{DD4HEP_LIBRARY_PATH} ${LCIO_DIR}/lib:$ENV{DD4HEP_LIBRARY_PATH} )
-  endif()
-
-  if(${DD4HEP_USE_EDM4HEP})
-    SET( ENV{DD4HEP_LIBRARY_PATH} ${EDM4HEP_DIR}/lib:$ENV{DD4HEP_LIBRARY_PATH} )
   endif()
 
   SET( ENV{DD4HEP_LIBRARY_PATH} ${CLHEP_ROOT_DIR}/lib:$ENV{DD4HEP_LIBRARY_PATH} )
@@ -592,17 +557,16 @@ function(dd4hep_add_dictionary dictionary )
     set ( output_dir ${ARG_OUTPUT} )
   endif()
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir})
-
+  SET(COMP_DEFS )
+  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${dictionary}_arguments
+    CONTENT "${ROOT_rootcling_CMD} -f ${dictionary}.cxx -s ${output_dir}/${dictionary} -inlineInputHeader ${ARG_OPTIONS}  \
+   $<$<BOOL:${comp_defs}>:-D$<JOIN:${comp_defs}, -D>> \
+   $<$<BOOL:${inc_dirs}>:-I$<JOIN:${inc_dirs}, -I>> \
+   $<JOIN:${headers}, >  $<JOIN:${linkdefs}, >"
+    )
   add_custom_command(OUTPUT ${dictionary}.cxx ${output_dir}/${dictionary}_rdict.pcm
-    COMMAND ${ROOT_rootcling_CMD}
-    ARGS -f ${dictionary}.cxx -s ${output_dir}/${dictionary} -inlineInputHeader
-    ${ARG_OPTIONS}
-   "$<$<BOOL:$<JOIN:${comp_defs},>>:-D$<JOIN:${comp_defs},;-D>>"
-   "$<$<BOOL:$<JOIN:${inc_dirs},>>:-I$<JOIN:${inc_dirs},;-I>>"
-   "$<JOIN:${headers},;>" "$<JOIN:${linkdefs},;>"
-
-   DEPENDS ${headers} ${linkdefs}
-   COMMAND_EXPAND_LISTS
+    COMMAND bash ${dictionary}_arguments
+    DEPENDS ${headers} ${linkdefs}
     )
   add_custom_target(${dictionary}
     DEPENDS ${dictionary}.cxx ${output_dir}/${dictionary}_rdict.pcm
@@ -678,50 +642,6 @@ endfunction(dd4hep_add_plugin)
 #
 macro(DD4HEP_SETUP_ROOT_TARGETS)
 
-  #Check if Python version detected matches the version used to build ROOT
-  SET(Python_FIND_FRAMEWORK LAST)
-  IF((TARGET ROOT::PyROOT OR TARGET ROOT::ROOTTPython) AND ${ROOT_VERSION} VERSION_GREATER_EQUAL 6.19)
-    # some cmake versions don't include python patch level in PYTHON_VERSION
-    IF(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16.0 AND CMAKE_VERSION VERSION_LESS_EQUAL 3.17.2)
-      string(REGEX MATCH [23]\\.[0-9]+ REQUIRE_PYTHON_VERSION ${ROOT_PYTHON_VERSION})
-    ELSE()
-      SET(REQUIRE_PYTHON_VERSION ${ROOT_PYTHON_VERSION})
-    ENDIF()
-    dd4hep_debug("D++> Python version used for building ROOT ${ROOT_PYTHON_VERSION}" )
-    if (NOT DD4HEP_RELAX_PYVER)
-      dd4hep_debug("D++> Required python version ${REQUIRE_PYTHON_VERSION}")
-      FIND_PACKAGE(Python ${REQUIRE_PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
-      FIND_PACKAGE(Python ${REQUIRE_PYTHON_VERSION} EXACT QUIET COMPONENTS Interpreter)
-    else()
-      FIND_PACKAGE(Python REQUIRED COMPONENTS Development)
-      FIND_PACKAGE(Python QUIET COMPONENTS Interpreter)
-      dd4hep_debug("D++> Found python version ${Python_VERSION}")
-      string(REPLACE "." ";" _root_pyver_tuple ${REQUIRE_PYTHON_VERSION})
-      list(GET _root_pyver_tuple 0 _root_pyver_major)
-      list(GET _root_pyver_tuple 1 _root_pyver_minor)
-      if (NOT "${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}" VERSION_EQUAL "${_root_pyver_major}.${_root_pyver_minor}")
-        dd4hep_print("WARNING: Mismatch in Python version: ${Python_VERSION} vs. ${REQUIRE_PYTHON_VERSION}")
-        dd4hep_print("         ABI compatibility should not be assumed!")
-      endif()
-    endif()
-  ELSE()
-    FIND_PACKAGE(Python COMPONENTS Development)
-    FIND_PACKAGE(Python QUIET COMPONENTS Interpreter)
-  ENDIF()
-  IF("${Python_EXECUTABLE}" STREQUAL "")
-     set (Python_EXECUTABLE python${Python_VERSION_MAJOR})
-  ENDIF()
-  dd4hep_print("|++> Using python executable:  ${Python_EXECUTABLE}")
-
-  SET(DD4HEP_PYTHON_INSTALL_DIR lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
-
-  # root python changes target name in 6.22
-  IF(TARGET ROOT::PyROOT)
-    SET(DD4HEP_ROOT_PYTHON ROOT::PyROOT)
-  ELSEIF(TARGET ROOT::ROOTTPython)
-    # New "pyroot" in 6.22
-    SET(DD4HEP_ROOT_PYTHON ROOT::ROOTTPython)
-  ENDIF()
   #ROOT CXX Flags are a string with quotes, not a list, so we need to convert to a list...
   string(REPLACE " " ";" DD4HEP_ROOT_CXX_FLAGS ${ROOT_CXX_FLAGS})
 
@@ -826,20 +746,10 @@ MACRO(DD4HEP_SETUP_GEANT4_TARGETS)
 
     if(Geant4_builtin_clhep_FOUND)
       dd4hep_debug("Using Geant4 internal CLHEP")
-      if(TARGET CLHEP::CLHEP)
-        message(WARNING "CLHEP::CLHEP already exists, this may cause problems if there are two different installations of CLHEP, one from Geant4 and one external")
-      else()
-        ADD_LIBRARY(CLHEP::CLHEP INTERFACE IMPORTED GLOBAL)
-      endif()
-      SET_TARGET_PROPERTIES(CLHEP::CLHEP
-        PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${Geant4_INCLUDE_DIRS}"
-      )
-      TARGET_LINK_LIBRARIES(CLHEP::CLHEP INTERFACE G4clhep)
-
+      set(CLHEP "")
     else()
       IF(NOT TARGET CLHEP::CLHEP)
-        FIND_PACKAGE(CLHEP REQUIRED CONFIG)
+        FIND_PACKAGE(CLHEP REQUIRED)
       ENDIF()
       set(CLHEP CLHEP::CLHEP)
       dd4hep_debug("Using External CLHEP")
@@ -858,7 +768,7 @@ MACRO(DD4HEP_SETUP_GEANT4_TARGETS)
     # Geant4::10.2.2 at least, not in 10.5 (check where it switches)
     string(REPLACE " " ";" Geant4_Flags ${Geant4_CXX_FLAGS} ${Geant4_CXX_FLAGS_${CMAKE_BUILD_TYPE}})
 
-    #Geant4_DEFINITIONS already include -D, we have to get rid of that so we can join things when creating dictionaries
+    #Geant4_DEFINITIONS already include -D, we jave to get rid of that so we can join things when creating dictionaries
     SET(G4_DEF_TEMP "")
     foreach(def ${Geant4_DEFINITIONS})
       string(REPLACE "-D" "" def ${def})

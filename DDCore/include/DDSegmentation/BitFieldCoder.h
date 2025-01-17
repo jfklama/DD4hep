@@ -9,29 +9,30 @@
 //
 //==========================================================================
 
-#ifndef DDSEGMENTATION_BITFIELDCODER_H
-#define DDSEGMENTATION_BITFIELDCODER_H 1
+#ifndef DDSegmentation_BitFieldCoder_H
+#define DDSegmentation_BitFieldCoder_H 1
 
-#include <map>
+
 #include <string>
 #include <vector>
+#include <map>
 #include <sstream>
-#include <cstdint>
+
 
 namespace dd4hep {
 
-  namespace DDSegmentation {
+  typedef long long int long64 ;
+  typedef unsigned long long ulong64 ;
 
-    typedef int64_t  FieldID;
-    typedef uint64_t CellID;
-    typedef uint64_t VolumeID;
+  namespace DDSegmentation {
 
     class StringTokenizer ; 
 
     /// Helper class for BitFieldCoder that corresponds to one field value. 
-    class BitFieldElement   {
+    class BitFieldElement{
   
     public :
+  
       /// Default constructor
       BitFieldElement() = default ;
       /// Copy constructor
@@ -52,10 +53,12 @@ namespace dd4hep {
       BitFieldElement& operator=(const BitFieldElement&) = default ;
 
       /// calculate this field's value given an external 64 bit bitmap 
-      FieldID value(CellID bitfield) const;
+      long64 value(long64 bitfield) const;
+
 
       // assign the given value to the bit field
-      void set(CellID& bitfield, FieldID value) const ;
+      void set(long64& bitfield, long64 value) const ;
+
 
       /** The field's name */
       const std::string& name() const { return _name ; }
@@ -64,13 +67,13 @@ namespace dd4hep {
       unsigned offset() const { return _offset ; }
 
       /** The field's width */
-      unsigned width() const  { return _width ; }
+      unsigned width() const { return _width ; }
 
       /** True if field is interpreted as signed */
-      bool isSigned() const   { return _isSigned ; }
+      bool isSigned() const { return _isSigned ; }
 
       /** The field's mask */
-      CellID mask() const     { return _mask ; }
+      ulong64 mask() const { return _mask ; }
 
       /** Minimal value  */
       int  minValue()  const  { return _minVal;  }
@@ -80,13 +83,14 @@ namespace dd4hep {
 
     protected:
   
-      CellID _mask      {};
+      ulong64 _mask     {};
       unsigned _offset  {};
       unsigned _width   {};
       int _minVal       {};
       int _maxVal       {};
       bool _isSigned    {};
       std::string _name;
+
     };
 
 
@@ -112,10 +116,11 @@ namespace dd4hep {
      *    @date  2017-09
      */  
     class BitFieldCoder{
+    
     public :
+    
       typedef std::map<std::string, unsigned int> IndexMap ;
 
-    public :
       /// Default constructor
       BitFieldCoder() = default ;
       /// Copy constructor
@@ -143,50 +148,57 @@ namespace dd4hep {
        *  Example: "layer:7,system:-3,barrel:3,theta:32:11,phi:11"
        */
       BitFieldCoder( const std::string& initString ) : _joined(0){
+    
         init( initString ) ;
       }
 
       /** return a new 64bit value given as high and low 32bit words.
        */
-      static CellID toLong(unsigned low_Word, unsigned high_Word ) {
+      static long64 toLong(unsigned low_Word, unsigned high_Word ) {
         return (  ( low_Word & 0xffffffffULL ) |  ( ( high_Word & 0xffffffffULL ) << 32 ) ) ; 
       }
     
       /** The low  word, bits 0-31
        */
-      static unsigned lowWord(CellID bitfield)  { return unsigned( bitfield &  0xffffFFFFUL ); } 
+      static unsigned lowWord(long64 bitfield) { return unsigned( bitfield &  0xffffFFFFUL )  ; } 
 
       /** The high  word, bits 32-63
        */
-      static unsigned highWord(CellID bitfield) { return unsigned( bitfield >> 32); }
+      static unsigned highWord(long64 bitfield) { return unsigned( bitfield >> 32) ; } 
+
 
       /** get value of sub-field specified by index 
        */
-      FieldID get(CellID bitfield, size_t idx) const { 
+      long64 get(long64 bitfield, size_t idx) const { 
         return _fields.at(idx).value( bitfield )  ;
       }
     
       /** Access to field through name .
        */
-      FieldID get(CellID bitfield, const std::string& name) const {
+      long64 get(long64 bitfield, const std::string& name) const {
+
         return _fields.at( index( name ) ).value( bitfield ) ;
       }
 
       /** set value of sub-field specified by index 
        */
-      void set(CellID& bitfield, size_t idx, FieldID value) const { 
+      void set(long64& bitfield, size_t idx, ulong64 value) const { 
         _fields.at(idx).set( bitfield , value )  ;
       }
     
       /** Access to field through name .
        */
-      void set(CellID& bitfield, const std::string& name, FieldID value) const {
+      void set(long64& bitfield, const std::string& name, ulong64 value) const {
+
         _fields.at( index( name ) ).set( bitfield, value ) ;
       }
+
+
 
       /** Highest bit used in fields [0-63]
        */
       unsigned highestBit() const ;
+    
 
       /** Number of values */
       size_t size() const { return _fields.size() ; }
@@ -195,15 +207,18 @@ namespace dd4hep {
        */
       size_t index( const std::string& name) const ;
 
+
       /** Const Access to field through name .
        */
       const BitFieldElement& operator[](const std::string& name) const { 
+
         return _fields[ index( name ) ] ;
       }
 
       /** Const Access to field through index .
        */
       const BitFieldElement& operator[](unsigned idx) const { 
+
         return _fields[ idx ] ;
       }
 
@@ -213,14 +228,15 @@ namespace dd4hep {
 
       /** Return a string with a comma separated list of the current sub field values 
        */
-      std::string valueString(CellID bitfield) const ;
+      std::string valueString(ulong64 bitfield) const ;
 
       const std::vector<BitFieldElement>& fields()  const  {
         return _fields;
       }
     
+
       /** the mask of all the bits used in the description */
-      CellID mask() const { return _joined ; }
+      ulong64 mask() const { return _joined ; }
 
     protected:
 
@@ -233,11 +249,16 @@ namespace dd4hep {
        */
       void init( const std::string& initString) ;
 
+    public:
+
     protected:
+
       // -------------- data members:--------------
+
       std::vector<BitFieldElement> _fields{} ;
       IndexMap  _map{} ;
-      CellID    _joined{} ;
+      long64    _joined{} ;
+
     };
 
 
@@ -251,6 +272,7 @@ namespace dd4hep {
      *    @date  2013-06
      */
     class StringTokenizer{
+    
       std::vector< std::string >& _tokens ;
       char _del ;
       char _last ;
@@ -266,7 +288,9 @@ namespace dd4hep {
     
       /** Operator for use with algorithms, e.g. for_each */
       void operator()(const char& c) { 
+      
         if( c != _del  ) {
+	
           if( _last == _del  ) {
             _tokens.emplace_back("") ; 
           }
@@ -274,10 +298,13 @@ namespace dd4hep {
         }
         _last = c ;
       } 
+    
     };
 
   } // end namespace
+
 } // end namespace
+
 #endif
 
 

@@ -43,7 +43,7 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4EscapeCounter();
       /// G4VSensitiveDetector interface: Method for generating hit(s) using the information of G4Step object.
-      virtual bool process(const G4Step* step, G4TouchableHistory* history)  override;
+      virtual bool process(G4Step* step, G4TouchableHistory* history)  override;
     };
 
   }    // End namespace sim
@@ -96,31 +96,19 @@ Geant4EscapeCounter::~Geant4EscapeCounter() {
 }
 
 /// G4VSensitiveDetector interface: Method for generating hit(s) using the information of G4Step object.
-bool Geant4EscapeCounter::process(const G4Step* step, G4TouchableHistory* /* history */)   {
+bool Geant4EscapeCounter::process(G4Step* step, G4TouchableHistory* /* history */)   {
   Geant4StepHandler  h(step);
   Geant4TrackHandler th(h.track);
   Geant4TouchableHandler handler(step);
   string   hdlr_path  = handler.path();
   Position prePos     = h.prePos();
-  Position postPos    = h.postPos();
   Geant4HitCollection* coll = collection(m_collectionID);
-  SimpleTracker::Hit*  hit = new SimpleTracker::Hit();
-  hit->g4ID          = th.id();
-  hit->energyDeposit = h.deposit();
+  SimpleTracker::Hit*  hit = new SimpleTracker::Hit(th.id(),th.pdgID(),h.deposit(),th.time());
   hit->cellID        = volumeID(step);
   hit->energyDeposit = th.energy();
   hit->position      = prePos;
   hit->momentum      = h.trkMom();
-  hit->length        = (postPos-prePos).R();
-  hit->truth.trackID = th.id();
-  hit->truth.deposit = h.deposit();
-  hit->truth.pdgID   = th.pdgID();
-  hit->truth.deposit = h.deposit();
-  hit->truth.time    = th.time();
-  hit->truth.length  = hit->length;
-  hit->truth.x       = hit->position.x();
-  hit->truth.y       = hit->position.y();
-  hit->truth.z       = hit->position.z();
+  hit->length        = 0;
   coll->add(hit);
   mark(h.track);
 
@@ -128,7 +116,7 @@ bool Geant4EscapeCounter::process(const G4Step* step, G4TouchableHistory* /* his
         h.trkID(),h.trkEnergy()/CLHEP::MeV,th.name().c_str(),
         th.creatorName().c_str(),hdlr_path.c_str());
   // Kill track, so that it does no longer participate in the propagation
-  step->GetTrack()->SetTrackStatus(fStopAndKill);
+  h.track->SetTrackStatus(fStopAndKill);
   return true;
 }
 

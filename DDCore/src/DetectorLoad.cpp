@@ -50,14 +50,8 @@ DetectorLoad::~DetectorLoad() {
 void DetectorLoad::processXML(const string& xmlfile, xml::UriReader* entity_resolver) {
   try {
     xml::DocumentHolder doc(xml::DocumentHandler().load(xmlfile,entity_resolver));
-    if ( doc )   {
-      xml::Handle_t handle = doc.root();
-      if ( handle )   {
-        processXMLElement(xmlfile,handle);
-        return;
-      }
-    }
-    throw runtime_error("dd4hep: Failed to parse the XML file " + xmlfile + " [Invalid XML ROOT handle]");
+    xml::Handle_t handle = doc.root();
+    processXMLElement(xmlfile,handle);
   }
   catch (const xml::XmlException& e) {
     throw runtime_error(xml::_toString(e.msg) + "\ndd4hep: XML-DOM Exception while parsing " + xmlfile);
@@ -75,14 +69,8 @@ void DetectorLoad::processXML(const xml::Handle_t& base, const string& xmlfile, 
   try {
     xml::Strng_t xml(xmlfile);
     xml::DocumentHolder doc(xml::DocumentHandler().load(base,xml,entity_resolver));
-    if ( doc )   {
-      xml::Handle_t handle = doc.root();
-      if ( handle )   {
-        processXMLElement(xmlfile,handle);
-        return;
-      }
-    }
-    throw runtime_error("dd4hep: Failed to parse the XML file " + xmlfile + " [Invalid XML ROOT handle]");
+    xml::Handle_t handle = doc.root();
+    processXMLElement(xmlfile,handle);
   }
   catch (const xml::XmlException& e) {
     throw runtime_error(xml::_toString(e.msg) + "\ndd4hep: XML-DOM Exception while parsing " + xmlfile);
@@ -105,13 +93,9 @@ void DetectorLoad::processXMLString(const char* xmldata, xml::UriReader* entity_
   try {
     if ( xmldata)   {
       xml::DocumentHolder doc(xml::DocumentHandler().parse(xmldata,::strlen(xmldata),"In-Memory",entity_resolver));
-      if ( doc )   {
-        xml::Handle_t handle = doc.root();
-        if ( handle )   {
-          processXMLElement("In-Memory-XML",handle);
-          return;
-        }
-      }
+      xml::Handle_t handle = doc.root();
+      processXMLElement("In-Memory-XML",handle);
+      return;
     }
     throw runtime_error("DetectorLoad::processXMLString: Invalid XML In-memory source [NULL]");
   }
@@ -128,50 +112,42 @@ void DetectorLoad::processXMLString(const char* xmldata, xml::UriReader* entity_
 
 /// Process a given DOM (sub-) tree
 void DetectorLoad::processXMLElement(const std::string& xmlfile, const xml::Handle_t& xml_root) {
-  if ( xml_root.ptr() )   {
-    string tag = xml_root.tag();
-    string type = tag + "_XML_reader";
-    xml::Handle_t handle = xml_root;
-    long result = PluginService::Create<long>(type, m_detDesc, &handle);
-    if (0 == result) {
-      PluginDebug dbg;
-      result = PluginService::Create<long>(type, m_detDesc, &handle);
-      if ( 0 == result )  {
-        throw runtime_error("dd4hep: Failed to locate plugin to interprete files of type"
-                            " \"" + tag + "\" - no factory:" + type + ". " + dbg.missingFactory(type));
-      }
+  string tag = xml_root.tag();
+  string type = tag + "_XML_reader";
+  xml::Handle_t handle = xml_root;
+  long result = PluginService::Create<long>(type, m_detDesc, &handle);
+  if (0 == result) {
+    PluginDebug dbg;
+    result = PluginService::Create<long>(type, m_detDesc, &handle);
+    if ( 0 == result )  {
+      throw runtime_error("dd4hep: Failed to locate plugin to interprete files of type"
+                          " \"" + tag + "\" - no factory:" + type + ". " + dbg.missingFactory(type));
     }
-    result = *(long*) result;
-    if (result != 1) {
-      throw runtime_error("dd4hep: Failed to parse the XML file " + xmlfile + " with the plugin " + type);
-    }
-    return;
   }
-  throw runtime_error("dd4hep: Failed to parse the XML file " + xmlfile + " [Invalid XML ROOT handle]");
+  result = *(long*) result;
+  if (result != 1) {
+    throw runtime_error("dd4hep: Failed to parse the XML file " + xmlfile + " with the plugin " + type);
+  }
 }
 
 /// Process a given DOM (sub-) tree
 void DetectorLoad::processXMLElement(const xml::Handle_t& xml_root, DetectorBuildType /* type */) {
-  if ( xml_root.ptr() )   {
-    string tag = xml_root.tag();
-    string type = tag + "_XML_reader";
-    xml::Handle_t handle = xml_root;
-    long result = PluginService::Create<long>(type, m_detDesc, &handle);
-    if (0 == result) {
-      PluginDebug dbg;
-      result = PluginService::Create<long>(type, m_detDesc, &handle);
-      if ( 0 == result )  {
-        throw runtime_error("dd4hep: Failed to locate plugin to interprete files of type"
-                            " \"" + tag + "\" - no factory:" 
-                            + type + ". " + dbg.missingFactory(type));
-      }
+  string tag = xml_root.tag();
+  string type = tag + "_XML_reader";
+  xml::Handle_t handle = xml_root;
+  long result = PluginService::Create<long>(type, m_detDesc, &handle);
+  if (0 == result) {
+    PluginDebug dbg;
+    result = PluginService::Create<long>(type, m_detDesc, &handle);
+    if ( 0 == result )  {
+      throw runtime_error("dd4hep: Failed to locate plugin to interprete files of type"
+                          " \"" + tag + "\" - no factory:" 
+			  + type + ". " + dbg.missingFactory(type));
     }
-    result = *(long*) result;
-    if (result != 1)   {
-      throw runtime_error("dd4hep: Failed to parse the XML element with tag " 
-                          + tag + " with the plugin " + type);
-    }
-    return;
   }
-  throw runtime_error("dd4hep: Failed to parse the XML file [Invalid XML ROOT handle]");
+  result = *(long*) result;
+  if (result != 1)   {
+    throw runtime_error("dd4hep: Failed to parse the XML element with tag " 
+			+ tag + " with the plugin " + type);
+  }
 }

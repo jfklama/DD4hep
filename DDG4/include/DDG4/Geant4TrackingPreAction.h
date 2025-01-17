@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TRACKINGPREACTION_H
-#define DDG4_GEANT4TRACKINGPREACTION_H
+#ifndef DD4HEP_DDG4_GEANT4TRACKINGPREACTION_H
+#define DD4HEP_DDG4_GEANT4TRACKINGPREACTION_H
 
 // Framework include files
 #include "DDG4/Geant4TrackingAction.h"
@@ -35,11 +35,11 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4TrackingPreAction();
       /// Begin-of-tracking callback
-      virtual void begin(const G4Track* track)  override;
+      virtual void begin(const G4Track* track);
       /// End-of-tracking callback
-      virtual void end(const G4Track* track)  override;
+      virtual void end(const G4Track* track);
     };
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4TRACKINGPREACTION_H
+#endif // DD4HEP_DDG4_GEANT4TRACKINGPREACTION_H

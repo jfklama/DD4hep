@@ -16,8 +16,8 @@
  *      Author: cgrefe
  */
 
-#ifndef DDSEGMENTATION_TILEDLAYERSEGMENTATION_H
-#define DDSEGMENTATION_TILEDLAYERSEGMENTATION_H
+#ifndef DDSegmentation_TILEDLAYERSEGMENTATION_H_
+#define DDSegmentation_TILEDLAYERSEGMENTATION_H_
 
 #include "DDSegmentation/Segmentation.h"
 
@@ -127,4 +127,4 @@ namespace dd4hep {
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
 
-#endif // DDSEGMENTATION_TILEDLAYERSEGMENTATION_H
+#endif /* TILEDLAYERSEGMENTATION_H_ */

@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_PARTICLEACTORS_H
-#define DDEVE_PARTICLEACTORS_H
+#ifndef DD4HEP_DDEVE_PARTICLEHANDLERS_H
+#define DD4HEP_DDEVE_PARTICLEHANDLERS_H
 
 // Framework include files
 #include "DDEve/EventHandler.h"
@@ -22,7 +22,6 @@
 
 // Forward declarations
 class TEveTrackPropagator;
-class TEvePointSet;
 class TEveCompound;
 class TEveElement;
 class TEveLine;
@@ -38,13 +37,11 @@ namespace dd4hep {
    */
   struct MCParticleCreator : public DDEveParticleActor  {
     typedef std::map<std::string,TEveCompound*> Compounds;
-    TEveTrackPropagator* propagator {0};
-    TEveCompound* particles {0};
+    TEveTrackPropagator* propagator;
+    TEveCompound* particles;
     Compounds types;
-    double threshold {10e0}; // 10 MeV
-    int count {0};
-    int lineWidth {4};
-    
+    int count;
+    int lineWidth;
     /// Standard initializing constructor
     MCParticleCreator(TEveTrackPropagator* p, TEveCompound* ps, const DisplayConfiguration::Config* cfg);
     /// Access sub-compound by name
@@ -57,30 +54,8 @@ namespace dd4hep {
     void close();
   };
 
-  /// Fill a 3D pointset with particle start vertices
-  /*
-   *  \author  M.Frank
-   *  \version 1.0
-   *  \ingroup DD4HEP_EVE
-   */
-  struct StartVertexCreator : public  DDEveParticleActor {
-    TEvePointSet* pointset;
-    float deposit;
-    int count;
-    /// Standard initializing constructor
-    StartVertexCreator(const std::string& collection, size_t length);
-    /// Standard initializing constructor
-    StartVertexCreator(const std::string& collection, size_t length, const DisplayConfiguration::Config& cfg);
-    /// Standard destructor
-    virtual ~StartVertexCreator();
-    /// Return eve element
-    TEveElement* element() const;
-    /// Action callback of this functor: 
-    virtual void operator()(const DDEveParticle& particle);
-  };
-
 } /* End namespace dd4hep   */
 
 
-#endif // DDEVE_PARTICLEACTORS_H
+#endif /* DD4HEP_DDEVE_PARTICLEHANDLERS_H */
 

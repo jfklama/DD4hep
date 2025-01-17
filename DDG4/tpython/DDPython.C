@@ -18,8 +18,7 @@
 // FRamework include files
 #include "DDG4/Python/DDPython.h"
 
-class dd4hepPython {
-public:
+struct dd4hepPython {
   static void setMainThread()   {
     dd4hep::DDPython::setMainThread();
   }

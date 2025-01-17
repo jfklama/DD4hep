@@ -13,9 +13,6 @@
 #include "DD4hep/DetFactoryHelper.h"
 #include "DD4hep/Printout.h"
 #include "DD4hep/DD4hepUnits.h"
-#include "DD4hep/DetType.h"
-#include "DDRec/DetectorData.h"
-#include "XML/Utilities.h"
 
 #include <cmath>
 #include <string>
@@ -34,16 +31,11 @@ using dd4hep::Solid;
 using dd4hep::Tube;
 using dd4hep::PlacedVolume;
 using dd4hep::Assembly;
-using dd4hep::Detector;
-using dd4hep::SensitiveDetector;
-using dd4hep::Ref_t;
-
 namespace units = dd4hep;
 
-
-static Ref_t create_detector(Detector& description,
-			     xml_h xmlHandle,
-			     SensitiveDetector sens) {
+static dd4hep::Ref_t create_element(dd4hep::Detector& description,
+					      xml_h xmlHandle,
+					      dd4hep::SensitiveDetector /*sens*/) {
 
   printout(dd4hep::DEBUG,"DD4hep_Mask", "Creating Mask" ) ;
 
@@ -66,11 +58,10 @@ static Ref_t create_detector(Detector& description,
   if (xmlParameter.hasAttr(_Unicode(rotationX)))
     rotationX = xmlParameter.attr< bool >(_Unicode(rotationX));
 
-  int counter = 0; 
-  for(xml_coll_t c( xmlMask ,Unicode("section")); c; ++c, counter++) {
+  for(xml_coll_t c( xmlMask ,Unicode("section")); c; ++c) {
 
     xml_comp_t xmlSection( c );
-    bool isSensitive = false;
+
     ODH::ECrossType crossType = ODH::getCrossType(xmlSection.attr< std::string >(_Unicode(type)));
     const double zStart       = xmlSection.attr< double > (_Unicode(start));
     const double zEnd         = xmlSection.attr< double > (_Unicode(end));
@@ -89,15 +80,6 @@ static Ref_t create_detector(Detector& description,
     if (xmlSection.hasAttr(_U(phi2)))
       phi2 = xmlSection.attr< double > (_U(phi2));
 
-    std::string ssensitive = "none";
-    if (xmlSection.hasAttr(_U(sensitive))){
-      isSensitive = true;
-      ssensitive = xmlSection.attr< std::string > (_U(sensitive));
-      sens.setType( xmlSection.attr< std::string > (_U(sensitive))  );  //decide the type of SD (tracker / calorimeter) check for k4run
-      printout(dd4hep::DEBUG, "sensitive in sens ", ssensitive);
-    }
-
-
     std::stringstream pipeInfo;
     pipeInfo << std::setw(8) << zStart      /units::mm
 	     << std::setw(8) << zEnd        /units::mm
@@ -110,8 +92,7 @@ static Ref_t create_detector(Detector& description,
 	     << std::setw(35) << volName
 	     << std::setw(15) << sectionMat.name()
 	     << std::setw(8) << phi1
-	     << std::setw(8) << phi2
-	     << std::setw(8) << ssensitive;
+	     << std::setw(8) << phi2;
 
     printout(dd4hep::INFO, "DD4hep_Mask", pipeInfo.str() );
 
@@ -129,14 +110,12 @@ static Ref_t create_detector(Detector& description,
     const double mirrorAngle = M_PI - rotateAngle; // for the "mirrored" placement at -z
     // the "mirroring" in fact is done by a rotation of (almost) 180 degrees around the y-axis
 
-    
     switch (crossType) {
     case ODH::kCenter:
     case ODH::kUpstream:
     case ODH::kDnstream: {
       // a volume on the z-axis, on the upstream branch, or on the downstream branch
       Transform3D transformer, transmirror;
-
       if( rotationX == true) {
         // absolute transformations for the placement in the world, rotate over X
         transformer = Transform3D(RotationX(rotateAngle), RotateX( Position(0, 0, zPosition), rotateAngle) );
@@ -146,29 +125,17 @@ static Ref_t create_detector(Detector& description,
 	transformer = Transform3D(RotationY(rotateAngle), RotateY( Position(0, 0, zPosition), rotateAngle) );
 	transmirror = Transform3D(RotationY(mirrorAngle), RotateY( Position(0, 0, zPosition), mirrorAngle) );
       }
-      
       // solid for the tube (including vacuum and wall): a solid cone
       ConeSegment tubeSolid( zHalf, rInnerStart, rOuterStart, rInnerEnd, rOuterEnd , phi1, phi2);
 
       // tube consists of vacuum
-      Volume tubeLog0( volName, tubeSolid, material ) ;
-      Volume tubeLog1( volName, tubeSolid, material ) ;
-      if (isSensitive) {
-        tubeLog0.setSensitiveDetector(sens);
-        tubeLog1.setSensitiveDetector(sens);
-      }
-      tubeLog0.setVisAttributes(description, xmlMask.visStr() );
-      tubeLog1.setVisAttributes(description, xmlMask.visStr() );
+      Volume tubeLog( volName, tubeSolid, material ) ;
+      tubeLog.setVisAttributes(description, xmlMask.visStr() );
 
       // placement of the tube in the world, both at +z and -z
-      PlacedVolume placed0 = envelope.placeVolume( tubeLog0,  transformer );
-      PlacedVolume placed1 = envelope.placeVolume( tubeLog1,  transmirror );
+      envelope.placeVolume( tubeLog,  transformer );
+      envelope.placeVolume( tubeLog,  transmirror );
 
-      placed0.addPhysVolID("side",1);
-      placed0.addPhysVolID("layer",counter);
-      placed1.addPhysVolID("side",-1);
-      placed1.addPhysVolID("layer",counter);
-      
     }
       break;
 
@@ -215,21 +182,12 @@ static Ref_t create_detector(Detector& description,
       // tube consists of vacuum (will later have two different daughters)
       Volume tubeLog0( volName + "_0", finalSolid0, material );
       Volume tubeLog1( volName + "_1", finalSolid1, material );
-      if (isSensitive) {
-        tubeLog0.setSensitiveDetector(sens);
-        tubeLog1.setSensitiveDetector(sens);
-      }
       tubeLog0.setVisAttributes(description, xmlMask.visStr() );
       tubeLog1.setVisAttributes(description, xmlMask.visStr() );
 
       // placement of the tube in the world, both at +z and -z
-      PlacedVolume placed0 = envelope.placeVolume( tubeLog0, placementTransformer );
-      PlacedVolume placed1 = envelope.placeVolume( tubeLog1, placementTransmirror );
-      
-      placed0.addPhysVolID("side",  1);
-      placed1.addPhysVolID("side", -1);
-      placed0.addPhysVolID("layer", counter);
-      placed1.addPhysVolID("layer", counter);
+      envelope.placeVolume( tubeLog0, placementTransformer );
+      envelope.placeVolume( tubeLog1, placementTransmirror );
 
       break;
     }
@@ -263,21 +221,12 @@ static Ref_t create_detector(Detector& description,
       // tube consists of vacuum (will later have two different daughters)
       Volume tubeLog0( volName + "_0", finalSolid0, material );
       Volume tubeLog1( volName + "_1", finalSolid1, material );
-      if (isSensitive) {
-        tubeLog0.setSensitiveDetector(sens);
-        tubeLog1.setSensitiveDetector(sens);
-      }
       tubeLog0.setVisAttributes(description, xmlMask.visStr() );
       tubeLog1.setVisAttributes(description, xmlMask.visStr() );
 
       // placement of the tube in the world, both at +z and -z
-      PlacedVolume placed0 = envelope.placeVolume( tubeLog0, placementTransformer );
-      PlacedVolume placed1 = envelope.placeVolume( tubeLog1, placementTransmirror );
-
-      placed0.addPhysVolID("side",  1);
-      placed1.addPhysVolID("side", -1);
-      placed0.addPhysVolID("layer", counter);
-      placed1.addPhysVolID("layer", counter);
+      envelope.placeVolume( tubeLog0, placementTransformer );
+      envelope.placeVolume( tubeLog1, placementTransmirror );
 
       break;
     }
@@ -286,7 +235,6 @@ static Ref_t create_detector(Detector& description,
     }
 
     }//end switch
-    
   }//for all xmlSections
 
   //--------------------------------------
@@ -300,4 +248,4 @@ static Ref_t create_detector(Detector& description,
 
   return tube;
 }
-DECLARE_DETELEMENT(DD4hep_Mask_o1_v01,create_detector)
+DECLARE_DETELEMENT(DD4hep_Mask_o1_v01,create_element)

@@ -126,9 +126,7 @@ std::vector<double> WaferGridXY::cellDimensions(const CellID&) const {
 #endif
 }
 
+REGISTER_SEGMENTATION(WaferGridXY)
+
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(WaferGridXY,create_segmentation<dd4hep::DDSegmentation::WaferGridXY>)

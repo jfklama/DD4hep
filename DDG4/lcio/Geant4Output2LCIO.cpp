@@ -17,9 +17,7 @@
 // Framework include files
 #include "DD4hep/VolumeManager.h"
 #include "DDG4/Geant4OutputAction.h"
-
-#include "DDG4/EventParameters.h"
-#include "DDG4/RunParameters.h"
+#include "LCIOEventParameters.h"
 // Geant4 headers
 #include "G4Threading.hh"
 #include "G4AutoLock.hh"
@@ -43,43 +41,6 @@ namespace dd4hep {
 
   /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
   namespace sim {
-    template <class T=lcio::LCEventImpl> void EventParameters::extractParameters(T& event){
-      auto& lcparameters = event.parameters();
-      event.setRunNumber(this->runNumber());
-      event.setEventNumber(this->eventNumber());
-      for(auto const& ival: this->intParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-      for(auto const& ival: this->fltParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-      for(auto const& ival: this->strParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-#if LCIO_VERSION_GE(2, 17)
-      for(auto const& ival: this->dblParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-#endif
-    }
-
-    template <class T=lcio::LCRunHeaderImpl> void RunParameters::extractParameters(T& runHeader){
-      auto& lcparameters = runHeader.parameters();
-      for(auto const& ival: this->intParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-      for(auto const& ival: this->fltParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-      for(auto const& ival: this->strParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-#if LCIO_VERSION_GE(2, 17)
-      for(auto const& ival: this->dblParameters()) {
-        lcparameters.setValues(ival.first, ival.second);
-      }
-#endif
-    }
 
     class Geant4ParticleMap;
 
@@ -268,10 +229,6 @@ void Geant4Output2LCIO::saveRun(const G4Run* run)  {
   rh->parameters().setValue("DD4HEPVersion", versionString());
   rh->setRunNumber(m_runNo);
   rh->setDetectorName(context()->detectorDescription().header().name());
-  auto* parameters = context()->run().extension<RunParameters>(false);
-  if (parameters) {
-    parameters->extractParameters(*rh);
-  }
   m_file->writeRunHeader(rh);
 }
 
@@ -394,27 +351,24 @@ lcio::LCCollectionVec* Geant4Output2LCIO::saveParticles(Geant4ParticleMap* parti
 /// Callback to store the Geant4 event
 void Geant4Output2LCIO::saveEvent(OutputContext<G4Event>& ctxt)  {
   lcio::LCEventImpl* e = context()->event().extension<lcio::LCEventImpl>();
-  EventParameters* parameters = context()->event().extension<EventParameters>(false);
+  LCIOEventParameters* parameters = context()->event().extension<LCIOEventParameters>(false);
   int runNumber(0), eventNumber(0);
   const int eventNumberOffset(m_eventNumberOffset > 0 ? m_eventNumberOffset : 0);
   const int runNumberOffset(m_runNumberOffset > 0 ? m_runNumberOffset : 0);
-  double eventWeight{0};
   // Get event number, run number and parameters from extension ...
-  if (parameters) {
+  if ( parameters ) {
     runNumber = parameters->runNumber() + runNumberOffset;
     eventNumber = parameters->eventNumber() + eventNumberOffset;
-    parameters->extractParameters(*e);
-#if LCIO_VERSION_GE(2, 17)
-    eventWeight = e->getParameters().getDoubleVal("EventWeights");
-#endif
-  } else {  // ... or from DD4hep framework
+    LCIOEventParameters::copyLCParameters(parameters->eventParameters(),e->parameters());
+  }
+  // ... or from DD4hep framework 
+  else {
     runNumber = m_runNo + runNumberOffset;
     eventNumber = ctxt.context->GetEventID() + eventNumberOffset;
   }
   print("+++ Saving LCIO event %d run %d ....", eventNumber, runNumber);
   e->setRunNumber(runNumber);
   e->setEventNumber(eventNumber);
-  e->setWeight(eventWeight);
   e->setDetectorName(context()->detectorDescription().header().name());
   saveEventParameters<int>(e, m_eventParametersInt);
   saveEventParameters<float>(e, m_eventParametersFloat);
@@ -438,6 +392,8 @@ void Geant4Output2LCIO::saveCollection(OutputContext<G4Event>& /* ctxt */, G4VHi
   typedef pair<const Geant4Context*,G4VHitsCollection*> _Args;
   typedef Geant4Conversion<lcio::LCCollectionVec,_Args> _C;
   const _C& cnv = _C::converter(typeid(Geant4HitCollection));
-  cnv(_Args(context(),collection));
+  lcio::LCEventImpl* evt = context()->event().extension<lcio::LCEventImpl>();
+  lcio::LCCollectionVec* col = cnv(_Args(context(),collection));
+  evt->addCollection(col,hc_nam);
 }
 

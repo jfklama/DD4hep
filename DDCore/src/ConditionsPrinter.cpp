@@ -12,13 +12,11 @@
 //==========================================================================
 
 // Framework includes
-#include "Parsers/Parsers.h"
+#include "Parsers/spirit/ToStream.h"
 #include "DD4hep/Printout.h"
 #include "DD4hep/ConditionsData.h"
 #include "DD4hep/ConditionsPrinter.h"
 #include "DD4hep/ConditionsProcessor.h"
-
-#include "DD4hep/detail/ConditionsInterna.h"
 
 // C/C++ include files
 #include <sstream>
@@ -50,9 +48,7 @@ protected:
   /// Parent object
   ConditionsPrinter* m_parent = 0;
 public:
-  /// Prefix to tag print statements
   std::string        prefix;
-  /// Used printout level
   PrintLevel         printLevel = INFO;
 public:
   /// Copy constructor
@@ -69,8 +65,8 @@ public:
 
 
 /// Initializing constructor
-ConditionsPrinter::ParamPrinter::ParamPrinter(ConditionsPrinter* printer, PrintLevel lvl)
-  : m_parent(printer), printLevel(lvl)
+ConditionsPrinter::ParamPrinter::ParamPrinter(ConditionsPrinter* p, PrintLevel lvl)
+  : m_parent(p), printLevel(lvl)
 {
 }
 
@@ -115,8 +111,8 @@ void ConditionsPrinter::ParamPrinter::operator()(const AbstractMap::Params::valu
 }
 
 /// Initializing constructor
-ConditionsPrinter::ConditionsPrinter(ConditionsMap* cond_map, const string& pref, int flg)
-  : mapping(cond_map), m_flag(flg), name("Condition"), prefix(pref)
+ConditionsPrinter::ConditionsPrinter(ConditionsMap* m, const string& pref, int flg)
+  : mapping(m), m_flag(flg), name("Condition"), prefix(pref)
 {
   m_print = new ParamPrinter(this, printLevel);
 }
@@ -179,26 +175,20 @@ int ConditionsPrinter::operator()(Condition cond)   const   {
       string piv;
       stringstream str_tr, str_rot, str_piv;
       const Delta& D = cond.get<Delta>();
-      if ( D.hasTranslation() )  {
-	Position copy(D.translation * (1./dd4hep::cm));
-	Parsers::toStream(copy, str_tr);
-      }
-      if ( D.hasRotation()    )  {
-	Parsers::toStream(D.rotation, str_rot);
-      }
-      if ( D.hasPivot()       )  {
-	Position copy(D.pivot.Vect() * (1./dd4hep::cm));
-        Parsers::toStream(copy, str_piv);
+      if ( D.hasTranslation() ) Utils::toStream(D.translation, str_tr);
+      if ( D.hasRotation()    ) Utils::toStream(D.rotation, str_rot);
+      if ( D.hasPivot()       ) {
+        Utils::toStream(D.pivot, str_piv);
         piv = str_replace(str_piv.str(),"\n","");
-        piv = str_replace(piv,"  "," , ");
+        piv =  "( "+str_replace(piv,"  "," , ")+" )";
       }
       printout(printLevel,name,"++ %s \t[%p] Typ:%s",
                prefix.c_str(), cond.ptr(),
                typeName(typeid(*ptr)).c_str());
-      printout(printLevel,name,"++ %s \tData(%11s-%8s-%5s): [%s [cm], %s [rad], %s [cm]]",
+      printout(printLevel,name,"++ %s \tData(%11s-%8s-%5s): [%s, %s, %s]",
                prefix.c_str(), 
                D.hasTranslation() ? "Translation" : "",
-               D.hasRotation() ? "Rotation(Phi,Theta,Psi)" : "",
+               D.hasRotation() ? "Rotation" : "",
                D.hasPivot() ? "Pivot" : "",
                str_replace(str_tr.str(),"\n","").c_str(),
                str_replace(str_rot.str(),"\n","").c_str(),
@@ -209,12 +199,12 @@ int ConditionsPrinter::operator()(Condition cond)   const   {
       string piv;
       stringstream str_tr, str_rot, str_piv;
       const Delta& D = cond.get<AlignmentData>().delta;
-      if ( D.hasTranslation() ) Parsers::toStream(D.translation, str_tr);
-      if ( D.hasRotation()    ) Parsers::toStream(D.rotation, str_rot);
+      if ( D.hasTranslation() ) Utils::toStream(D.translation, str_tr);
+      if ( D.hasRotation()    ) Utils::toStream(D.rotation, str_rot);
       if ( D.hasPivot()       ) {
-        Parsers::toStream(D.pivot, str_piv);
+        Utils::toStream(D.pivot, str_piv);
         piv = str_replace(str_piv.str(),"\n","");
-        piv = str_replace(piv,"  "," , ");
+        piv =  "( "+str_replace(piv,"  "," , ")+" )";
       }
       
       printout(printLevel,name,"++ %s \t[%p] Typ:%s",
@@ -223,7 +213,7 @@ int ConditionsPrinter::operator()(Condition cond)   const   {
       printout(printLevel,name,"++ %s \tData(%11s-%8s-%5s): [%s, %s, %s]",
                prefix.c_str(), 
                D.hasTranslation() ? "Translation" : "",
-               D.hasRotation() ? "Rotation(Phi,Theta,Psi)" : "",
+               D.hasRotation() ? "Rotation" : "",
                D.hasPivot() ? "Pivot" : "",
                str_replace(str_tr.str(),"\n","").c_str(),
                str_replace(str_rot.str(),"\n","").c_str(),

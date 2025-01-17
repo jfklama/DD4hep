@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef JSON_ELEMENTS_H
-#define JSON_ELEMENTS_H
+#ifndef DDCORE_DD4HEP_JSON_ELEMENTS_H
+#define DDCORE_DD4HEP_JSON_ELEMENTS_H
 
 // C/C++ include files
 #include <cmath>
@@ -20,7 +20,7 @@
 #include <stdexcept>
 
 // Framework include files
-#include <JSON/config.h>
+#include "JSON/config.h"
 
 #ifndef RAD_2_DEGREE
 #define RAD_2_DEGREE 57.295779513082320876798154814105
@@ -183,13 +183,13 @@ namespace dd4hep {
       template <class T> T attr(const Attribute a) const {
         return this->attr<T>(this->attr_name(a));
       }
-      /// Access typed attribute value by its unicode name
+      /// Access typed attribute value by it's unicode name
       template <class T> T attr(const char* name) const;
 
       /*** DOM Element child handling                                     */
       /// Check the existence of a child with a given tag name
       bool hasChild(const char* tag) const;
-      /// Access a single child by its tag name (unicode)
+      /// Access a single child by it's tag name (unicode)
       Handle_t child(const char* tag, bool throw_exception = true) const;
       /// Access a group of children identified by the same tag name
       NodeList children(const char* tag) const;
@@ -411,7 +411,7 @@ namespace dd4hep {
       /// Retrieve a collection of all attributes of this element
       std::vector<Attribute> attributes() const
       {  return m_element.attributes();                                       }
-      /// Access single attribute by its name
+      /// Access single attribute by it's name
       Attribute getAttr(const char* name) const;
      /// Access child by tag name. Thow an exception if required in case the child is not present
       Handle_t child(const char* tag_value, bool except = true) const
@@ -431,4 +431,4 @@ namespace dd4hep {
 
   }       /* End namespace json              */
 }         /* End namespace dd4hep            */
-#endif // JSON_ELEMENTS_H
+#endif    /* DDCORE_DD4HEP_JSON_ELEMENTS_H   */

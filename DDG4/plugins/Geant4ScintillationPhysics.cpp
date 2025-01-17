@@ -28,7 +28,6 @@
 #include "DDG4/Geant4PhysicsList.h"
 
 /// Geant4 include files
-#include "G4Version.hh"
 #include "G4ParticleTableIterator.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4LossTableManager.hh"
@@ -37,19 +36,6 @@
 #include "G4ParticleTable.hh"
 #include "G4EmSaturation.hh"
 #include "G4Threading.hh"
-
-#if G4VERSION_NUMBER >= 1070
-#include "G4OpticalParameters.hh"
-
-/// This is a beta release problem:
-#if G4VERSION_NUMBER == 110000
-#include "G4OpticalParameters.hh"
-#pragma message("Geant4 version 11 beta: temporary fix to be removed!")
-void G4OpticalParameters::SetScintExcitationRatio(double) {}
-void G4OpticalParameters::SetScintYieldFactor(double) {}
-#endif
-
-#endif
 
 #include "G4Scintillation.hh"
 
@@ -80,15 +66,7 @@ namespace dd4hep {
         declareProperty("FiniteRiseTime",                m_finiteRiseTime = false);
         declareProperty("TrackSecondariesFirst",         m_trackSecondariesFirst = false);
         declareProperty("StackPhotons",                  m_stackPhotons = true);
-        declareProperty("ByParticleType",                m_byParticleType = false);
-        declareProperty("TrackInfo",                     m_trackInfo = false);
         declareProperty("VerboseLevel",                  m_verbosity = 0);
-        declareProperty("BoundaryInvokeSD",              m_boundaryInvokeSD = false);
-        declareProperty("WLSTimeProfile",                m_WLSTimeProfile);
-        declareProperty("WLS2TimeProfile",               m_WLS2TimeProfile);
-        declareProperty("CerenkovMaxPhotonsPerStep",     m_CerenkovMaxPhotonsPerStep = -1);
-        declareProperty("CerenkovMaxBetaChange",         m_CerenkovMaxBetaChange = -1.0);
-        declareProperty("ScintEnhancedTimeConstants",    m_ScintEnhancedTimeConstants=false);
       }
       /// Default destructor
       virtual ~Geant4ScintillationPhysics() = default;
@@ -101,46 +79,14 @@ namespace dd4hep {
              yes_no(m_finiteRiseTime), yes_no(m_stackPhotons),
              yes_no(m_trackSecondariesFirst));
         G4Scintillation* process = new G4Scintillation(name());
-#if G4VERSION_NUMBER >= 1070
-        G4OpticalParameters* params = G4OpticalParameters::Instance();
-#if G4VERSION_NUMBER >= 1100
-        if ( m_CerenkovMaxPhotonsPerStep > 0 )
-          params->SetCerenkovMaxPhotonsPerStep(m_CerenkovMaxPhotonsPerStep);
-        if ( m_CerenkovMaxBetaChange > 0e0 )
-          params->SetCerenkovMaxBetaChange(m_CerenkovMaxBetaChange);
-        if ( !m_WLSTimeProfile.empty()  )
-          params->SetWLSTimeProfile(m_WLS2TimeProfile);
-        if ( !m_WLS2TimeProfile.empty() )
-          params->SetWLS2TimeProfile(m_WLS2TimeProfile);
-        params->SetBoundaryInvokeSD(m_boundaryInvokeSD);
-#endif
-        params->SetScintVerboseLevel(m_verbosity);
-        params->SetScintFiniteRiseTime(m_finiteRiseTime);
-        params->SetScintStackPhotons(m_stackPhotons);
-        params->SetScintTrackSecondariesFirst(m_trackSecondariesFirst);
-        params->SetScintByParticleType(m_byParticleType);
-        params->SetScintTrackInfo(m_trackInfo);
-#else
         process->SetVerboseLevel(m_verbosity);
         process->SetFiniteRiseTime(m_finiteRiseTime);
-#if G4VERSION_NUMBER >= 1030
+#if G4VERSION_NUMBER>1030
         process->SetStackPhotons(m_stackPhotons);
 #endif
         process->SetTrackSecondariesFirst(m_trackSecondariesFirst);
-#if G4VERSION_NUMBER == 110000
-        /// Not yet implemented in G4 11.0.0. Only declared in the header
-        // params->SetScintEnhancedTimeConstants(m_ScintEnhancedTimeConstants);
-        /// These were only in the beta release:
         process->SetScintillationYieldFactor(m_scintillationYieldFactor);
         process->SetScintillationExcitationRatio(m_scintillationExcitationRatio);
-#endif
-#if G4VERSION_NUMBER >= 940
-        process->SetScintillationByParticleType(m_byParticleType);
-#endif
-#if G4VERSION_NUMBER >= 1030
-        process->SetScintillationTrackInfo(m_trackInfo);
-#endif
-#endif
         // Use Birks Correction in the Scintillation process
         if ( G4Threading::IsMasterThread() )  {
           G4EmSaturation* emSaturation =
@@ -161,36 +107,12 @@ namespace dd4hep {
       }
 
     private:
-      /// G4 11 beta, then disappeared....
-      double m_scintillationYieldFactor      { 1.0 };
-      /// G4 11 beta, then disappeared....
-      double m_scintillationExcitationRatio  { 1.0 };
-
-      /// G4OpticalParameters: "VerboseLevel"
-      int    m_verbosity                  { 0 };
-      /// G4OpticalParameters: "CerenkovStackPhotons"
-      bool   m_stackPhotons               { true };
-      /// G4OpticalParameters: "ScintFiniteRiseTime"
-      bool   m_finiteRiseTime             { false };
-      /// G4OpticalParameters: "ScintTrackSecondariesFirst"
-      bool   m_trackSecondariesFirst      { false };
-      /// G4OpticalParameters: "ScintByParticleType"
-      bool   m_byParticleType             { false };
-      /// G4OpticalParameters: "ScintTrackInfo"
-      bool   m_trackInfo                  { false };
-
-      /// G4OpticalParameters: "BoundaryInvokeSD"
-      bool m_boundaryInvokeSD             { false };
-      /// G4OpticalParameters: "WLSTimeProfile"
-      std::string m_WLSTimeProfile        { };
-      /// G4OpticalParameters: "WLS2TimeProfile";
-      std::string m_WLS2TimeProfile       { };
-      /// G4OpticalParameters: "CerenkovMaxBetaChange"
-      double m_CerenkovMaxBetaChange      { -1.0 };
-      /// G4OpticalParameters: "CerenkovMaxPhotonsPerStep"
-      int  m_CerenkovMaxPhotonsPerStep    { -1 };
-      /// G4OpticalParameters: "ScintEnhancedTimeConstants"
-      bool m_ScintEnhancedTimeConstants   { false };
+      double m_scintillationYieldFactor;
+      double m_scintillationExcitationRatio;
+      int    m_verbosity;
+      bool   m_stackPhotons;
+      bool   m_finiteRiseTime;
+      bool   m_trackSecondariesFirst;
     };
   }
 }

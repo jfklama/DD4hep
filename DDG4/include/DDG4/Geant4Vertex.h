@@ -10,11 +10,11 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4VERTEX_H
-#define DDG4_GEANT4VERTEX_H
+#ifndef DD4HEP_GEANT4VERTEX_H
+#define DD4HEP_GEANT4VERTEX_H
 
 // Framework include files
-#include <DD4hep/Memory.h>
+#include "DD4hep/Memory.h"
 
 // C/C++ include files
 #include <set>
@@ -73,4 +73,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4VERTEX_H
+#endif // DD4HEP_GEANT4VERTEX_H

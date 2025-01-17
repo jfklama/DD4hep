@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 set ( CMAKE_MODULE_PATH      ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../cmake ) 
 #
 include ( DD4hepBuild )
@@ -52,6 +52,11 @@ include(DD4hepMacros)
 add_subdirectory(DDParsers)
 #
 #---Configuration-------------------------------------------------------------------
+# ----for APPLE scripts have to set the DYLD_LIBRARY_PATH 
+if( APPLE ) 
+  set( USE_DYLD 1)
+  set(CMAKE_MACOSX_RPATH 1)
+endif()
 #-----------------------------------------------------------------------------------
 display_std_variables()
 

@@ -16,8 +16,8 @@
  *      Author: Christian Grefe, CERN
  */
 
-#ifndef DDSEGMENTATION_CARTESIANGRIDXYZ_H
-#define DDSEGMENTATION_CARTESIANGRIDXYZ_H
+#ifndef DDSegmentation_CARTESIANGRIDXYZ_H_
+#define DDSegmentation_CARTESIANGRIDXYZ_H_
 
 #include "DDSegmentation/CartesianGridXY.h"
 
@@ -85,4 +85,4 @@ namespace dd4hep {
 
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-#endif // DDSEGMENTATION_CARTESIANGRIDXYZ_H
+#endif /* DDSegmentation_CARTESIANGRIDXYZ_H_ */

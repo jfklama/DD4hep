@@ -5,12 +5,12 @@
  *      Author: Shaojun Lu, DESY
  */
 
-#include <DDSegmentation/TiledLayerGridXY.h>
-#include <DD4hep/Printout.h>
+#include "DDSegmentation/TiledLayerGridXY.h"
 
 // C/C++ includes
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <cmath>
 
@@ -24,7 +24,7 @@ TiledLayerGridXY::TiledLayerGridXY(const std::string& cellEncoding) :
 	_type = "TiledLayerGridXY";
 	_description = "Cartesian segmentation in the local XY-plane using optimal tiling depending on the layer dimensions";
     
-	printout(INFO, "TiledLayerGridXY", " ######### dd4hep::DDSegmentation::TiledLayerGridXY() "); 
+	std::cout << " ######### dd4hep::DDSegmentation::TiledLayerGridXY() " << std::endl ; 
       
 	// register all necessary parameters
 	registerParameter("grid_size_x", "Cell size in X", _gridSizeX, 1., SegmentationParameter::LengthUnit);
@@ -46,7 +46,7 @@ TiledLayerGridXY::TiledLayerGridXY(const BitFieldCoder* decode) : CartesianGrid(
 	_type = "TiledLayerGridXY";
 	_description = "Cartesian segmentation in the local XY-plane using optimal tiling depending on the layer dimensions";
     
-	printout(INFO, "TiledLayerGridXY", " ######### dd4hep::DDSegmentation::TiledLayerGridXY() "); 
+	std::cout << " ######### dd4hep::DDSegmentation::TiledLayerGridXY() " << std::endl ; 
       
 	// register all necessary parameters
 	registerParameter("grid_size_x", "Cell size in X", _gridSizeX, 1., SegmentationParameter::LengthUnit);
@@ -122,10 +122,7 @@ std::vector<double> TiledLayerGridXY::cellDimensions(const CellID&) const {
 #endif
 }
 
+REGISTER_SEGMENTATION(TiledLayerGridXY)
 
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(TiledLayerGridXY,create_segmentation<dd4hep::DDSegmentation::TiledLayerGridXY>)

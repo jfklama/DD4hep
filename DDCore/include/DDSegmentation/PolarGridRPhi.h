@@ -16,8 +16,8 @@
  *      Author: Marko Petric
  */
 
-#ifndef DDSEGMENTATION_POLARGRIDRPHI_H
-#define DDSEGMENTATION_POLARGRIDRPHI_H
+#ifndef DDSegmentation_POLARGRIDRPHI_H_
+#define DDSegmentation_POLARGRIDRPHI_H_
 
 #include "DDSegmentation/PolarGrid.h"
 #include <math.h>
@@ -115,4 +115,4 @@ namespace dd4hep {
 
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-#endif // DDSEGMENTATION_POLARGRIDRPHI_H
+#endif /* DDSegmentation_POLARGRIDRPHI_H_ */

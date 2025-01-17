@@ -90,8 +90,8 @@ const IDDescriptor::FieldMap& IDDescriptor::fields() const {
 
 /// Get the field descriptor of one field by name
 const BitFieldElement* IDDescriptor::field(const string& field_name) const {
-  const FieldMap& fm = fields();   // This already checks the object validity
-  for (const auto& i : fm )
+  const FieldMap& m = fields();   // This already checks the object validity
+  for (const auto& i : m )
     if (i.first == field_name)
       return i.second;
   except("IDDescriptor","dd4hep: %s: This ID descriptor has no field with the name: %s",
@@ -101,14 +101,14 @@ const BitFieldElement* IDDescriptor::field(const string& field_name) const {
 
 /// Get the field descriptor of one field by its identifier
 const BitFieldElement* IDDescriptor::field(size_t identifier) const {
-  const FieldMap& fm = fields();   // This already checks the object validity
-  return fm[identifier].second;
+  const FieldMap& m = fields();   // This already checks the object validity
+  return m[identifier].second;
 }
 
 /// Get the field identifier of one field by name
 size_t IDDescriptor::fieldID(const string& field_name) const {
-  const FieldIDs& fm = ids();   // This already checks the object validity
-  for (const auto& i : fm )
+  const FieldIDs& m = ids();   // This already checks the object validity
+  for (const auto& i : m )
     if (i.second == field_name)
       return i.first;
   except("IDDescriptor","dd4hep: %s: This ID descriptor has no field with the name: %s",
@@ -116,18 +116,9 @@ size_t IDDescriptor::fieldID(const string& field_name) const {
   throw runtime_error("dd4hep");  // Never called. Simply make the compiler happy!
 }
 
-/// Compute the submask for a given set of volume IDs
-VolumeID IDDescriptor::get_mask(const std::vector<std::pair<std::string, int> >& id_vector) const   {
-  VolumeID mask = 0ULL;
-  for (const auto& i : id_vector )   {
-    const auto* fld = field(i.first);
-    mask |= fld->mask();
-  }
-  return mask;
-}
-
 /// Encode a set of volume identifiers (corresponding to this description of course!) to a volumeID.
-VolumeID IDDescriptor::encode(const std::vector<std::pair<std::string, int> >& id_vector) const  {
+VolumeID IDDescriptor::encode(const std::vector<std::pair<std::string, int> >& id_vector) const
+{
   VolumeID id = 0;
   //const PlacedVolume::VolIDs* ids = (const PlacedVolume::VolIDs*)&id_vector;
   //printout(INFO,"IDDescriptor","VolIDs: %s",ids->str().c_str());
@@ -135,25 +126,9 @@ VolumeID IDDescriptor::encode(const std::vector<std::pair<std::string, int> >& i
     const BitFieldElement* fld = field(i.first);
     int      off = fld->offset();
     VolumeID val = i.second;
-    id |= ((fld->value(val << off) << off)&fld->mask());
+    id |= ((fld->value(val<<off) << off)&fld->mask());
   }
   return id;
-}
-
-/// Encode partial volume identifiers to a volumeID.
-VolumeID IDDescriptor::encode(const Field* fld, VolumeID value)  {
-  if ( fld )   {
-    int off = fld->offset();
-    return ((fld->value(value << off) << off)&fld->mask());
-  }
-  except("IDDescriptor","dd4hep: %s: Cannot encode value with void Field reference.");
-  return 0UL;
-}
-
-/// Encode a set of volume identifiers to a volumeID with the system ID on the top bits
-VolumeID IDDescriptor::encode_reverse(const std::vector<std::pair<std::string, int> >& id_vector) const
-{
-  return detail::reverseBits<VolumeID>(encode(id_vector));
 }
 
 /// Decode volume IDs and return filled descriptor with all fields
@@ -189,6 +164,6 @@ string IDDescriptor::str(VolumeID vid, VolumeID mask)   const {
 }
 
 /// Access the BitFieldCoder object
-BitFieldCoder* IDDescriptor::decoder()   const   {
+BitFieldCoder* IDDescriptor::decoder() {
   return &(data<Object>()->decoder);
 }

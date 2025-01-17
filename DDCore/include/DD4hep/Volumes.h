@@ -10,23 +10,24 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_VOLUMES_H
-#define DD4HEP_VOLUMES_H
+#ifndef DD4HEP_DDCORE_VOLUMES_H
+#define DD4HEP_DDCORE_VOLUMES_H
 
 // Framework include files
-#include <DD4hep/Handle.h>
-#include <DD4hep/Shapes.h>
-#include <DD4hep/Objects.h>
-#include <DD4hep/BitField64.h>
+#include "DD4hep/Handle.h"
+#include "DD4hep/Shapes.h"
+#include "DD4hep/Objects.h"
 
 // C/C++ include files
 #include <map>
 #include <memory>
 
 // ROOT include file (includes TGeoVolume + TGeoShape)
-#include <TGeoNode.h>
-#include <TGeoPatternFinder.h>
-#include <TGeoExtension.h>
+#include "TGeoNode.h"
+#include "TGeoPatternFinder.h"
+
+// Recent ROOT versions
+#include "TGeoExtension.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -43,30 +44,6 @@ namespace dd4hep {
   class  Volume;
   class  PlacedVolume;
 
-  /// Scan geometry and create reflected volumes
-  /**
-   *   Build reflections the ROOT way. 
-   *   To be called once the geometry is closed.
-   *   This entity can only be invoked once.
-   *
-   *   For any further documentation please see the following ROOT documentation:
-   *   \see http://root.cern.ch/root/html/TGeoManager.html
-   *
-   *   \author  M.Frank
-   *   \version 1.0
-   *   \ingroup DD4HEP_CORE
-   */
-  class  ReflectionBuilder   {
-    Detector& detector;
-  public:
-    /// Initializing constructor
-    ReflectionBuilder(Detector& desc) : detector(desc) {}
-    /// Default descructor
-    ~ReflectionBuilder() = default;
-    /// Perform scan
-    void execute()  const;
-  };
-    
   /// Implementation class extending the ROOT placed volume
   /**
    *   For any further documentation please see the following ROOT documentation:
@@ -115,18 +92,12 @@ namespace dd4hep {
       /// String representation for debugging
       std::string str()  const;
     };
-    class Parameterisation;
-
     /// Magic word to detect memory corruptions
-    unsigned long magic { 0 };
+    unsigned long magic = 0;
     /// Reference count on object (used to implement Grab/Release)
-    long   refCount     { 0 };
-    /// Reference to the parameterised transformation
-    Parameterisation* params   { nullptr };
+    long   refCount     = 0;
     /// ID container
     VolIDs volIDs;
-
-  public:
     /// Default constructor
     PlacedVolumeExtension();
     /// Default move
@@ -138,15 +109,13 @@ namespace dd4hep {
     /// Move assignment
     PlacedVolumeExtension& operator=(PlacedVolumeExtension&& copy)  {
       magic  = std::move(copy.magic);
-      params = std::move(copy.params);
       volIDs = std::move(copy.volIDs);
       return *this;
     }
     /// Assignment operator
-    PlacedVolumeExtension& operator=(const PlacedVolumeExtension& copy) {
-      magic  = copy.magic;
-      params = copy.params;
-      volIDs = copy.volIDs;
+    PlacedVolumeExtension& operator=(const PlacedVolumeExtension& c) {
+      magic  = c.magic;
+      volIDs = c.volIDs;
       return *this;
     }
     /// TGeoExtension overload: Method called whenever requiring a pointer to the extension
@@ -155,10 +124,6 @@ namespace dd4hep {
     virtual void Release() const  override;
     /// Enable ROOT persistency
     ClassDefOverride(PlacedVolumeExtension,200);
-  };
-  class PlacedVolumeFeatureExtension : public  PlacedVolumeExtension {
-  public:
-  public:
   };
 
   /// Handle class holding a placed volume (also called physical volume)
@@ -207,19 +172,9 @@ namespace dd4hep {
     PlacedVolume& operator=(PlacedVolume&& v)  = default;
     /// Assignment operator (must match copy constructor)
     PlacedVolume& operator=(const PlacedVolume& v)  = default;
-    /// Equality operator
-    template <typename T> bool operator ==(const Handle<T>& e) const {
-      return ptr() == e.ptr();
-    }
-    /// Non-Equality operator
-    template <typename T> bool operator !=(const Handle<T>& e) const {
-      return ptr() != e.ptr();
-    }
 
     /// Check if placement is properly instrumented
     Object* data() const;
-    /// Access the object type from the class information
-    const char* type() const;
     /// Access the copy number of this placement within its mother
     int copyNumber() const;
     /// Volume material
@@ -228,10 +183,6 @@ namespace dd4hep {
     Volume volume() const;
     /// Parent volume (envelope)
     Volume motherVol() const;
-    /// Number of daughters placed in this volume
-    std::size_t num_daughters()  const;
-    /// Access the daughter by index
-    PlacedVolume daughter(std::size_t which)  const;
     /// Access the full transformation matrix to the parent volume
     const TGeoMatrix& matrix()  const;
     /// Access the translation vector to the parent volume
@@ -243,58 +194,6 @@ namespace dd4hep {
     /// String dump
     std::string toString() const;
   };
-
-  // This needs full knowledge of the PlacedVolume class, at least for ROOT 6.28/04
-  // so we place it here
-  /// Optional parameters to implement special features such as parametrization
-  /**
-   *
-   *   \author  M.Frank
-   *   \version 1.0
-   *   \ingroup DD4HEP_CORE
-   */
-  class PlacedVolumeExtension::Parameterisation {
-  public:
-    /** Feature: Geant4 parameterised volumes  */
-    using Dimension = std::pair<Transform3D, size_t>;
-    /// Reference to the starting point of the parameterisation
-    Transform3D   start    {   };
-    /// Reference to the parameterised transformation for dimension 1
-    Dimension     trafo1D  { {}, 0UL };
-    /// Reference to the parameterised transformation for dimension 2
-    Dimension     trafo2D  { {}, 0UL };
-    /// Reference to the parameterised transformation for dimension 3
-    Dimension     trafo3D  { {}, 0UL };
-    /// Number of entries for the parameterisation in dimension 2
-    unsigned long flags    { 0 };
-    /// Number of entries for the parameterisation in dimension 2
-    unsigned long refCount { 0 };
-    /// Reference to the placements of this volume
-    std::vector<PlacedVolume> placements {  };
-    /// Bitfield from sensitive detector to encode the volume ID on the fly
-    const detail::BitFieldElement* field { nullptr };
-
-  public:
-    /// Default constructor
-    Parameterisation() = default;
-    /// Default move
-    Parameterisation(Parameterisation&& copy) = default;
-    /// Copy constructor
-    Parameterisation(const Parameterisation& c) = default;
-    /// Default destructor
-    virtual ~Parameterisation() = default;
-    /// Move assignment
-    Parameterisation& operator=(Parameterisation&& copy) = default;
-    /// Assignment operator
-    Parameterisation& operator=(const Parameterisation& copy) = default;
-    /// Increase ref count
-    Parameterisation* addref();
-    /// Decrease ref count
-    void release();
-    /// Enable ROOT persistency
-    ClassDef(Parameterisation,200);
-  };
-
 
   /// Implementation class extending the ROOT volume (TGeoVolume)
   /**
@@ -327,23 +226,28 @@ namespace dd4hep {
     Handle<NamedObject> sens_det;
     /// Reference to the reflected volume (or to the original volume for reflections)
     Handle<TGeoVolume>  reflected;
-    /// Reference to properties
-    TList* properties  { nullptr };
-
+    
     /// Default destructor
     virtual ~VolumeExtension();
     /// Default constructor
     VolumeExtension();
     /// No move
     VolumeExtension(VolumeExtension&& copy) = delete;
-    /// Copy constructor
-    VolumeExtension(const VolumeExtension& copy);
+    /// No copy
+    VolumeExtension(const VolumeExtension& copy) = default;
     /// No move assignment
     VolumeExtension& operator=(VolumeExtension&& copy) = delete;
-    /// Copy assignment
-    VolumeExtension& operator=(const VolumeExtension& copy);
+    /// No copy assignment
+    VolumeExtension& operator=(const VolumeExtension& copy) = default;
     /// Copy the object
-    void copy(const VolumeExtension& c);
+    void copy(const VolumeExtension& c) {
+      magic      = c.magic;
+      region     = c.region;
+      limits     = c.limits;
+      vis        = c.vis;
+      sens_det   = c.sens_det;
+      referenced = c.referenced;
+    }
     /// TGeoExtension overload: Method called whenever requiring a pointer to the extension
     virtual TGeoExtension *Grab()  override;
     /// TGeoExtension overload: Method called always when the pointer to the extension is not needed anymore
@@ -383,19 +287,8 @@ namespace dd4hep {
       VETO_SIMU     = 1,
       VETO_RECO     = 2,
       VETO_DISPLAY  = 3,
-      REFLECTED     = 10,
+      REFLECTED     = 10
     };
-    enum ReplicationAxis  {
-      REPLICATED    = 1UL << 4,
-      PARAMETERIZED = 1UL << 5,
-      Undefined     = 1UL << 7,
-      X_axis        = 1UL << 8,
-      Y_axis        = 1UL << 9,
-      Z_axis        = 1UL << 10,
-      Rho_axis      = 1UL << 11,
-      Phi_axis      = 1UL << 12
-    };
-  
   public:
     /// Default constructor
     Volume() = default;
@@ -423,24 +316,9 @@ namespace dd4hep {
     Volume& operator=(Volume&& a)  = default;
     /// Assignment operator (must match copy constructor)
     Volume& operator=(const Volume& a)  = default;
-    /// Equality operator
-    template <typename T> bool operator ==(const Handle<T>& e) const {
-      return ptr() == e.ptr();
-    }
-    /// Non-Equality operator
-    template <typename T> bool operator !=(const Handle<T>& e) const {
-      return ptr() != e.ptr();
-    }
 
-    /// Set flag to enable copy number checks when inserting new nodes
-    /** By default checks are enabled. If you want to disable, call this function */
-    static void enableCopyNumberCheck(bool value);
-    
     /// Check if placement is properly instrumented
     Object* data() const;
-
-    /// Access the object type from the class information
-    const char* type() const;
 
     /// Create a reflected volume tree. The reflected volume has left-handed coordinates
     Volume reflect()  const;
@@ -478,166 +356,35 @@ namespace dd4hep {
     PlacedVolume placeVolume(const Volume& volume, int copy_no, const RotationZYX& rot) const;
     /// Place rotated daughter volume. The position is automatically the identity position
     PlacedVolume placeVolume(const Volume& volume, int copy_no, const Rotation3D& rot) const;
-    /// Place daughter volume with generic TGeo matrix
-    PlacedVolume placeVolume(const Volume& volume, TGeoMatrix* tr) const;
-    /// Place daughter volume with generic TGeo matrix
-    PlacedVolume placeVolume(const Volume& volume, int copy_nr, TGeoMatrix* tr) const;
-    /// 1D volume replication implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity Daughter volume to be placed
-     *  @param axis   Replication axis direction in the frame of the mother
-     *  @param count  Number of entities to be placed
-     *  @param inc    Transformation increment for each iteration
+    /// Parametrized volume implementation
+    /** Embedding parametrized daughter placements in a mother volume
      *  @param start  start transormation for the first placement
-     */
-    PlacedVolume replicate(const Volume entity, ReplicationAxis axis, size_t count, double inc, double start=0e0);
-    /// 1D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start  start transormation for the first placement
-     *  @param entity Daughter volume to be placed
      *  @param count  Number of entities to be placed
+     *  @param entity Daughter volume to be placed
      *  @param inc    Transformation increment for each iteration
      */
-    PlacedVolume paramVolume1D(const Transform3D& start, Volume entity, size_t count, const Transform3D& inc);
-    /// 1D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity Daughter volume to be placed
+    void paramVolume1D(const Transform3D& start, size_t count, Volume entity, const Transform3D& inc);
+    /// Parametrized volume implementation
+    /** Embedding parametrized daughter placements in a mother volume
      *  @param count  Number of entities to be placed
+     *  @param entity Daughter volume to be placed
      *  @param inc    Transformation increment for each iteration
      */
-    PlacedVolume paramVolume1D(Volume entity, size_t count, const Transform3D& trafo);
-    /// 1D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity Daughter volume to be placed
+    void paramVolume1D(size_t count, Volume entity, const Transform3D& trafo);
+    /// Parametrized volume implementation
+    /** Embedding parametrized daughter placements in a mother volume
      *  @param count  Number of entities to be placed
+     *  @param entity Daughter volume to be placed
      *  @param inc    Transformation increment for each iteration
      */
-    PlacedVolume paramVolume1D(Volume entity, size_t count, const Position& inc);
-    /// 1D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity Daughter volume to be placed
+    void paramVolume1D(size_t count, Volume entity, const Position& inc);
+    /// Parametrized volume implementation
+    /** Embedding parametrized daughter placements in a mother volume
      *  @param count  Number of entities to be placed
+     *  @param entity Daughter volume to be placed
      *  @param inc    Transformation increment for each iteration
      */
-    PlacedVolume paramVolume1D(Volume entity, size_t count, const RotationZYX& inc);
-
-    /// 2D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     */
-    PlacedVolume paramVolume2D(Volume entity, 
-			       size_t count_1, const Transform3D& inc_1,
-			       size_t count_2, const Transform3D& inc_2);
-
-    /// Constructor to be used when creating a new parameterised volume object
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start    start transormation for the first placement
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     */
-    PlacedVolume paramVolume2D(const Transform3D& start,
-			       Volume entity,
-			       size_t count_1,
-			       const Position& inc_1,
-			       size_t count_2,
-			       const Position& inc_2);
-
-    /// Constructor to be used when creating a new parameterised volume object
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start    start transormation for the first placement
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     */
-    PlacedVolume paramVolume2D(Volume entity,
-			       size_t count_1,
-			       const Position& inc_1,
-			       size_t count_2,
-			       const Position& inc_2);
-
-    /// 2D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start    start transormation for the first placement
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     */
-    PlacedVolume paramVolume2D(const Transform3D& start, Volume entity, 
-			       size_t count_1, const Transform3D& inc_1,
-			       size_t count_2, const Transform3D& inc_2);
-
-    /// 3D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     *  @param count_3  Number of entities to be placed in dimension 3
-     *  @param inc_3    Transformation increment for each iteration in dimension 3
-     */
-    PlacedVolume paramVolume3D(Volume entity, 
-			       size_t count_1, const Transform3D& inc_1,
-			       size_t count_2, const Transform3D& inc_2,
-			       size_t count_3, const Transform3D& inc_3);
-
-    /// 3D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start    start transormation for the first placement
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     *  @param count_3  Number of entities to be placed in dimension 3
-     *  @param inc_3    Transformation increment for each iteration in dimension 3
-     */
-    PlacedVolume paramVolume3D(const Transform3D& start, Volume entity, 
-			       size_t count_1, const Transform3D& inc_1,
-			       size_t count_2, const Transform3D& inc_2,
-			       size_t count_3, const Transform3D& inc_3);
-
-    /// 3D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     *  @param count_3  Number of entities to be placed in dimension 3
-     *  @param inc_3    Transformation increment for each iteration in dimension 3
-     */
-    PlacedVolume paramVolume3D(Volume entity, 
-			       size_t count_1, const Position& inc_1,
-			       size_t count_2, const Position& inc_2,
-			       size_t count_3, const Position& inc_3);
-
-    /// 3D Parameterised volume implementation
-    /** Embedding parameterised daughter placements in a mother volume
-     *  @param start    start transormation for the first placement
-     *  @param entity   Daughter volume to be placed
-     *  @param count_1  Number of entities to be placed in dimension 1
-     *  @param inc_1    Transformation increment for each iteration in dimension 1
-     *  @param count_2  Number of entities to be placed in dimension 2
-     *  @param inc_2    Transformation increment for each iteration in dimension 2
-     *  @param count_3  Number of entities to be placed in dimension 3
-     *  @param inc_3    Transformation increment for each iteration in dimension 3
-     */
-    PlacedVolume paramVolume3D(const Transform3D& start, Volume entity, 
-			       size_t count_1, const Position& inc_1,
-			       size_t count_2, const Position& inc_2,
-			       size_t count_3, const Position& inc_3);
+    void paramVolume1D(size_t count, Volume entity, const RotationZYX& inc);
 
     /// Set user flags in bit-field
     void setFlagBit(unsigned int bit);
@@ -647,11 +394,8 @@ namespace dd4hep {
     /// Test if this volume was reflected
     bool isReflected()   const;
     
-    /// Test if this volume is an assembly structure
-    bool isAssembly()   const;
-
     /// Set the volume's option value
-    const Volume& setOption(const std::string& opt) const;
+    void setOption(const std::string& opt) const;
     /// Access the volume's option value
     std::string option() const;
 
@@ -699,15 +443,6 @@ namespace dd4hep {
     /// Access to the Volume material
     Material material() const;
 
-    /// Check for existence of properties
-    bool hasProperties()  const;
-
-    /// Add Volume property (name-value pair)
-    void addProperty(const std::string& nam, const std::string& val)  const;
-
-    /// Access property value. Returns default_value if the property is not present
-    std::string getProperty(const std::string& nam, const std::string& default_val="")  const;
-
     /// Auto conversion to underlying ROOT object
     operator TGeoVolume*() const {
       return m_element;
@@ -726,9 +461,7 @@ namespace dd4hep {
    *   \ingroup DD4HEP_CORE
    */
   class VolumeMulti : public Volume   {
-    /// Import volume from pointer as a result of Solid->Divide()
     void verifyVolumeMulti();
-
   public:
     /// Default constructor
     VolumeMulti() = default;
@@ -776,4 +509,4 @@ namespace dd4hep {
   /// Output mesh vertices to string
   std::string toStringMesh(PlacedVolume solid, int precision=2);
 }         /* End namespace dd4hep          */
-#endif // DD4HEP_VOLUMES_H
+#endif    /* DD4HEP_DDCORE_VOLUMES_H       */

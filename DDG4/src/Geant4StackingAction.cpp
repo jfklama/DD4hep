@@ -38,13 +38,6 @@ Geant4StackingAction::~Geant4StackingAction() {
   InstanceCount::decrement(this);
 }
 
-/// Classify new track: The first call in the sequence returning non-null pointer wins!
-TrackClassification 
-Geant4StackingAction::classifyNewTrack(G4StackManager* /* manager */,
-				       const G4Track* /* track */)  {
-  return TrackClassification();
-}
-
 /// Standard constructor
 Geant4SharedStackingAction::Geant4SharedStackingAction(Geant4Context* ctxt, const string& nam)
   : Geant4StackingAction(ctxt, nam), m_action(0)
@@ -75,36 +68,23 @@ void Geant4SharedStackingAction::use(Geant4StackingAction* action)   {
 }
 
 /// Begin-of-stacking callback
-void Geant4SharedStackingAction::newStage(G4StackManager* stackManager)  {
+void Geant4SharedStackingAction::newStage()  {
   if ( m_action )  {
     G4AutoLock protection_lock(&action_mutex);    {
       ContextSwap swap(m_action,context());
-      m_action->newStage(stackManager);
+      m_action->newStage();
     }
   }
 }
 
 /// End-of-stacking callback
-void Geant4SharedStackingAction::prepare(G4StackManager* stackManager)  {
+void Geant4SharedStackingAction::prepare()  {
   if ( m_action )  {
     G4AutoLock protection_lock(&action_mutex);  {
       ContextSwap swap(m_action,context());
-      m_action->prepare(stackManager);
+      m_action->prepare();
     }
   }
-}
-
-/// Classify new track with delegation
-TrackClassification 
-Geant4SharedStackingAction::classifyNewTrack(G4StackManager* stackManager,
-					     const G4Track* track)   {
-  if ( m_action )  {
-    G4AutoLock protection_lock(&action_mutex);  {
-      ContextSwap swap(m_action,context());
-      return m_action->classifyNewTrack(stackManager, track);
-    }
-  }
-  return {};
 }
 
 /// Standard constructor
@@ -150,26 +130,13 @@ Geant4StackingAction* Geant4StackingActionSequence::get(const string& nam) const
 }
 
 /// Pre-track action callback
-void Geant4StackingActionSequence::newStage(G4StackManager* stackManager) {
-  m_actors(&Geant4StackingAction::newStage, stackManager);
-  m_newStage(stackManager);
+void Geant4StackingActionSequence::newStage() {
+  m_actors(&Geant4StackingAction::newStage);
+  m_newStage();
 }
 
 /// Post-track action callback
-void Geant4StackingActionSequence::prepare(G4StackManager* stackManager) {
-  m_actors(&Geant4StackingAction::prepare, stackManager);
-  m_prepare(stackManager);
-}
-
-/// Classify new track: The first call in the sequence returning non-null pointer wins!
-TrackClassification 
-Geant4StackingActionSequence::classifyNewTrack(G4StackManager* stackManager,
-					       const G4Track* track)   {
-  for( auto a : m_actors )   {
-    auto ret = a->classifyNewTrack(stackManager, track);
-    if ( ret.type != NoTrackClassification )  {
-      return ret;
-    }
-  }
-  return {};
+void Geant4StackingActionSequence::prepare() {
+  m_actors(&Geant4StackingAction::prepare);
+  m_prepare();
 }

@@ -68,12 +68,12 @@ DDSegmentation::Parameter  Segmentation::parameter(const std::string& parameterN
 }
 
 /// determine the local position based on the cell ID
-Position Segmentation::position(const CellID& cell) const {
+Position Segmentation::position(const long64& cell) const {
   return Position(access()->segmentation->position(cell));
 }
 
 /// determine the cell ID based on the local position
-CellID Segmentation::cellID(const Position& localPosition, const Position& globalPosition, const CellID & volID) const {
+long64 Segmentation::cellID(const Position& localPosition, const Position& globalPosition, const long64& volID) const {
   return access()->segmentation->cellID(localPosition, globalPosition, volID);
 }
 
@@ -112,12 +112,12 @@ void Segmentation::setDecoder(const BitFieldCoder* decode) const  {
   access()->segmentation->setDecoder(decode);
 }
 
-/// Access the main detector element using this segmentation object
+/// Access the main detector element using this segmetnation object
 Handle<DetElementObject> Segmentation::detector() const  {
   return access()->detector;
 }
 
-/// Access the sensitive detector using this segmentation object
+/// Access the sensitive detector using this segmetnation object
 Handle<SensitiveDetectorObject> Segmentation::sensitive() const  {
   return access()->sensitive;
 }

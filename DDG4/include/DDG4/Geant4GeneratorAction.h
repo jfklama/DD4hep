@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4GENERATORACTION_H
-#define DDG4_GEANT4GENERATORACTION_H
+#ifndef DD4HEP_DDG4_GEANT4GENERATORACTION_H
+#define DD4HEP_DDG4_GEANT4GENERATORACTION_H
 
 // Framework include files
 #include "DDG4/Geant4Action.h"
@@ -88,11 +88,11 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4SharedGeneratorAction();
       /// Set or update client for the use in a new thread fiber
-      virtual void configureFiber(Geant4Context* thread_context)  override;
+      virtual void configureFiber(Geant4Context* thread_context);
       /// Underlying object to be used during the execution of this thread
       virtual void use(Geant4GeneratorAction* action);
       /// User generator callback
-      virtual void operator()(G4Event* event)  override;
+      virtual void operator()(G4Event* event);
     };
 
     /// Concrete implementation of the Geant4 generator action sequence
@@ -127,9 +127,9 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4GeneratorActionSequence();
       /// Set or update client context
-      virtual void updateContext(Geant4Context* ctxt)  override;
+      virtual void updateContext(Geant4Context* ctxt);
       /// Set or update client for the use in a new thread fiber
-      virtual void configureFiber(Geant4Context* thread_context)  override;
+      virtual void configureFiber(Geant4Context* thread_context);
       /// Get an action by name
       Geant4GeneratorAction* get(const std::string& name) const;
       /// Register primary particle generation callback. Types Q and T must be polymorph!
@@ -146,4 +146,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4GENERATORACTION_H
+#endif // DD4HEP_DDG4_GEANT4GENERATORACTION_H

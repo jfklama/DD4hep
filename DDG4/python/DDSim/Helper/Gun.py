@@ -1,9 +1,10 @@
 """Helper object for particle gun properties"""
 
+from __future__ import absolute_import, unicode_literals
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from g4units import GeV
-from math import atan, exp
 import logging
+import ddsix as six
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class Gun(ConfigHelper):
 
   def __init__(self):
     super(Gun, self).__init__()
+    self.energy = 10 * GeV
     self.particle = "mu-"
     self.multiplicity = 1
     self._position = (0.0, 0.0, 0.0)
@@ -21,29 +23,14 @@ class Gun(ConfigHelper):
 
     self._phiMin_EXTRA = {'help': "Minimal azimuthal angle for random distribution"}
     self.phiMin = None
-    self._phiMax_EXTRA = {'help': "Maximal azimuthal angle for random distribution"}
     self.phiMax = None
-    self._thetaMin_EXTRA = {'help': "Minimal polar angle for random distribution"}
     self.thetaMin = None
-    self._thetaMax_EXTRA = {'help': "Maximal polar angle for random distribution"}
     self.thetaMax = None
-    self._etaMin_EXTRA = {'help': "Minimal pseudorapidity for random distibution (overrides thetaMax)"}
-    self.etaMin = None
-    self._etaMax_EXTRA = {'help': "Maximal pseudorapidity for random distibution (overrides thetaMin)"}
-    self.etaMax = None
-    self._momentumMin_EXTRA = {'help': "Minimal momentum when using distribution (default = 0.0)"}
-    self.momentumMin = 0 * GeV
-    self._momentumMax_EXTRA = {'help': "Maximal momentum when using distribution (default = 0.0)"}
-    self.momentumMax = 10 * GeV
-    self._energy_EXTRA = {'help': "Total energy (including mass) for the particle gun.\n\n"
-                          "If not None, it will overwrite the setting of momentumMin and momentumMax"}
-    self.energy = None
 
     self._distribution_EXTRA = {'choices': ['uniform', 'cos(theta)',
                                             'eta', 'pseudorapidity',
                                             'ffbar']}  # (1+cos^2 theta)
     self._distribution = None
-    self._closeProperties()
 
   @property
   def distribution(self):
@@ -64,8 +51,8 @@ class Gun(ConfigHelper):
   def distribution(self, val):
     if val is None:
       return
-    possibleDistributions = self._distribution_EXTRA['choices']
-    if not isinstance(val, str):
+    possibleDistributions = ['uniform', 'cos(theta)', 'eta', 'pseudorapidity', 'ffbar']  # (1+cos^2 theta)
+    if not isinstance(val, six.string_types):
       raise RuntimeError("malformed input '%s' for gun.distribution. Need a string : %s " %
                          (val, ",".join(possibleDistributions)))
     if val not in possibleDistributions:
@@ -83,7 +70,7 @@ class Gun(ConfigHelper):
     use the options phiMin, phiMax, thetaMin, and thetaMax to limit the range of randomly distributed directions
     if one of these options is not None the random distribution will be set to True and cannot be turned off!
     """
-    return self._isotrop or bool(self._distribution)
+    return self._isotrop
 
   @isotrop.setter
   def isotrop(self, val):
@@ -106,7 +93,7 @@ class Gun(ConfigHelper):
     self._direction = ConfigHelper.makeTuple(val)
     if len(self._direction) != 3:
       raise RuntimeError(
-          " gun.direction: malformed input '%s', needs to be a string representing a three vector " % (val,))
+          " gun.direction: malformed input '%s', needs to be a string representing a three vector " % val)
 
   @property
   def position(self):
@@ -118,14 +105,12 @@ class Gun(ConfigHelper):
     """check that the position is a three vector and can be parsed by ddg4"""
     self._position = ConfigHelper.makeTuple(val)
     if len(self._position) != 3:
-      raise RuntimeError(
-          " gun.position: malformed input '%s', needs to be a string representing a three vector " % (val,))
+      raise RuntimeError(" gun.position: malformed input '%s', needs to be a string representing a three vector " % val)
 
   def setOptions(self, ddg4Gun):
     """set the starting properties of the DDG4 particle gun"""
     try:
-      if self.energy:
-        ddg4Gun.Energy = self.energy
+      ddg4Gun.energy = self.energy
       ddg4Gun.particle = self.particle
       ddg4Gun.multiplicity = self.multiplicity
       ddg4Gun.position = self.position
@@ -144,15 +129,6 @@ class Gun(ConfigHelper):
       if self.phiMax is not None:
         ddg4Gun.PhiMax = self.phiMax
         ddg4Gun.isotrop = True
-      if self.etaMin is not None:
-        ddg4Gun.ThetaMax = 2. * atan(exp(-float(self.etaMin)))
-        ddg4Gun.isotrop = True
-      if self.etaMax is not None:
-        ddg4Gun.ThetaMin = 2. * atan(exp(-float(self.etaMax)))
-        ddg4Gun.isotrop = True
-      # this avoids issues if momentumMin is None because of previous default
-      ddg4Gun.MomentumMin = self.momentumMin if self.momentumMin else 0.0
-      ddg4Gun.MomentumMax = self.momentumMax
     except Exception as e:  # pylint: disable=W0703
       logger.error("parsing gun options:\n%s\nException: %s " % (self, e))
       exit(1)

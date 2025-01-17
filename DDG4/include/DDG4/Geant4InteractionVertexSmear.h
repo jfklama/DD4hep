@@ -10,19 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-
-/** \addtogroup Geant4GeneratorAction
- *
- @{
-   \package Geant4InteractionVertexSmear
- * \brief Action class to smear the primary vertex (and all outgoing particles) of a single interaction
- *
- *
-@}
- */
-
-#ifndef DDG4_GEANT4INTERACTIONVERTEXSMEAR_H
-#define DDG4_GEANT4INTERACTIONVERTEXSMEAR_H
+#ifndef DD4HEP_DDG4_GEANT4INTERACTIONVERTEXSMEAR_H
+#define DD4HEP_DDG4_GEANT4INTERACTIONVERTEXSMEAR_H
 
 // Framework include files
 #include "DDG4/Geant4GeneratorAction.h"
@@ -79,4 +68,4 @@ namespace dd4hep {
     };
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4INTERACTIONVERTEXSMEAR_H
+#endif /* DD4HEP_DDG4_GEANT4INTERACTIONVERTEXSMEAR_H  */

@@ -13,15 +13,6 @@
 SET_PROPERTY(DIRECTORY . PROPERTY PACKAGE_NAME DDCore)
 dd4hep_print("|++> Will be Building DDCore")
 
-file(GLOB DDCore_SOURCES src/*.cpp src/segmentations/*.cpp src/XML/*.cpp)
-
-if(${CMAKE_CXX_STANDARD} LESS 17)
-  list(APPEND EXCLUDE_HEADER include/DD4hep/SpecParRegistry.h)
-  list(APPEND EXCLUDE_HEADER include/DD4hep/Filter.h)
-  list(FILTER DDCore_SOURCES EXCLUDE REGEX Filter\.cpp|SpecParRegistry\.cpp )
-endif()
-
-# Build the generic DD4hep dictionary
 dd4hep_add_dictionary( G__DD4hep
   SOURCES include/ROOT/Warnings.h
   include/DD4hep/*.h
@@ -34,38 +25,34 @@ dd4hep_add_dictionary( G__DD4hep
   include/DD4hep/Plugins.h
   include/DD4hep/IoStreams.h
   include/DD4hep/SurfaceInstaller.h
-  include/DD4hep/GrammarParsed.h
-  include/DD4hep/GrammarUnparsed.h
+  include/DD4hep/detail/BasicGrammar_inl.h
   include/XML/UnicodeValues.h
   include/XML/tinyxml.h
   include/XML/tinystring.h
-  ${EXCLUDE_HEADER}
   LINKDEF include/ROOT/LinkDef.h
-  USES DDCore DDParsers ${XML_LIBRARIES} ${TBB_IMPORTED_TARGETS}
+  USES DDParsers ${XML_LIBRARIES}
   DEFINITIONS DD4HEP_MUST_USE_DETECTORIMP_H
   )
 
-# Build the DD4hep dictionary for all geometry instantiations
 dd4hep_add_dictionary( G__DD4hepGeo
   SOURCES include/ROOT/Warnings.h src/GeoDictionary.h
   LINKDEF include/ROOT/LinkDef.h
-  USES DDCore DDParsers ${XML_LIBRARIES}
+  USES DDParsers ${XML_LIBRARIES}
   )
 
-# Build the DD4hep dictionary for property type instantiations
 dd4hep_add_dictionary( G__DD4hepProperties
   SOURCES include/ROOT/Warnings.h src/PropertyDictionary.h
   LINKDEF include/ROOT/LinkDef.h
-  USES DDCore DDParsers ${XML_LIBRARIES}
+  USES DDParsers ${XML_LIBRARIES}
   )
 
-# Build the DD4hep dictionary for the segmentation instantiations
 dd4hep_add_dictionary( G__DD4hepSegmentations
   SOURCES include/ROOT/Warnings.h src/SegmentationDictionary.h
   LINKDEF include/ROOT/LinkDef.h
-  USES DDCore DDParsers ${XML_LIBRARIES}
+  USES DDParsers ${XML_LIBRARIES}
   )
 
+file(GLOB DDCore_SOURCES src/*.cpp src/segmentations/*.cpp src/XML/*.cpp)
 if(TARGET Boost::boost)
   dd4hep_print("|++> Boost available, building Json Parsers")
   file(GLOB DDCore_BOOST_SOURCES src/JSON/*.cpp)
@@ -79,11 +66,6 @@ add_library(DDCore ${DDCore_SOURCES} ${DDCore_BOOST_SOURCES}
   )
 add_library(DD4hep::DDCore ALIAS DDCore)
 
-if(DD4HEP_USE_TBB AND ${CMAKE_CXX_STANDARD} GREATER_EQUAL 17)
-  target_compile_definitions(DDCore PUBLIC DD4HEP_USE_TBB)
-  target_link_libraries(DDCore PUBLIC TBB::tbb)
-endif()
-
 target_include_directories(DDCore
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
@@ -94,7 +76,7 @@ target_link_libraries(DDCore
   PUBLIC
   DD4hep::DDParsers
   ROOT::Core ROOT::Rint ROOT::Tree ROOT::Physics ROOT::Geom ROOT::GenVector
-  ${XML_LIBRARIES} ${CMAKE_DL_LIBS}
+  ${XML_LIBRARIES}
   )
 
 if(${CMAKE_VERSION} VERSION_GREATER 3.7.99)
@@ -106,11 +88,6 @@ endif()
 
 # Generate DDCore plugins---------------------------------------------------------
 dd4hep_add_plugin(DDCorePlugins SOURCES src/plugins/*.cpp USES DDCore)
-
-# Graphics DDCore plugins---------------------------------------------------------
-dd4hep_add_plugin(DDCoreGraphics
-  SOURCES src/graphics/*.cpp
-  USES DDCore ROOT::Core ROOT::Rint ROOT::Gui ROOT::Hist ROOT::HistPainter ROOT::ROOTHistDraw)
 
 # This plugins depends on the ROOT GDML readers. Hence, extra library
 IF(TARGET ROOT::Gdml)
@@ -124,17 +101,17 @@ IF(TARGET ROOT::Gdml)
 ELSE()
   dd4hep_print("ROOT does not include GDML, not building DDCore GDML Plugins")
 ENDIF()
-
+    
 #---------------------------  Specialized PYTHON plugin ----------------------------
-IF(TARGET ${DD4HEP_ROOT_PYTHON})
+IF(TARGET ROOT::PyROOT)
   dd4hep_add_plugin(DDPythonPlugins
     SOURCES src/python/*.cpp
-    USES DDCore ROOT::Core ${DD4HEP_ROOT_PYTHON}
+    USES DDCore ROOT::Core ROOT::PyROOT
     )
   set_target_properties(DDPythonPlugins PROPERTIES VERSION ${DD4hep_VERSION} SOVERSION ${DD4hep_SOVERSION})
   LIST(APPEND OPTIONAL_TARGETS DDPythonPlugins)
 ELSE()
-  dd4hep_print("ROOT does not include Python support, not building DDCore DDPython Plugins")
+  dd4hep_print("ROOT does not include PyRoot, not building DDCore DDPython Plugins")
 ENDIF()
 
 # install python files

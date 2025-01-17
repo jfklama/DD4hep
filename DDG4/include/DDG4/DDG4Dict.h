@@ -15,8 +15,8 @@
 //  which are created by the DDG4 examples.
 //
 //====================================================================
-#ifndef DDG4_DDG4DICT_H
-#define DDG4_DDG4DICT_H
+#ifndef DD4HEP_DDG4_DDG4DICT_H
+#define DD4HEP_DDG4_DDG4DICT_H
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -52,6 +52,8 @@ namespace { class DDG4Dict {};   }
 #pragma link off all classes;
 #pragma link off all functions;
 
+using namespace std;
+
 /// Define namespaces
 #pragma link C++ namespace dd4hep;
 #pragma link C++ namespace dd4hep::sim;
@@ -65,35 +67,39 @@ namespace { class DDG4Dict {};   }
 /// Dictionaires for Geant4 particles
 #pragma link C++ class dd4hep::sim::ParticleExtension+;
 
+/// Auto-pointers related. ROOT cannot handle I/O!
+#pragma link C++ class dd4hep::dd4hep_ptr<dd4hep::sim::DataExtension>;
+#pragma link C++ class dd4hep::dd4hep_ptr<dd4hep::sim::ParticleExtension>;
+
 #pragma link C++ class dd4hep::sim::Geant4Particle+;
-#pragma link C++ class std::vector<dd4hep::sim::Geant4Particle*>+;
-#pragma link C++ class std::map<int,dd4hep::sim::Geant4Particle*>+;
-#pragma link C++ class std::map<int,dd4hep::sim::Geant4Particle*>::iterator;
-#pragma link C++ class std::map<int,dd4hep::sim::Geant4Particle*>::const_iterator;
+#pragma link C++ class vector<dd4hep::sim::Geant4Particle*>+;
+#pragma link C++ class map<int,dd4hep::sim::Geant4Particle*>+;
+#pragma link C++ class map<int,dd4hep::sim::Geant4Particle*>::iterator;
+#pragma link C++ class map<int,dd4hep::sim::Geant4Particle*>::const_iterator;
 
 #ifdef R__MACOSX
 // We only need these declarations for the clang compiler
-#pragma link C++ function operator==( const std::map<int,dd4hep::sim::Geant4Particle*>::iterator&, const std::map<int,dd4hep::sim::Geant4Particle*>::iterator& );
-#pragma link C++ function operator!=( const std::map<int,dd4hep::sim::Geant4Particle*>::iterator&, const std::map<int,dd4hep::sim::Geant4Particle*>::iterator& );
+#pragma link C++ function operator==( const map<int,dd4hep::sim::Geant4Particle*>::iterator&, const map<int,dd4hep::sim::Geant4Particle*>::iterator& );
+#pragma link C++ function operator!=( const map<int,dd4hep::sim::Geant4Particle*>::iterator&, const map<int,dd4hep::sim::Geant4Particle*>::iterator& );
 #endif
+
+//#pragma link C++ class type_info;
 
 /// Dictionaires for basic Hit data structures
 #pragma link C++ class dd4hep::sim::Geant4HitData+;
-namespace dd4hep { namespace sim { typedef Geant4HitData* Geant4HitData_ptr_t; }}
-#pragma link C++ typedef dd4hep::sim::Geant4HitData_ptr_t;
-#pragma link C++ class std::vector<dd4hep::sim::Geant4HitData_ptr_t>+;
+#pragma link C++ class vector<dd4hep::sim::Geant4HitData*>+;
 #pragma link C++ class dd4hep::sim::Geant4HitData::Contribution+;
 #pragma link C++ class dd4hep::sim::Geant4HitData::Contributions+;
 
 /// Dictionaires for Tracker Hit data structures
 #pragma link C++ class dd4hep::sim::Geant4Tracker+;
 #pragma link C++ class dd4hep::sim::Geant4Tracker::Hit+;
-#pragma link C++ class std::vector<dd4hep::sim::Geant4Tracker::Hit*>+;
+#pragma link C++ class vector<dd4hep::sim::Geant4Tracker::Hit*>+;
 
 /// Dictionaires for Calorimeter Hit data structures
 #pragma link C++ class dd4hep::sim::Geant4Calorimeter+;
 #pragma link C++ class dd4hep::sim::Geant4Calorimeter::Hit+;
-#pragma link C++ class std::vector<dd4hep::sim::Geant4Calorimeter::Hit*>+;
+#pragma link C++ class vector<dd4hep::sim::Geant4Calorimeter::Hit*>+;
 
 #endif
 
@@ -133,22 +139,18 @@ namespace dd4hep {
     inline  Geant4HitData::~Geant4HitData()  {    }
     /// Extract the MC contribution for a given hit from the step information
     inline Geant4HitData::Contribution Geant4HitData::extractContribution(const G4Step*) { return Contribution(); }
-    /// Extract the MC contribution for a given hit from the spot information
-    inline Geant4HitData::Contribution Geant4HitData::extractContribution(const Geant4FastSimSpot*) { return Contribution(); }
     /// Default constructor
     inline Geant4Tracker::Hit::Hit() : length(0), energyDeposit(0e0)  {    }
     /// Initializing constructor
-    //inline Geant4Tracker::Hit::Hit(int, int, double, double)   {}
+    inline Geant4Tracker::Hit::Hit(int, int, double, double)   {}
     /// Default destructor
     inline Geant4Tracker::Hit::~Hit()  {    }
-    /// Explicit assignment operation
-    inline void Geant4Tracker::Hit::copyFrom(const Hit&)   {   }
+    /// Assignment operator
+    inline Geant4Tracker::Hit& Geant4Tracker::Hit::operator=(const Hit&)   { return *this; }
     /// Clear hit content
     inline Geant4Tracker::Hit& Geant4Tracker::Hit::clear()    { return *this; }
     /// Store Geant4 point and step information into tracker hit structure.
     inline Geant4Tracker::Hit& Geant4Tracker::Hit::storePoint(const G4Step*, const G4StepPoint*)  { return *this;}
-    /// Store Geant4 spot information into tracker hit structure.
-    inline Geant4Tracker::Hit& Geant4Tracker::Hit::storePoint(const Geant4FastSimSpot*)  { return *this;}    
     /// Default constructor
     inline Geant4Calorimeter::Hit::Hit() : energyDeposit(0e0)  {    }
     /// Initializing constructor
@@ -161,4 +163,4 @@ namespace dd4hep {
 
 #endif // __DDG4_STANDALONE_DICTIONARIES__
 
-#endif // DDG4_DDG4DICT_H
+#endif /* DD4HEP_DDG4_DDG4DICT_H */

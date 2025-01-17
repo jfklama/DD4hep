@@ -10,25 +10,25 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETECTOR_H
-#define DD4HEP_DETECTOR_H
+#ifndef DD4HEP_DETECTOR_DETECTOR_H
+#define DD4HEP_DETECTOR_DETECTOR_H
 
-#include <DD4hep/Version.h>
+#include "DD4hep/Version.h"
 
 // Framework includes
-#include <DD4hep/Handle.h>
-#include <DD4hep/Fields.h>
-#include <DD4hep/Objects.h>
-#include <DD4hep/Shapes.h>
-#include <DD4hep/Volumes.h>
-#include <DD4hep/Readout.h>
-#include <DD4hep/DetElement.h>
-#include <DD4hep/NamedObject.h>
-#include <DD4hep/Segmentations.h>
-#include <DD4hep/VolumeManager.h>
-#include <DD4hep/OpticalSurfaceManager.h>
-#include <DD4hep/ExtensionEntry.h>
-#include <DD4hep/BuildType.h>
+#include "DD4hep/Handle.h"
+#include "DD4hep/Fields.h"
+#include "DD4hep/Objects.h"
+#include "DD4hep/Shapes.h"
+#include "DD4hep/Volumes.h"
+#include "DD4hep/Readout.h"
+#include "DD4hep/DetElement.h"
+#include "DD4hep/NamedObject.h"
+#include "DD4hep/Segmentations.h"
+#include "DD4hep/VolumeManager.h"
+#include "DD4hep/OpticalSurfaceManager.h"
+#include "DD4hep/ExtensionEntry.h"
+#include "DD4hep/BuildType.h"
 
 // C/C++ include files
 #include <map>
@@ -54,25 +54,6 @@ namespace dd4hep {
     class UriReader;
   }
 
-  /// Helper class to access default temperature and pressure
-  class STD_Conditions   {
-  public:
-    enum  Conventions {
-      STP           = 1<<0, // Standard temperature and pressure (273.15 Kelvin, 1 ATM)
-      NTP           = 1<<1, // Normal   temperature and pressure (293.15 Kelvin, 1 ATM)
-      USER          = 1<<2, // Explicitly set before materials are defined (recommended)
-      USER_SET      = 1<<3,
-      USER_NOTIFIED = 1<<4
-    };
-  public:
-    double pressure;
-    double temperature;
-    long   convention;
-    bool is_NTP()  const           {  return (convention&NTP)  != 0; }
-    bool is_STP()  const           {  return (convention&STP)  != 0; }
-    bool is_user_defined()  const  {  return (convention&USER) != 0; }
-  };
-  
   /// The main interface to the dd4hep detector description package
   /**
    *  Note: The usage of the factory method:
@@ -147,14 +128,6 @@ namespace dd4hep {
     /// Access the optical surface manager
     virtual OpticalSurfaceManager surfaceManager()  const = 0;
 
-    /// Access default conditions (temperature and pressure
-    virtual const STD_Conditions& stdConditions()  const = 0;
-    /// Set the STD temperature and pressure
-    virtual void setStdConditions(double temp, double pressure) = 0;
-    /// Set the STD conditions according to defined types (STP or NTP)
-    virtual void setStdConditions(const std::string& type) = 0;
-    
-    
     /// Accessor to the map of header entries
     virtual Header header() const = 0;
     /// Accessor to the header entry
@@ -194,7 +167,7 @@ namespace dd4hep {
        is not present. Otherwise an empty detector container is returned.
     */
     virtual const std::vector<DetElement>& detectors(const std::string& type,
-                                                     bool throw_exc=false) const = 0;
+                                                     bool throw_exc=false) = 0;
 
     /// Access a set of subdetectors according to several sensitive types.
     virtual std::vector<DetElement> detectors(const std::string& type1,
@@ -239,28 +212,28 @@ namespace dd4hep {
     /// Typed access to constants: double values
     virtual double constantAsDouble(const std::string& name) const = 0;
 
-    /// Retrieve a constant by its name from the detector description
+    /// Retrieve a constant by it's name from the detector description
     virtual Constant constant(const std::string& name) const = 0;
     /// Typed access to constants: access any type values
     template <class T> T constant(const std::string& name) const;
 
-    /// Retrieve a matrial by its name from the detector description
+    /// Retrieve a matrial by it's name from the detector description
     virtual Material material(const std::string& name) const = 0;
-    /// Retrieve a id descriptor by its name from the detector description
+    /// Retrieve a id descriptor by it's name from the detector description
     virtual IDDescriptor idSpecification(const std::string& name) const = 0;
-    /// Retrieve a region object by its name from the detector description
+    /// Retrieve a region object by it's name from the detector description
     virtual Region region(const std::string& name) const = 0;
-    /// Retrieve a visualization attribute by its name from the detector description
+    /// Retrieve a visualization attribute by it's name from the detector description
     virtual VisAttr visAttributes(const std::string& name) const = 0;
-    /// Retrieve a limitset by its name from the detector description
+    /// Retrieve a limitset by it's name from the detector description
     virtual LimitSet limitSet(const std::string& name) const = 0;
-    /// Retrieve a readout object by its name from the detector description
+    /// Retrieve a readout object by it's name from the detector description
     virtual Readout readout(const std::string& name) const = 0;
-    /// Retrieve a sensitive detector by its name from the detector description
+    /// Retrieve a sensitive detector by it's name from the detector description
     virtual SensitiveDetector sensitiveDetector(const std::string& name) const = 0;
-    /// Retrieve a field component by its name from the detector description
+    /// Retrieve a subdetector element by it's name from the detector description
     virtual CartesianField field(const std::string& name) const = 0;
-    /// Retrieve a subdetector element by its name from the detector description
+    /// Retrieve a field component by it's name from the detector description
     virtual DetElement detector(const std::string& name) const = 0;
 
     /// Add a new constant to the detector description
@@ -402,4 +375,4 @@ namespace dd4hep {
   }
 #endif
 }         /* End namespace dd4hep           */
-#endif // DD4HEP_DETECTOR_H
+#endif    /* DD4HEP_DETECTOR_DETECTOR_H     */

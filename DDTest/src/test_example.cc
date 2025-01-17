@@ -4,11 +4,15 @@
 #include <assert.h>
 #include <cmath>
 
-//=============================================================================
-int main(int /* argc */, char** /* argv */ ){
+using namespace std ;
+using namespace dd4hep ;
 
-  // this should be the first line in your test
-  dd4hep::DDTest test( "example" );
+// this should be the first line in your test
+static DDTest test( "example" ) ; 
+
+//=============================================================================
+
+int main(int /* argc */, char** /* argv */ ){
     
   try{
     
@@ -18,12 +22,15 @@ int main(int /* argc */, char** /* argv */ ){
 
     // ----- example test for testing two expressions for equality:
 
-    test( std::string("Example"), std::string("Example"), "example test - string comparison " ); // this test will pass
+    test( "Example", "Example", "example test - string comparison " ); // this test will pass
 
     //test( "Example", "BadExample", "example test - string comparison " ); //  this test will fail
 
+
+
     double pi_d = M_PI ;
     float  pi_f = M_PI ;
+
     // ----- example for test of an expresssion - not using equality
 
     test(  1.1 * pi_f > pi_d   , " example comparison:  1.1* float(M_PI)  > double( M_PI) " ) ;  
@@ -34,11 +41,16 @@ int main(int /* argc */, char** /* argv */ ){
     // test(  pi_f >  pi_d  , " example comparison:  float(M_PI)  > double( M_PI) " ) ;  
 
     // --------------------------------------------------------------------
-  }
-  catch( std::exception &e ){
+
+
+  } catch( exception &e ){
+    //} catch( ... ){
+
     test.log( e.what() );
     test.error( "exception occurred" );
   }
+
   return 0;
 }
+
 //=============================================================================

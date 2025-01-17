@@ -21,24 +21,8 @@
 
 XML_ATTR_ACCESSOR(int, id)
 XML_ATTR_ACCESSOR_INT(id)
-XML_ATTR_ACCESSOR(int, level)
-XML_ATTR_ACCESSOR_INT(level)
 XML_ATTR_ACCESSOR(bool, combineHits)
 XML_ATTR_ACCESSOR(int, station)
-
-XML_ATTR_ACCESSOR_DOUBLE(v)
-XML_ATTR_ACCESSOR_DOUBLE(V)
-XML_ATTR_ACCESSOR_DOUBLE(dv)
-
-XML_ATTR_ACCESSOR_DOUBLE(v0)
-XML_ATTR_ACCESSOR_DOUBLE(v1)
-XML_ATTR_ACCESSOR_DOUBLE(v2)
-XML_ATTR_ACCESSOR_DOUBLE(v3)
-XML_ATTR_ACCESSOR_DOUBLE(v4)
-XML_ATTR_ACCESSOR_DOUBLE(vmin)
-XML_ATTR_ACCESSOR_DOUBLE(vmax)
-XML_ATTR_ACCESSOR_DOUBLE(v_offset)
-XML_ATTR_ACCESSOR_DOUBLE(dim_v)
 
 XML_ATTR_ACCESSOR_DOUBLE(x)
 XML_ATTR_ACCESSOR_DOUBLE(X)
@@ -71,8 +55,6 @@ XML_ATTR_ACCESSOR_DOUBLE(dz)
 XML_ATTR_ACCESSOR_DOUBLE(z0)
 XML_ATTR_ACCESSOR_DOUBLE(z1)
 XML_ATTR_ACCESSOR_DOUBLE(z2)
-XML_ATTR_ACCESSOR_DOUBLE(zpos)
-XML_ATTR_ACCESSOR_DOUBLE(zneg)
 XML_ATTR_ACCESSOR_DOUBLE(zmin)
 XML_ATTR_ACCESSOR_DOUBLE(zmax)
 XML_ATTR_ACCESSOR_DOUBLE(z_offset)
@@ -83,7 +65,6 @@ XML_ATTR_ACCESSOR(double, inner_z)
 XML_ATTR_ACCESSOR_DOUBLE(a)
 XML_ATTR_ACCESSOR_DOUBLE(b)
 XML_ATTR_ACCESSOR_DOUBLE(c)
-XML_ATTR_ACCESSOR_DOUBLE(dist)
 XML_ATTR_ACCESSOR_DOUBLE(distance)
 XML_ATTR_ACCESSOR_DOUBLE(g)
 XML_ATTR_ACCESSOR_DOUBLE(A)
@@ -118,8 +99,6 @@ XML_ATTR_ACCESSOR_DOUBLE(epsilon)
 XML_ATTR_ACCESSOR_DOUBLE(fraction)
 XML_ATTR_ACCESSOR_DOUBLE(theta)
 XML_ATTR_ACCESSOR_DOUBLE(deltatheta)
-XML_ATTR_ACCESSOR_DOUBLE(starttheta)
-XML_ATTR_ACCESSOR_DOUBLE(endtheta)
 XML_ATTR_ACCESSOR(int, thetaBins)
 XML_ATTR_ACCESSOR_DOUBLE(psi)
 XML_ATTR_ACCESSOR_DOUBLE(phi)
@@ -130,8 +109,6 @@ XML_ATTR_ACCESSOR_DOUBLE(phi1)
 XML_ATTR_ACCESSOR_DOUBLE(phi2)
 XML_ATTR_ACCESSOR_DOUBLE(deltaphi)
 XML_ATTR_ACCESSOR_DOUBLE(startphi)
-XML_ATTR_ACCESSOR_DOUBLE(endphi)
-XML_ATTR_ACCESSOR_DOUBLE(twist)
 
 XML_ATTR_ACCESSOR(double, length)
 XML_ATTR_ACCESSOR(double, width)
@@ -152,9 +129,7 @@ XML_ATTR_ACCESSOR(double, gap)
 XML_ATTR_ACCESSOR(double, z_length)
 XML_ATTR_ACCESSOR(double, zhalf)
 XML_ATTR_ACCESSOR(double, phi_tilt)
-XML_ATTR_ACCESSOR(int, count)
 XML_ATTR_ACCESSOR(int, nphi)
-XML_ATTR_ACCESSOR(int, replicate)
 XML_ATTR_ACCESSOR(double, rc)
 XML_ATTR_ACCESSOR(int, nz)
 XML_ATTR_ACCESSOR(int, key)
@@ -176,8 +151,6 @@ XML_ATTR_ACCESSOR_DOUBLE(step_z)
 XML_ATTR_ACCESSOR(double, thickness)
 XML_ATTR_ACCESSOR(double, inner_stereo)
 XML_ATTR_ACCESSOR(double, outer_stereo)
-XML_ATTR_ACCESSOR(int, item)
-XML_ATTR_ACCESSOR(int, items)
 XML_ATTR_ACCESSOR(int, numsides)
 XML_ATTR_ACCESSOR(int, nsides)
 XML_ATTR_ACCESSOR(int, nsides_inner)
@@ -190,7 +163,6 @@ XML_ATTR_ACCESSOR(bool, nocore)
 XML_ATTR_ACCESSOR_BOOL(nocore)
 
 XML_ATTR_ACCESSOR(int, nmodules)
-XML_ATTR_ACCESSOR(int, nsegments)
 XML_ATTR_ACCESSOR(int, nModules)
 XML_ATTR_ACCESSOR(int, RowID)
 XML_ATTR_ACCESSOR(int, nPads)
@@ -225,8 +197,6 @@ XML_CHILD_ACCESSOR_XML_DIM(params)
 XML_CHILD_ACCESSOR_XML_DIM(parameters)
 XML_CHILD_ACCESSOR_XML_DIM(position)
 XML_CHILD_ACCESSOR_XML_DIM(rotation)
-XML_CHILD_ACCESSOR_XML_DIM(transform)
-XML_CHILD_ACCESSOR_XML_DIM(transformation)
 XML_CHILD_ACCESSOR_XML_DIM(cone)
 XML_CHILD_ACCESSOR_XML_DIM(sphere)
 XML_CHILD_ACCESSOR_XML_DIM(torus)
@@ -237,29 +207,21 @@ XML_CHILD_ACCESSOR_XML_DIM(tubs)
 XML_CHILD_ACCESSOR_XML_DIM(staves)
 XML_CHILD_ACCESSOR_XML_DIM(envelope)
 XML_CHILD_ACCESSOR_XML_DIM(beampipe)
-XML_CHILD_ACCESSOR_XML_DIM(shape)
-XML_CHILD_ACCESSOR_XML_DIM(solid)
 
-/// Access "name" attribute as STL std::string
+std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::padType() const {
+  return m_element.attr < std::string > (_U(pads));
+}
+
 std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::nameStr() const {
   return m_element.attr < std::string > (_U(name));
 }
 
-/// Access "name" attribute as STL std::string. Return default value if not present
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::nameStr(const std::string& default_value) const {
-  Attribute attr = m_element.attr_nothrow(_U(name));
-  return attr ? m_element.attr < std::string >(attr) : default_value;
+std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::refStr() const {
+  return m_element.attr < std::string > (_U(ref));
 }
 
-/// Access "type" attribute as STL std::string
 std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::typeStr() const {
   return m_element.attr < std::string > (_U(type));
-}
-
-/// Access "type" attribute as STL std::string. Return default value if not present
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::typeStr(const std::string& default_value) const {
-  Attribute attr = m_element.attr_nothrow(_U(type));
-  return attr ? m_element.attr < std::string >(attr) : default_value;
 }
 
 /// Access "value" attribute as STL std::string
@@ -267,42 +229,14 @@ std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::valueStr() const   {
   return m_element.attr < std::string > (_U(value));
 }
 
-/// Access "value" attribute as STL std::string. Return default value if not present
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::valueStr(const std::string& default_value) const   {
-  Attribute attr = m_element.attr_nothrow(_U(value));
-  return attr ? m_element.attr < std::string >(attr) : default_value;
-}
-
 /// Access "label" attribute as STL std::string
 std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::labelStr() const   {
   return m_element.attr < std::string > (_U(label));
 }
 
-/// Access "label" attribute as STL std::string. Return default value if not present
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::labelStr(const std::string& default_value) const   {
-  Attribute attr = m_element.attr_nothrow(_U(label));
-  return attr ? m_element.attr < std::string >(attr) : default_value;
-}
-
 /// Access "symbol" attribute as STL std::string
 std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::symbolStr() const   {
   return m_element.attr < std::string > (_U(symbol));
-}
-
-/// Access "symbol" attribute as STL std::string. Return default value if not present
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::symbolStr(const std::string& default_value) const   {
-  Attribute attr = m_element.attr_nothrow(_U(symbol));
-  return attr ? m_element.attr < std::string >(attr) : default_value;
-}
-
-/// Access "padType" attribute as STL std::string
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::padType() const {
-  return m_element.attr < std::string > (_U(pads));
-}
-
-/// Access "ref" attribute as STL std::string
-std::string dd4hep::DD4HEP_DIMENSION_NS::Dimension::refStr() const {
-  return m_element.attr < std::string > (_U(ref));
 }
 
 /// Access "region" attribute as STL std::string. If not present returns empty string.

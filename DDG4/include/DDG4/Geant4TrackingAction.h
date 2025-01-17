@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TRACKINGACTION_H
-#define DDG4_GEANT4TRACKINGACTION_H
+#ifndef DD4HEP_DDG4_GEANT4TRACKINGACTION_H
+#define DD4HEP_DDG4_GEANT4TRACKINGACTION_H
 
 // Framework include files
 #include "DDG4/Geant4Action.h"
@@ -87,13 +87,13 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4SharedTrackingAction();
       /// Set or update client for the use in a new thread fiber
-      virtual void configureFiber(Geant4Context* thread_context)  override;
+      virtual void configureFiber(Geant4Context* thread_context);
       /// Underlying object to be used during the execution of this thread
       virtual void use(Geant4TrackingAction* action);
       /// Begin-of-track callback
-      virtual void begin(const G4Track* track)  override;
+      virtual void begin(const G4Track* track);
       /// End-of-track callback
-      virtual void end(const G4Track* track)   override;
+      virtual void end(const G4Track* track);
     };
 
     /// Concrete implementation of the Geant4 tracking action sequence
@@ -134,9 +134,9 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4TrackingActionSequence();
       /// Set or update client context
-      virtual void updateContext(Geant4Context* ctxt)  override;
+      virtual void updateContext(Geant4Context* ctxt);
       /// Set or update client for the use in a new thread fiber
-      virtual void configureFiber(Geant4Context* thread_context)  override;
+      virtual void configureFiber(Geant4Context* thread_context);
       /// Get an action by name
       Geant4TrackingAction* get(const std::string& name) const;
       /// Register Pre-track action callback before anything else
@@ -173,4 +173,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4TRACKINGACTION_H
+#endif // DD4HEP_DDG4_GEANT4TRACKINGACTION_H

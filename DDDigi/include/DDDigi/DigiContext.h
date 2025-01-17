@@ -10,17 +10,12 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDDIGI_DIGICONTEXT_H
-#define DDDIGI_DIGICONTEXT_H
+#ifndef DD4HEP_DDDIGI_DIGICONTEXT_H
+#define DD4HEP_DDDIGI_DIGICONTEXT_H
 
 // Framework incloude files
-#include <DD4hep/Primitives.h>
-#include <DDDigi/DigiData.h>
-#include <DDDigi/DigiRandomGenerator.h>
-
-/// C/C++ include files
-#include <memory>
-#include <mutex>
+#include "DD4hep/Primitives.h"
+#include "DDDigi/DigiData.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -53,7 +48,7 @@ namespace dd4hep {
      *  e.g. references for histogramming, logging, data access etc.
      *
      *  This way any experiment/user related data processing framework can exhibit
-     *  its essential tools to DDG4 actions.
+     *  it's essential tools to DDG4 actions.
      *
      *  A possible specialized implementations would look like the following:
      *
@@ -85,22 +80,12 @@ namespace dd4hep {
       friend class DigiKernel;
     public:
       typedef std::pair<void*, const std::type_info*>   UserFramework;
-
-    public:
-      /// Reference to the thread context
-      const DigiKernel&           kernel;
+    protected:
       /// Transient context variable - depending on the thread context: event reference
-      std::unique_ptr<DigiEvent>  event  { };
+      const DigiKernel* m_kernel = 0;
+      /// Reference to transient event
+      DigiEvent*        m_event  = 0;
 
-    protected:
-      /// Reference to the random engine for this event
-      std::shared_ptr<DigiRandomGenerator> m_random;
-      /// Set the random generator
-      void set_random_generator(std::shared_ptr<DigiRandomGenerator>& rndm)   {
-	m_random = rndm;
-      }
-
-    protected:
       /// Inhibit default constructor
       DigiContext() = delete;
       /// Inhibit move constructor
@@ -109,21 +94,18 @@ namespace dd4hep {
       DigiContext(const DigiContext&) = delete;
 
     public:
-
       /// Initializing constructor
-      DigiContext(const DigiKernel& kernel, std::unique_ptr<DigiEvent>&& event);
+      DigiContext(const DigiKernel* kernel_pointer, DigiEvent* event_pointer = 0);
       /// Default destructor
       virtual ~DigiContext();
 
-      /// Have a shared initializer lock
-      std::mutex& initializer_lock()   const;
-      /// Have a global I/O lock (e.g. for ROOT)
-      std::mutex& global_io_lock()   const;
-      /// Have a global output log lock
-      std::mutex& global_output_lock()   const;
+      /// Set the geant4 event reference
+      void setEvent(DigiEvent* new_event);
+      /// Access the geant4 event -- valid only between BeginEvent() and EndEvent()!
+      DigiEvent& event()  const;
+      /// Access the geant4 event by ptr. Must be checked by clients!
+      DigiEvent* eventPtr()  const     { return m_event; }
 
-      /// Access to the random engine for this event
-      DigiRandomGenerator& randomGenerator()  const  { return *m_random; }
       /// Access to the user framework. Specialized function to be implemented by the client
       template <typename T> T& framework()  const;
       /// Generic framework access
@@ -141,4 +123,4 @@ namespace dd4hep {
   }    // End namespace digi
 }      // End namespace dd4hep
 
-#endif // DDDIGI_DIGICONTEXT_H
+#endif // DD4HEP_DDDIGI_DIGICONTEXT_H

@@ -17,7 +17,13 @@
 #include "DD4hep/Printout.h"
 
 // C/C++ include files
+#include <algorithm>
+#include <functional>
+#include <numeric>
+#include <stdexcept>
+#include <cstdint>
 #include <cstring>
+#include <map>
 
 #if defined(__linux) || defined(__APPLE__) || defined(__powerpc64__)
 #include <cxxabi.h>
@@ -136,142 +142,27 @@ namespace {
     static constexpr unsigned long long int doByte(unsigned long long int hash,unsigned char val)
     { return (hash ^ val) * 1099511628211ull; }
   };
-
-  static unsigned char crc8_table[] =
-    { 0, 94,188,226, 97, 63,221,131,194,156,126, 32,163,253, 31, 65,
-      157,195, 33,127,252,162, 64, 30, 95,  1,227,189, 62, 96,130,220,
-      35,125,159,193, 66, 28,254,160,225,191, 93,  3,128,222, 60, 98,
-      190,224,  2, 92,223,129, 99, 61,124, 34,192,158, 29, 67,161,255,
-      70, 24,250,164, 39,121,155,197,132,218, 56,102,229,187, 89,  7,
-      219,133,103, 57,186,228,  6, 88, 25, 71,165,251,120, 38,196,154,
-      101, 59,217,135,  4, 90,184,230,167,249, 27, 69,198,152,122, 36,
-      248,166, 68, 26,153,199, 37,123, 58,100,134,216, 91,  5,231,185,
-      140,210, 48,110,237,179, 81, 15, 78, 16,242,172, 47,113,147,205,
-      17, 79,173,243,112, 46,204,146,211,141,111, 49,178,236, 14, 80,
-      175,241, 19, 77,206,144,114, 44,109, 51,209,143, 12, 82,176,238,
-      50,108,142,208, 83, 13,239,177,240,174, 76, 18,145,207, 45,115,
-      202,148,118, 40,171,245, 23, 73,  8, 86,180,234,105, 55,213,139,
-      87,  9,235,181, 54,104,138,212,149,203, 41,119,244,170, 72, 22,
-      233,183, 85, 11,136,214, 52,106, 43,117,151,201, 74, 20,246,168,
-      116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
-    };
-  /// Original Pearson algorithm
-  static unsigned char pearson_hash(const void *data, size_t len) {
-    const char *s = (const char*)data;
-    unsigned char c = 0;
-    while (--len) c = crc8_table[c ^ *s++];
-    return c;
-  }
-  static unsigned char pearson_hash(const char *data) {
-    const char *s = data;
-    unsigned char c = 0;
-    while (*s) c = crc8_table[c ^ *s++];
-    return c;
-  }
 }
 
 /// Convert volumeID to string format (016X)
 std::string dd4hep::volumeID(VolumeID vid)   {
   char text[32];
-  unsigned long long id = (unsigned long long)vid;
-  ::snprintf(text,sizeof(text), "%016llx", id);
+  ::snprintf(text,sizeof(text),"%016llx",vid);
   return text;
 }
 
-/// 64 bit hash function
+/// We need it so often: one-at-time 64 bit hash function
 unsigned long long int dd4hep::detail::hash64(const char* key)   {
-  return update_hash64(FNV1a_64::hashinit, key);
-}
-
-/// 64 bit hash function
-unsigned long long int dd4hep::detail::hash64(const std::string& key)  {
-  return update_hash64(FNV1a_64::hashinit, key.c_str(), key.length());
-}
-
-/// 64 bit hash function
-unsigned long long int dd4hep::detail::hash64(const void* key, std::size_t len)  {
-  return update_hash64(FNV1a_64::hashinit, key, len);
-}
-
-/// 64 bit hash update function
-unsigned long long int dd4hep::detail::update_hash64(unsigned long long int hash, const std::string& key)  {
-  return update_hash64(hash, key.c_str(), key.length());
-}
-
-/// 64 bit hash update function
-unsigned long long int dd4hep::detail::update_hash64(unsigned long long int hash, const char* key)  {
-  const unsigned char* str = (const unsigned char*)key;
+  //return murmur_hash_64(key, strlen(key));
+  unsigned char* str = (unsigned char*)key;
+  unsigned long long int hash = FNV1a_64::hashinit;
   for ( ; *str; ++str) hash = FNV1a_64::doByte(hash, *str);
   return hash;
 }
 
-/// 64 bit hash update function
-unsigned long long int dd4hep::detail::update_hash64(unsigned long long int hash, const void* key, std::size_t len)  {
-  const unsigned char* str = (const unsigned char*)key;
-  if ( len > 0 )  {
-    for ( ; --len; ++str) hash = FNV1a_64::doByte(hash, *str);
-  }
-  return hash;
-}
-
-/// 16 bit hash function
-unsigned short dd4hep::detail::hash16(const void* key, std::size_t len)   {
-  unsigned short value = (unsigned short)hash32(key, len);
-  return value;
-}
-
-/// 8 bit hash function
-unsigned char dd4hep::detail::hash8(const void* key, std::size_t len)   {
-  return pearson_hash(key, len);
-}
-
-/// 8 bit hash function
-unsigned char dd4hep::detail::hash8(const char* key)   {
-  return pearson_hash(key);
-}
-
-/// Replace all occurrencies of a string
-std::string dd4hep::detail::str_replace(const std::string& str,
-					const std::string& pattern,
-					const std::string& replacement)   {
-  std::string res = str;
-  for(size_t id=res.find(pattern); id != std::string::npos; id = res.find(pattern) )
-    res.replace(id, pattern.length(), replacement);
-  return res;
-}
-
-/// Replace all occurrencies of a string
-std::string dd4hep::detail::str_replace(const std::string& str,
-					char  pattern,
-					const std::string& replacement)   {
-  std::string res = str;
-  for(size_t id=res.find(pattern); id != std::string::npos; id = res.find(pattern) )
-    res.replace(id, 1, replacement);
-  return res;
-}
-
-/// Replace all occurrencies of a string
-std::string dd4hep::detail::str_replace(const std::string& str,
-					char  pattern,
-				        char  replacement)   {
-  std::string res = str;
-  for(size_t id=res.find(pattern); id != std::string::npos; id = res.find(pattern) )
-    res.replace(id, 1, 1, replacement);
-  return res;
-}
-
-/// C++ version to convert a string to lower case
-std::string dd4hep::detail::str_lower(const std::string& str) {
-  std::string res = str.c_str();
-  std::transform(res.begin(), res.end(), res.begin(), ::tolower);
-  return res;
-}
-
-/// C++ version to convert a string to upper case
-std::string dd4hep::detail::str_upper(const std::string& str) {
-  std::string res = str.c_str();
-  std::transform(res.begin(), res.end(), res.begin(), ::toupper);
-  return res;
+unsigned long long int dd4hep::detail::hash64(const std::string& key)  {
+  //return murmur_hash_64(key.data(), key.length());
+  return std::accumulate(begin(key),end(key),FNV1a_64::hashinit,FNV1a_64::doByte);
 }
 
 long int dd4hep::detail::makeTime(int year, int month, int day,
@@ -519,26 +410,51 @@ namespace dd4hep   {
   }
 }
 
+/// Initializing Constructor
+dd4hep::ComponentCast::ComponentCast(const std::type_info& t, destroy_t d, cast_t c)
+  : type(t), destroy(d), cast(c) {
 #ifdef __APPLE__
-/// Initializing Constructor
-dd4hep::Cast::Cast(const std::type_info& t, cast_t c) : type(t), cast(c)  {
-}
+  abi_class = 0;
 #else
-/// Initializing Constructor
-dd4hep::Cast::Cast(const std::type_info& t) : type(t)   {
   abi_class = dynamic_cast<const class_t*>(&type);
   if (!abi_class) {
     throw std::runtime_error("Class type " + typeName(type) + " is not an abi object type!");
   }
-}
 #endif
+}
 
 /// Defautl destructor
-dd4hep::Cast::~Cast() {
+dd4hep::ComponentCast::~ComponentCast() {
 }
 
+#if 0
+// Dynamic cast runtime.
+// src2dst has the following possible values
+//  >-1: src_type is a unique public non-virtual base of dst_type
+//       dst_ptr + src2dst == src_ptr
+//   -1: unspecified relationship
+//   -2: src_type is not a public base of dst_type
+//   -3: src_type is a multiple public non-virtual base of dst_type
+extern "C" void*
+__dynamic_cast(const void* __src_ptr,// Starting object.
+               const abi::__class_type_info* __src_type,// Static type of object.
+               const abi::__class_type_info* __dst_type,// Desired target type.
+               ptrdiff_t __src2dst);// How src and dst are related.
+#endif
+#if 0
+#ifndef __APPLE__
+static inline void* cast_wrap(const void* p,
+                              const abi::__class_type_info* src,
+                              const abi::__class_type_info* dst,
+                              ptrdiff_t src2dst)
+{
+  return abi::__dynamic_cast(p,src,dst,src2dst);
+}
+#endif
+#endif
+
 /// Apply cast using typeinfo instead of dynamic_cast
-void* dd4hep::Cast::apply_dynCast(const Cast& to, const void* ptr) const
+void* dd4hep::ComponentCast::apply_dynCast(const ComponentCast& to, const void* ptr) const
 {
   if (&to == this) {
     return (void*) ptr;
@@ -573,12 +489,12 @@ void* dd4hep::Cast::apply_dynCast(const Cast& to, const void* ptr) const
 #endif
     throw unrelated_type_error(type, to.type, "Failed to apply abi dynamic cast operation!");
   }
-#endif
   throw unrelated_type_error(type, to.type, "Target type is not an abi class type!");
+#endif
 }
 
 /// Apply cast using typeinfo instead of dynamic_cast
-void* dd4hep::Cast::apply_upCast(const Cast& to, const void* ptr) const
+void* dd4hep::ComponentCast::apply_upCast(const ComponentCast& to, const void* ptr) const
 {
   if (&to == this) {
     return (void*) ptr;
@@ -587,7 +503,7 @@ void* dd4hep::Cast::apply_upCast(const Cast& to, const void* ptr) const
 }
   
 /// Apply cast using typeinfo instead of dynamic_cast
-void* dd4hep::Cast::apply_downCast(const Cast& to, const void* ptr) const
+void* dd4hep::ComponentCast::apply_downCast(const ComponentCast& to, const void* ptr) const
 {
   if (&to == this) {
     return (void*) ptr;
@@ -612,3 +528,4 @@ void* dd4hep::Cast::apply_downCast(const Cast& to, const void* ptr) const
   throw unrelated_type_error(type, to.type, "Target type is not an abi class type!");
 #endif
 }
+

@@ -8,8 +8,8 @@
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
 //==========================================================================
-#ifndef PARSERS_SPIRIT_USEDPARSER_H
-#define PARSERS_SPIRIT_USEDPARSER_H
+#ifndef DD4HEP_DDCORE_PARSERS_USEDPARSERS_H
+#define DD4HEP_DDCORE_PARSERS_USEDPARSERS_H
 
 #include "Parsers/config.h"
 
@@ -21,8 +21,9 @@
 #else
 
 // Standard DD4hep parser handling
-#include "Parsers/Parsers.h"
+#include "Parsers/spirit/Parsers.h"
+#include "Parsers/spirit/ToStream.h"
 
 #endif
 
-#endif // PARSERS_SPIRIT_USEDPARSER_H
+#endif //  DD4HEP_DDCORE_PARSERS_USEDPARSERS_H

@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_HITACTORS_H
-#define DDEVE_HITACTORS_H
+#ifndef DD4HEP_DDEVE_HITHANDLERS_H
+#define DD4HEP_DDEVE_HITHANDLERS_H
 
 // Framework include files
 #include "DDEve/EventHandler.h"
@@ -47,10 +47,9 @@ namespace dd4hep {
    *  \ingroup DD4HEP_EVE
    */
   struct PointsetCreator : public DDEveHitActor  {
-    TEvePointSet* pointset {nullptr};
-    float threshold  {0};
-    float deposit {0};
-    int count {0};
+    TEvePointSet* pointset;
+    float deposit;
+    int count;
     /// Standard initializing constructor
     PointsetCreator(const std::string& collection, size_t length);
     /// Standard initializing constructor
@@ -70,9 +69,9 @@ namespace dd4hep {
    *  \ingroup DD4HEP_EVE
    */
   struct BoxsetCreator : public DDEveHitActor  {
-    TEveBoxSet* boxset {0};
-    float emax = 1e12, towerH = 1e12, deposit = 0e0;
-    int count {0};
+    TEveBoxSet* boxset;
+    float emax, towerH, deposit;
+    int count;
     /// Standard initializing constructor
     BoxsetCreator(const std::string& collection, size_t length);
     /// Standard initializing constructor
@@ -107,5 +106,5 @@ namespace dd4hep {
 } /* End namespace dd4hep   */
 
 
-#endif // DDEVE_HITACTORS_H
+#endif /* DD4HEP_DDEVE_HITHANDLERS_H */
 

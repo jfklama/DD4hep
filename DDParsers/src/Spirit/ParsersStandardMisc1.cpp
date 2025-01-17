@@ -1,3 +1,4 @@
+// $Id: $
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -10,29 +11,18 @@
 //==========================================================================
 #include "Parsers/spirit/ParsersStandardMiscCommon.h"
 
-PARSERS_DEF_FOR_PAIR(bool,bool)
-PARSERS_DEF_FOR_PAIR(float,float)
-PARSERS_DEF_FOR_PAIR(double,double)
-PARSERS_DEF_FOR_PAIR(double,int)
-PARSERS_DEF_FOR_PAIR(double,long)
-PARSERS_DEF_FOR_PAIR(double,size_t)
+int dd4hep::Parsers::parse(std::pair<double,double>& result, const std::string& input) {
+  return dd4hep::Parsers::parse_(result, input);
+}
 
-/// Namespace for the AIDA detector description toolkit
-namespace dd4hep {
+int dd4hep::Parsers::parse(std::vector<std::pair<double, double> >& result, const std::string& input) {
+  return dd4hep::Parsers::parse_(result, input);
+}
 
-  /// Namespace for the AIDA detector for utilities using boost::spirit parsers
-  namespace Parsers {
+int dd4hep::Parsers::parse(std::vector<std::pair<int, int> >& result, const std::string& input) {
+  return dd4hep::Parsers::parse_(result, input);
+}
 
-    template <> int parse(std::vector<std::pair<double, double> >& result, const std::string& input) {
-      return parse_(result, input);
-    }
-
-    template <> int parse(std::vector<std::pair<int, int> >& result, const std::string& input) {
-      return parse_(result, input);
-    }
-
-    template <> int parse(std::vector<std::vector<std::string> >& result, const std::string& input) {
-      return parse_(result, input);
-    }
-  }
+int dd4hep::Parsers::parse(std::vector<std::vector<std::string> >& result, const std::string& input) {
+  return dd4hep::Parsers::parse_(result, input);
 }

@@ -146,7 +146,7 @@ namespace {
   };
   
   template <typename T> xml::Element _convert(xml::Element par, Condition c);
-  
+
   xml::Element make(xml::Element e, Condition c)  {
     char hash[64];
     std::string nam = c.name();
@@ -159,25 +159,25 @@ namespace {
   xml::Element _convert(xml::Element par, const Translation3D& tr)  {
     xml::Element e = xml::Element(par.document(),_U(pivot));
     const Translation3D::Vector& v = tr.Vect();
-    e.setAttr(_U(x),_toString(v.X()/dd4hep::mm,"%f*mm"));
-    e.setAttr(_U(y),_toString(v.Y()/dd4hep::mm,"%f*mm"));
-    e.setAttr(_U(z),_toString(v.Z()/dd4hep::mm,"%f*mm"));
+    e.setAttr(_U(x),v.X());
+    e.setAttr(_U(y),v.Y());
+    e.setAttr(_U(z),v.Z());
     return e;
   }
   xml::Element _convert(xml::Element par, const Position& pos)  {
     xml::Element e = xml::Element(par.document(),_U(position));
-    e.setAttr(_U(x),_toString(pos.X()/dd4hep::mm,"%f*mm"));
-    e.setAttr(_U(y),_toString(pos.Y()/dd4hep::mm,"%f*mm"));
-    e.setAttr(_U(z),_toString(pos.Z()/dd4hep::mm,"%f*mm"));
+    e.setAttr(_U(x),pos.X());
+    e.setAttr(_U(y),pos.Y());
+    e.setAttr(_U(z),pos.Z());
     return e;
   }
   xml::Element _convert(xml::Element par, const RotationZYX& rot)  {
     xml::Element e = xml::Element(par.document(),_U(rotation));
     double z, y, x;
     rot.GetComponents(z,y,x);
-    e.setAttr(_U(x),_toString(x/dd4hep::rad,"%f*rad"));
-    e.setAttr(_U(y),_toString(y/dd4hep::rad,"%f*rad"));
-    e.setAttr(_U(z),_toString(z/dd4hep::rad,"%f*rad"));
+    e.setAttr(_U(x),x);
+    e.setAttr(_U(y),y);
+    e.setAttr(_U(z),z);
     return e;
   }
   template <> xml::Element _convert<value>(xml::Element par, Condition c)  {
@@ -200,7 +200,7 @@ namespace {
     return temp;
   }
   template <> xml::Element _convert<Delta>(xml::Element par, Condition c)  {
-    xml::Element       align = make(xml::Element(par.document(),_UC(alignment_delta)),c);
+    xml::Element       align = make(xml::Element(par.document(),_UC(alignment)),c);
     const Delta&       delta = c.get<Delta>();
     if ( delta.flags&Delta::HAVE_TRANSLATION )
       align.append(_convert(align,delta.translation));
@@ -211,16 +211,9 @@ namespace {
     return align;
   }
   template <> xml::Element _convert<Alignment>(xml::Element par, Condition c)  {
-    char hash[64];
-    typedef ConditionKey::KeyMaker KM;
-    AlignmentCondition  acond = c;
-    KM                  km(c.key());
-    const Delta&        delta = acond.data().delta;
-    xml::Element        align(xml::Element(par.document(),_UC(alignment_delta)));
-    Condition::key_type key = KM(km.values.det_key,align::Keys::deltaKey).hash;
-    ::snprintf(hash,sizeof(hash),"%llX",key);
-    align.setAttr(_U(name),align::Keys::deltaName);
-    align.setAttr(_U(key),hash);
+    xml::Element       align = make(xml::Element(par.document(),_UC(alignment)),c);
+    AlignmentCondition acond = c;
+    const Delta&       delta = acond.data().delta;
     if ( delta.flags&Delta::HAVE_TRANSLATION )
       align.append(_convert(align,delta.translation));
     if ( delta.flags&Delta::HAVE_ROTATION )
@@ -292,7 +285,7 @@ size_t ConditionsXMLRepositoryWriter::collect(xml::Element root, ConditionsSlice
   root.append(repo);
   repo.append(iov);
   ::snprintf(text,sizeof(text),"%ld,%ld#%s",
-             long(validity.keyData.first), long(validity.keyData.second),
+             validity.keyData.first,validity.keyData.second,
              validity.iovType->name.c_str());
   iov.setAttr(_UC(validity),text);
   return collect(iov,slice,slice.manager->detectorDescription().world());

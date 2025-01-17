@@ -11,8 +11,8 @@
 //  \date   2015-11-07
 //
 //==========================================================================
-#ifndef DDG4_PYTHON_DDPYTHON_H
-#define DDG4_PYTHON_DDPYTHON_H 1
+#ifndef DD4HEP_DDG4_DDPYTHON_H 
+#define DD4HEP_DDG4_DDPYTHON_H 1
 
 // C/C++ include files
 #include <string>
@@ -68,7 +68,7 @@ namespace dd4hep  {
     /// Release python object
     static void assignObject(PyObject*& obj, PyObject* new_obj);
 
-    /// Start the interpreter in normal mode without hacks like 'python.exe' does.
+    /// Start the interpreter in normal mode without hacks like 'pythopn.exe' does.
     static int run_interpreter(int argc, char** argv);
 
     /// Copy constructor 
@@ -114,4 +114,4 @@ namespace dd4hep  {
   };
 }
 
-#endif // DDG4_PYTHON_DDPYTHON_H
+#endif // DD4HEP_DDG4_DDPYTHON_H

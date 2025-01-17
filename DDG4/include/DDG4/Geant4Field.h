@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4FIELD_H
-#define DDG4_GEANT4FIELD_H
+#ifndef DD4HEP_DDG4_GEANT4FIELD_H
+#define DD4HEP_DDG4_GEANT4FIELD_H
 
 // Framework include files
 #include "DD4hep/Detector.h"
@@ -54,4 +54,4 @@ namespace dd4hep {
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4FIELD_H
+#endif // DD4HEP_DDG4_GEANT4FIELD_H

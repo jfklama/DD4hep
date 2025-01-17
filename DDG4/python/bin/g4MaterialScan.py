@@ -42,8 +42,9 @@ def materialScan(opts):
       typ = sd.type()
       if typ in geant4.sensitive_types:
         geant4.setupDetector(o.name(), geant4.sensitive_types[typ])
+        sdtyp = geant4.sensitive_types[typ]
       else:
-        logger.error('+++  %-32s type:%-12s  --> Unknown Sensitive type: %s', o.name(), typ, typ)
+        logger.error('+++  %-32s type:%-12s  --> Unknown Sensitive type: %s', o.name(), typ, sdtyp)
         sys.exit(errno.EINVAL)
 
   geant4.setupGun("Gun",
@@ -59,6 +60,16 @@ def materialScan(opts):
 
   # Now build the physics list:
   geant4.setupPhysics('QGSP_BERT')
+  """
+  phys = geant4.setupPhysics('')
+  ph = DDG4.PhysicsList(kernel,'Geant4PhysicsList/Myphysics')
+  ph.addParticleConstructor('G4Geantino')
+  ph.addParticleConstructor('G4BosonConstructor')
+  ph.addParticleConstructor('G4LeptonConstructor')
+  phys.transportation = True
+  phys.decays = True
+  phys.adopt(ph)
+  """
 
   kernel.configure()
   kernel.initialize()

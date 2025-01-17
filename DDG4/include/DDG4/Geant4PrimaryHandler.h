@@ -10,24 +10,11 @@
 // Author     : M.Frank
 //
 //==========================================================================
-
-/** \addtogroup Geant4GeneratorAction
- *
- @{
-  \package Geant4PrimaryHandler
- * \brief Geant4Action to convert the particle information to Geant4
- *
- *
-@}
- */
-
-#ifndef DDG4_GEANT4PRIMARYHANDLER_H
-#define DDG4_GEANT4PRIMARYHANDLER_H
+#ifndef DD4HEP_DDG4_GEANT4PRIMARYHANDLER_H
+#define DD4HEP_DDG4_GEANT4PRIMARYHANDLER_H
 
 // Framework include files
 #include "DDG4/Geant4GeneratorAction.h"
-
-#include <set>
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -77,4 +64,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4PRIMARYHANDLER_H
+#endif // DD4HEP_DDG4_GEANT4PRIMARYHANDLER_H

@@ -22,11 +22,10 @@ def loadDDG4():
 
   # Try to load libglapi to avoid issues with TLS Static
   # Turn off all errors from ROOT about the library missing
-  if 'libglapi' not in gSystem.GetLibraries():
-    orgLevel = ROOT.gErrorIgnoreLevel
-    ROOT.gErrorIgnoreLevel = 6000
-    gSystem.Load("libglapi")
-    ROOT.gErrorIgnoreLevel = orgLevel
+  orgLevel = ROOT.gErrorIgnoreLevel
+  ROOT.gErrorIgnoreLevel = 6000
+  gSystem.Load("libglapi")
+  ROOT.gErrorIgnoreLevel = orgLevel
 
   import platform
   import os
@@ -82,8 +81,8 @@ def importConstants(description, namespace=None, debug=False):
   """
   ns = current
   if namespace is not None and not hasattr(current, namespace):
-    import types
-    m = types.ModuleType('DDG4.' + namespace)
+    import imp
+    m = imp.new_module('DDG4.' + namespace)
     setattr(current, namespace, m)
     ns = m
   evaluator = dd4hep.g4Evaluator()
@@ -111,12 +110,13 @@ def importConstants(description, namespace=None, debug=False):
 
     for k, v in list(todo.items()):
       if not hasattr(ns, k):
-        val = evaluator.evaluate(str(v))
-        if val.first == 0:
-          evaluator.setVariable(str(k), val.second)
-          setattr(ns, k, val.second)
+        val = evaluator.evaluate(v)
+        status = evaluator.status()
+        if status == 0:
+          evaluator.setVariable(k, val)
+          setattr(ns, k, val)
           if debug:
-            logger.info('Imported global value: "' + k + '" = "' + str(val.second) + '" into namespace' + ns.__name__)
+            logger.info('Imported global value: "' + k + '" = "' + str(val) + '" into namespace' + ns.__name__)
           del todo[k]
           num = num + 1
   if cnt < 100:
@@ -127,36 +127,18 @@ def _registerGlobalAction(self, action):
   self.get().registerGlobalAction(Interface.toAction(action))
 
 
-def _registerGlobalFilter(self, filter):  # noqa: A002
+def _registerGlobalFilter(self, filter):
   self.get().registerGlobalFilter(Interface.toAction(filter))
-
-
-def _evalProperty(data):
-  """
-    Function necessary to extract real strings from the property value.
-    Strings may be embraced by quotes: '<value>'
-  """
-  try:
-    if isinstance(data, str):
-      import ast
-      return ast.literal_eval(data)
-  except ValueError:
-    pass
-  except TypeError:
-    pass
-  finally:
-    pass
-  return data
 
 
 def _getKernelProperty(self, name):
   ret = Interface.getPropertyKernel(self.get(), name)
   if ret.status > 0:
-    return _evalProperty(ret.data)
+    return ret.data
   elif hasattr(self.get(), name):
-    return _evalProperty(getattr(self.get(), name))
+    return getattr(self.get(), name)
   elif hasattr(self, name):
-    return _evalProperty(getattr(self, name))
+    return getattr(self, name)
   msg = 'Geant4Kernel::GetProperty [Unhandled]: Cannot access Kernel.' + name
   raise KeyError(msg)
 
@@ -311,12 +293,34 @@ def _get(self, name):
   raise KeyError(msg)
 
 
+def _deUnicode(value):
+  """Turn any unicode literal into str, needed when passing to c++.
+
+  Recursively transverses dicts, lists, sets, tuples
+
+  :return: always a str
+  """
+  if isinstance(value, (bool, float, six.integer_types)):
+    value = value
+  elif isinstance(value, six.string_types):
+    value = str(value)
+  elif isinstance(value, (list, set, tuple)):
+    value = [_deUnicode(x) for x in value]
+  elif isinstance(value, dict):
+    tempDict = {}
+    for key, val in value.items():
+      key = _deUnicode(key)
+      val = _deUnicode(val)
+      tempDict[key] = val
+    value = tempDict
+  return str(value)
+
+
 def _set(self, name, value):
   """This function is called when properties are passed to the c++ objects."""
-  from dd4hep_base import unicode_2_string
   a = Interface.toAction(self)
-  name = unicode_2_string(name)
-  value = unicode_2_string(value)
+  name = _deUnicode(name)
+  value = _deUnicode(value)
   if Interface.setProperty(a, name, value):
     return
   msg = 'Geant4Action::SetProperty [Unhandled]: Cannot set ' + a.name() + '.' + name + ' = ' + value
@@ -360,11 +364,6 @@ _props('UserInitializationSequenceHandle')
 _props('Geant4PhysicsListActionSequence')
 
 
-# ---------------------------------------------------------------------------
-#
-# Basic helper to configure the DDG4 instance from python
-#
-# ---------------------------------------------------------------------------
 class Geant4:
   """
   Helper object to perform stuff, which occurs very often.
@@ -435,15 +434,6 @@ class Geant4:
     """
     return self.setupUI(typ='csh', vis=vis, ui=ui, macro=macro)
 
-  def ui(self):
-    """
-    Access UI manager action from the kernel object
-
-    \author  M.Frank
-    """
-    ui_name = getattr(self.master(), 'UI')
-    return self.master().globalAction(ui_name)
-
   def addUserInitialization(self, worker, worker_args=None, master=None, master_args=None):
     """
     Configure Geant4 user initialization for optionasl multi-threading mode
@@ -474,7 +464,7 @@ class Geant4:
                               sensitives=None, sensitives_args=None,
                               allow_threads=False):
     """
-    Configure Geant4 user initialization for optional multi-threading mode
+    Configure Geant4 user initialization for optionasl multi-threading mode
 
     \author  M.Frank
     """
@@ -555,7 +545,7 @@ class Geant4:
     """
     return self.addPhaseAction('stop', factory_specification)
 
-  def execute(self, num_events=None):
+  def execute(self):
     """
     Execute the Geant 4 program with all steps.
 
@@ -563,18 +553,11 @@ class Geant4:
     """
     self.kernel().configure()
     self.kernel().initialize()
-    if num_events:
-      self.kernel().NumEvents = num_events
     self.kernel().run()
     self.kernel().terminate()
     return self
 
   def printDetectors(self):
-    """
-    Scan the list of detectors and print detector name and sensitive type
-
-    \author  M.Frank
-    """
     logger.info('+++  List of sensitive detectors:')
     for i in self.description.detectors():
       o = DetElement(i.second.ptr())  # noqa: F405
@@ -586,36 +569,7 @@ class Geant4:
           sdtyp = self.sensitive_types[typ]
         logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
 
-  def setupDetectors(self):
-    """
-    Scan the list of detectors and assign the proper sensitive actions
-
-    \author  M.Frank
-    """
-    seq = None
-    actions = []
-    logger.info('+++  Setting up sensitive detectors:')
-    for i in self.description.detectors():
-      o = DetElement(i.second.ptr())  # noqa: F405
-      sd = self.description.sensitiveDetector(str(o.name()))
-      if sd.isValid():
-        typ = sd.type()
-        sdtyp = 'Unknown'
-        if typ in self.sensitive_types:
-          sdtyp = self.sensitive_types[typ]
-          seq, act = self.setupDetector(o.name(), sdtyp, collections=None)
-          logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
-          actions.append(act)
-          continue
-        logger.info('+++  %-32s --> UNKNOWN Sensitive type: %s', o.name(), typ)
-    return (seq, actions)
-
   def setupDetector(self, name, action, collections=None):
-    """
-    Setup single subdetector and assign the proper sensitive action
-
-    \author  M.Frank
-    """
     # fg: allow the action to be a tuple with parameter dictionary
     sensitive_type = ""
     parameterDict = {}
@@ -644,16 +598,16 @@ class Geant4:
         params = {}
         if isinstance(coll, tuple) or isinstance(coll, list):
           if len(coll) > 2:
-            coll_nam = str(coll[0])
+            coll_nam = coll[0]
             sensitive_type = coll[1]
-            params = str(coll[2])
+            params = coll[2]
           elif len(coll) > 1:
-            coll_nam = str(coll[0])
+            coll_nam = coll[0]
             sensitive_type = coll[1]
           else:
-            coll_nam = str(coll[0])
+            coll_nam = coll[0]
         else:
-          coll_nam = str(coll)
+          coll_nam = coll
         act = SensitiveAction(self.kernel(), sensitive_type + '/' + coll_nam + 'Handler', name)
         act.CollectionName = coll_nam
         for parameter, value in six.iteritems(params):
@@ -667,31 +621,19 @@ class Geant4:
       return (seq, acts)
     return (seq, acts[0])
 
-  def setupCalorimeter(self, name, type=None, collections=None):  # noqa: A002
-    """
-    Setup subdetector of type 'calorimeter' and assign the proper sensitive action
-
-    \author  M.Frank
-    """
-    typ = type    # noqa: A002
+  def setupCalorimeter(self, name, type=None, collections=None):
     self.description.sensitiveDetector(str(name))
     # sd.setType('calorimeter')
-    if typ is None:
-      typ = self.sensitive_types['calorimeter']
-    return self.setupDetector(name, typ, collections)
+    if type is None:
+      type = self.sensitive_types['calorimeter']
+    return self.setupDetector(name, type, collections)
 
-  def setupTracker(self, name, type=None, collections=None):  # noqa: A002
-    """
-    Setup subdetector of type 'tracker' and assign the proper sensitive action
-
-    \author  M.Frank
-    """
-    typ = type
+  def setupTracker(self, name, type=None, collections=None):
     self.description.sensitiveDetector(str(name))
     # sd.setType('tracker')
-    if typ is None:
-      typ = self.sensitive_types['tracker']
-    return self.setupDetector(name, typ, collections)
+    if type is None:
+      type = self.sensitive_types['tracker']
+    return self.setupDetector(name, type, collections)
 
   def _private_setupField(self, field, stepper, equation, prt):
     import g4units
@@ -743,12 +685,12 @@ class Geant4:
     phys.adopt(opt)
     return opt
 
-  def setupGun(self, name, particle, energy, typ="Geant4ParticleGun", isotrop=True,
+  def setupGun(self, name, particle, energy, isotrop=True,
                multiplicity=1, position=(0.0, 0.0, 0.0), register=True, **args):
-    gun = GeneratorAction(self.kernel(), typ + "/" + name, True)
+    gun = GeneratorAction(self.kernel(), "Geant4ParticleGun/" + name, True)
     for i in args.items():
       setattr(gun, i[0], i[1])
-    gun.Energy = energy
+    gun.energy = energy
     gun.particle = particle
     gun.multiplicity = multiplicity
     gun.position = position
@@ -786,15 +728,6 @@ class Geant4:
     evt_lcio.enableUI()
     self.kernel().eventAction().add(evt_lcio)
     return evt_lcio
-
-  def setupEDM4hepOutput(self, name, output):
-    """Configure EDM4hep root output for the simulated events."""
-    evt_edm4hep = EventAction(self.kernel(), 'Geant4Output2EDM4hep/' + name, True)
-    evt_edm4hep.Control = True
-    evt_edm4hep.Output = output
-    evt_edm4hep.enableUI()
-    self.kernel().eventAction().add(evt_edm4hep)
-    return evt_edm4hep
 
   def buildInputStage(self, generator_input_modules, output_level=None, have_mctruth=True):
     """

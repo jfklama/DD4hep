@@ -12,9 +12,9 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Printout.h>
-#include <DD4hep/InstanceCount.h>
-#include <DDDigi/DigiLockedAction.h>
+#include "DD4hep/Printout.h"
+#include "DD4hep/InstanceCount.h"
+#include "DDDigi/DigiLockedAction.h"
 
 // C/C++ include files
 
@@ -24,7 +24,7 @@ using namespace dd4hep::digi;
 
 /// Standard constructor
 DigiLockedAction::DigiLockedAction(const DigiKernel& kernel, const string& nam)
-  : DigiEventAction(kernel, nam)
+  : DigiAction(kernel, nam)
 {
   InstanceCount::increment(this);
 }
@@ -36,7 +36,7 @@ DigiLockedAction::~DigiLockedAction()   {
 }
 
 /// Underlying object to be used during the locked execution
-void DigiLockedAction::use(DigiEventAction* action)   {
+void DigiLockedAction::use(DigiAction* action)   {
   if (action) {
     action->addRef();
     m_properties.adopt(action->properties());

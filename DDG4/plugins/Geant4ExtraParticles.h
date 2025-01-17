@@ -3,8 +3,8 @@
 //          Taikan Suehara <suehara@icepp.s.u-tokyo.ac.jp>
 // Proted from Mokka by A.Sailer (CERN )
 //
-#ifndef DDG4_PLUGINS_GEANT4EXTRAPARTICLES_H
-#define DDG4_PLUGINS_GEANT4EXTRAPARTICLES_H 1
+#ifndef ExtraParticles_hh
+#define ExtraParticles_hh 1
 
 #include "DDG4/Geant4PhysicsConstructor.h"
 

@@ -1,26 +1,21 @@
 """Helper object for SD Actions
 """
 
+from __future__ import absolute_import, unicode_literals
 from DDSim.Helper.ConfigHelper import ConfigHelper
+from ddsix.moves import range
+import ddsix as six
 
 
 class Action(ConfigHelper):
-  """Helper holding sensitive detector actions.
-
+  """Action holding sensitive detector actions
   The default tracker and calorimeter actions can be set with
 
   >>> SIM = DD4hepSimulation()
   >>> SIM.action.tracker=('Geant4TrackerWeightedAction', {'HitPositionCombination': 2, 'CollectSingleDeposits': False})
   >>> SIM.action.calo = "Geant4CalorimeterAction"
 
-  The default sensitive actions for calorimeters and trackers are applied based on the sensitive type.
-  The list of sensitive types can be changed with
-
-  >>> SIM = DD4hepSimulation()
-  >>> SIM.action.trackerSDTypes = ['tracker', 'myTrackerSensType']
-  >>> SIM.calor.calorimeterSDTypes = ['calorimeter', 'myCaloSensType']
-
-  For specific subdetectors specific sensitive detectors can be set based on patterns in the name of the subdetector.
+  for specific subdetectors specific sensitive detectors can be set based on pattern matching
 
   >>> SIM = DD4hepSimulation()
   >>> SIM.action.mapActions['tpc'] = "TPCSDAction"
@@ -37,9 +32,6 @@ class Action(ConfigHelper):
     self._tracker = ('Geant4TrackerWeightedAction', {'HitPositionCombination': 2, 'CollectSingleDeposits': False})
     self._calo = 'Geant4ScintillatorCalorimeterAction'
     self._mapActions = dict()
-    self._trackerSDTypes = ['tracker']
-    self._calorimeterSDTypes = ['calorimeter']
-    self._closeProperties()
 
   @property
   def tracker(self):
@@ -61,12 +53,8 @@ class Action(ConfigHelper):
 
   @property
   def mapActions(self):
-    """Create a map of patterns and actions to be applied to sensitive detectors.
-
-    Example: if the name of the detector matches 'tpc' the TPCSDAction is used.
-
-      SIM.action.mapActions['tpc'] = "TPCSDAction"
-    """
+    """ create a map of patterns and actions to be applied to sensitive detectors
+        example: SIM.action.mapActions['tpc'] = "TPCSDAction" """
     return self._mapActions
 
   @mapActions.setter
@@ -78,7 +66,7 @@ class Action(ConfigHelper):
       self._mapActions.update(val)
       return
 
-    if isinstance(val, str):
+    if isinstance(val, six.string_types):
       vals = val.split(" ")
     elif isinstance(val, list):
       vals = val
@@ -90,21 +78,3 @@ class Action(ConfigHelper):
   def clearMapActions(self):
     """empty the mapActions dictionary"""
     self._mapActions = dict()
-
-  @property
-  def trackerSDTypes(self):
-    """List of patterns matching sensitive detectors of type Tracker."""
-    return self._trackerSDTypes
-
-  @trackerSDTypes.setter
-  def trackerSDTypes(self, val):
-    self._trackerSDTypes = ConfigHelper.makeList(val)
-
-  @property
-  def calorimeterSDTypes(self):
-    """List of patterns matching sensitive detectors of type Calorimeter."""
-    return self._calorimeterSDTypes
-
-  @calorimeterSDTypes.setter
-  def calorimeterSDTypes(self, val):
-    self._calorimeterSDTypes = ConfigHelper.makeList(val)

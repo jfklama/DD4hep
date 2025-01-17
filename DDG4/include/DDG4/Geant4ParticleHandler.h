@@ -11,18 +11,8 @@
 //
 //==========================================================================
 
- /** \addtogroup Geant4Action
- *
- @{
-   \package Geant4ParticleHandler
- * \brief Geant4Action to collect the MC particle information.
- *
- *
-@}
- */
-
-#ifndef DDG4_GEANT4PARTICLEHANDLER_H
-#define DDG4_GEANT4PARTICLEHANDLER_H
+#ifndef DD4HEP_DDG4_GEANT4PARTICLEHANDLER_H
+#define DD4HEP_DDG4_GEANT4PARTICLEHANDLER_H
 
 // Framework include files
 #include "DDG4/Geant4Primary.h"
@@ -119,9 +109,6 @@ namespace dd4hep {
       Particle          m_currTrack;
       /// Map with stored MC Particles
       ParticleMap       m_particleMap;
-      /// Map with stored MC Particles that were suspended by the stepping action
-      ParticleMap       m_suspendedPM;
-      bool              m_haveSuspended = false;
       /// Map associating the G4Track identifiers with identifiers of existing MCParticles
       TrackEquivalents  m_equivalentTracks;
 
@@ -176,4 +163,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4PARTICLEHANDLER_H
+#endif // DD4HEP_DDG4_GEANT4PARTICLEHANDLER_H

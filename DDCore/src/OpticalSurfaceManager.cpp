@@ -123,25 +123,27 @@ void OpticalSurfaceManager::addOpticalSurface(OpticalSurface surf)  const   {
 void OpticalSurfaceManager::registerSurfaces(DetElement subdetector)    {
   Object* o = access();
   unique_ptr<Object> extension(new Object(o->detector));
-  for(auto& optical : o->opticalSurfaces)  {
-    o->detector.manager().AddOpticalSurface(optical.second.ptr());
-    extension->opticalSurfaces.insert(optical);
+  for(auto& s : o->opticalSurfaces)  {
+    //string n = s.first.first.path() + '#' + s.first.second;
+    //s.second->SetName(n.c_str());
+    o->detector.manager().AddOpticalSurface(s.second.ptr());
+    extension->opticalSurfaces.insert(s);
   }
   o->opticalSurfaces.clear();
   
-  for(auto& skin : o->skinSurfaces)  {
-    string n = skin.first.first.path() + '#' + skin.first.second;
-    skin.second->SetName(n.c_str());
-    o->detector.manager().AddSkinSurface(skin.second.ptr());
-    extension->skinSurfaces.insert(skin);
+  for(auto& s : o->skinSurfaces)  {
+    string n = s.first.first.path() + '#' + s.first.second;
+    s.second->SetName(n.c_str());
+    o->detector.manager().AddSkinSurface(s.second.ptr());
+    extension->skinSurfaces.insert(s);
   }
   o->skinSurfaces.clear();
   
-  for(auto& border : o->borderSurfaces)  {
-    string n = border.first.first.path() + '#' + border.first.second;
-    border.second->SetName(n.c_str());
-    o->detector.manager().AddBorderSurface(border.second.ptr());
-    extension->borderSurfaces.insert(border);
+  for(auto& s : o->borderSurfaces)  {
+    string n = s.first.first.path() + '#' + s.first.second;
+    s.second->SetName(n.c_str());
+    o->detector.manager().AddBorderSurface(s.second.ptr());
+    extension->borderSurfaces.insert(s);
   }
   o->borderSurfaces.clear();
   

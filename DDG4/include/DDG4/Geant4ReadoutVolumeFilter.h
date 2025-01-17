@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4READOUTVOLUMEFILTER_H
-#define DDG4_GEANT4READOUTVOLUMEFILTER_H
+#ifndef DD4HEP_DDG4_GEANT4READOUTVOLUMEFILTER_H
+#define DD4HEP_DDG4_GEANT4READOUTVOLUMEFILTER_H
 
 // Framework include files
 #include "DD4hep/Readout.h"
@@ -48,11 +48,9 @@ namespace dd4hep {
       /// Default destructor
       virtual ~Geant4ReadoutVolumeFilter();
       /// Filter action. Return true if hits should be processed
-      virtual bool operator()(const G4Step* step) const  override;
-      /// GFLASH/FastSim interface: Filter action. Return true if hits should be processed.
-      virtual bool operator()(const Geant4FastSimSpot* step) const  override;
+      virtual bool operator()(const G4Step* step) const;
     };
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4READOUTVOLUMEFILTER_H
+#endif // DD4HEP_DDG4_GEANT4READOUTVOLUMEFILTER_H

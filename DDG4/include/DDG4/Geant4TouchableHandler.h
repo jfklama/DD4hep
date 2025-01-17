@@ -10,10 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4TOUCHABLEHANDLER_H
-#define DDG4_GEANT4TOUCHABLEHANDLER_H
-
-#include <G4VTouchable.hh>
+#ifndef DD4HEP_GEANT4TOUCHABLEHANDLER_H
+#define DD4HEP_GEANT4TOUCHABLEHANDLER_H
 
 // C/C++ include files
 #include <vector>
@@ -21,6 +19,7 @@
 
 // Forward declarations
 class G4VPhysicalVolume;
+class G4VTouchable;
 class G4Step;
 
 /// Namespace for the AIDA detector description toolkit
@@ -67,4 +66,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4TOUCHABLEHANDLER_H
+#endif // DD4HEP_GEANT4TOUCHABLEHANDLER_H

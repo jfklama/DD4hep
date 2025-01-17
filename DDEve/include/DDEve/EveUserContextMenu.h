@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_EVEUSERCONTEXTMENU_H
-#define DDEVE_EVEUSERCONTEXTMENU_H
+#ifndef DD4HEP_DDEVE_EVEUSERCONTEXTMENU_H
+#define DD4HEP_DDEVE_EVEUSERCONTEXTMENU_H
 
 // ROOT include files
 #include "TClass.h"
@@ -74,4 +74,4 @@ namespace dd4hep {
     ClassDef(EveUserContextMenu,0);
   };
 }      /* End namespace dd4hep              */
-#endif // DDEVE_EVEUSERCONTEXTMENU_H
+#endif /* DD4HEP_DDEVE_EVEUSERCONTEXTMENU_H */

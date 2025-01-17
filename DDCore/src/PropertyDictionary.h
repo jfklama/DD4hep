@@ -13,8 +13,8 @@
 // M.Frank
 //
 //==========================================================================
-#ifndef DDCORE_SRC_PROPERTYDICTIONARY_H
-#define DDCORE_SRC_PROPERTYDICTIONARY_H
+#ifndef DD4HEP_DDCORE_PROPERTYDICTIONARY_H
+#define DD4HEP_DDCORE_PROPERTYDICTIONARY_H
 
 // Framework include files
 #include "DD4hep/ComponentProperties.h"
@@ -38,6 +38,8 @@ namespace dd4hep {
 #pragma link off all globals;
 #pragma link off all classes;
 #pragma link off all functions;
+
+using namespace std;
 
 #pragma link C++ class dd4hep::Property;
 #if defined(DD4HEP_HAVE_ALL_PARSERS)
@@ -147,6 +149,8 @@ template class std::map<std::string, dd4hep::Property>;
 #pragma link C++ class std::map<std::string, dd4hep::Property>-;
 #pragma link C++ class dd4hep::PropertyManager-;
 #pragma link C++ class dd4hep::PropertyConfigurable-;
+#pragma link C++ class dd4hep::PropertyConfigurator-;
+#pragma link C++ class dd4hep::PropertyGrammar-;
 
 #endif  // __CINT__
-#endif // DDCORE_SRC_PROPERTYDICTIONARY_H
+#endif  /* DD4HEP_DDCORE_PROPERTYDICTIONARY_H  */

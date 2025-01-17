@@ -12,41 +12,41 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Shapes.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/detail/ShapesInterna.h>
+#include "DD4hep/Shapes.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/DD4hepUnits.h"
 
 #include "Geant4ShapeConverter.h"
 
 // ROOT includes
-#include <TClass.h>
-#include <TGeoMatrix.h>
-#include <TGeoBoolNode.h>
-#include <TGeoScaledShape.h>
+#include "TClass.h"
+#include "TGeoMatrix.h"
+#include "TGeoBoolNode.h"
+#include "TGeoScaledShape.h"
 
 // Geant4 include files
-#include <G4Box.hh>
-#include <G4Trd.hh>
-#include <G4Tubs.hh>
-#include <G4Trap.hh>
-#include <G4Cons.hh>
-#include <G4Hype.hh>
-#include <G4Para.hh>
-#include <G4Torus.hh>
-#include <G4Sphere.hh>
-#include <G4CutTubs.hh>
-#include <G4Polycone.hh>
-#include <G4Polyhedra.hh>
-#include <G4Ellipsoid.hh>
-#include <G4Paraboloid.hh>
-#include <G4TwistedTubs.hh>
-#include <G4GenericTrap.hh>
-#include <G4ExtrudedSolid.hh>
-#include <G4EllipticalTube.hh>
+#include "G4Box.hh"
+#include "G4Trd.hh"
+#include "G4Tubs.hh"
+#include "G4Trap.hh"
+#include "G4Cons.hh"
+#include "G4Hype.hh"
+#include "G4Torus.hh"
+#include "G4Sphere.hh"
+#include "G4CutTubs.hh"
+#include "G4Polycone.hh"
+#include "G4Polyhedra.hh"
+#include "G4Paraboloid.hh"
+#include "G4Ellipsoid.hh"
+#include "G4GenericTrap.hh"
+#include "G4ExtrudedSolid.hh"
+#include "G4EllipticalTube.hh"
 
 // C/C++ include files
 
+using namespace std;
 using namespace dd4hep::detail;
+namespace units = dd4hep;
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -59,9 +59,9 @@ namespace dd4hep {
     /// Convert a specific TGeo shape into the geant4 equivalent
     template <typename T> G4VSolid* convertShape(const TGeoShape* shape)    {
       if ( shape )   {
-        except("convertShape","Unsupported shape: %s",shape->IsA()->GetName());
+        dd4hep::except("convertShape","Unsupported shape: %s",shape->IsA()->GetName());
       }
-      except("convertShape","Invalid shape conversion requested.");
+      dd4hep::except("convertShape","Invalid shape conversion requested.");
       return 0;
     }
 
@@ -91,8 +91,7 @@ namespace dd4hep {
       const Double_t* hn = sh->GetNhigh();
       G4ThreeVector   lowNorm (ln[0], ln[1], ln[2]);
       G4ThreeVector   highNorm(hn[0], hn[1], hn[2]);
-      return new G4CutTubs(sh->GetName(),
-                           sh->GetRmin() * CM_2_MM, sh->GetRmax() * CM_2_MM, sh->GetDz() * CM_2_MM,
+      return new G4CutTubs(sh->GetName(), sh->GetRmin() * CM_2_MM, sh->GetRmax() * CM_2_MM, sh->GetDz() * CM_2_MM,
                            sh->GetPhi1() * DEGREE_2_RAD, (sh->GetPhi2()-sh->GetPhi1()) * DEGREE_2_RAD, lowNorm, highNorm);
     }
 
@@ -101,27 +100,15 @@ namespace dd4hep {
       return new G4EllipticalTube(sh->GetName(),sh->GetA() * CM_2_MM, sh->GetB() * CM_2_MM, sh->GetDz() * CM_2_MM);
     }
 
-    template <> G4VSolid* convertShape<TwistedTubeObject>(const TGeoShape* shape)  {
-      const TwistedTubeObject* sh = (const TwistedTubeObject*) shape;
-      return new G4TwistedTubs(sh->GetName(),sh->GetPhiTwist() * DEGREE_2_RAD,
-                               sh->GetRmin() * CM_2_MM, sh->GetRmax() * CM_2_MM,
-                               sh->GetNegativeEndZ() * CM_2_MM, sh->GetPositiveEndZ() * CM_2_MM,
-                               sh->GetNsegments(), (sh->GetPhi2()-sh->GetPhi1()) * DEGREE_2_RAD);
-    }
-
     template <> G4VSolid* convertShape<TGeoTrd1>(const TGeoShape* shape)  {
       const TGeoTrd1* sh = (const TGeoTrd1*) shape;
-      return new G4Trd(sh->GetName(),
-                       sh->GetDx1() * CM_2_MM, sh->GetDx2() * CM_2_MM,
-                       sh->GetDy() * CM_2_MM, sh->GetDy() * CM_2_MM,
+      return new G4Trd(sh->GetName(), sh->GetDx1() * CM_2_MM, sh->GetDx2() * CM_2_MM, sh->GetDy() * CM_2_MM, sh->GetDy() * CM_2_MM,
                        sh->GetDz() * CM_2_MM);
     }
 
     template <> G4VSolid* convertShape<TGeoTrd2>(const TGeoShape* shape)  {
       const TGeoTrd2* sh = (const TGeoTrd2*) shape;
-      return new G4Trd(sh->GetName(),
-                       sh->GetDx1() * CM_2_MM, sh->GetDx2() * CM_2_MM,
-                       sh->GetDy1() * CM_2_MM, sh->GetDy2() * CM_2_MM,
+      return new G4Trd(sh->GetName(), sh->GetDx1() * CM_2_MM, sh->GetDx2() * CM_2_MM, sh->GetDy1() * CM_2_MM, sh->GetDy2() * CM_2_MM,
                        sh->GetDz() * CM_2_MM);
     }
 
@@ -133,34 +120,23 @@ namespace dd4hep {
     }
 
     template <> G4VSolid* convertShape<TGeoArb8>(const TGeoShape* shape)  {
-      std::vector<G4TwoVector> vertices;
+      vector<G4TwoVector> vertices;
       TGeoArb8* sh = (TGeoArb8*) shape;
       Double_t* vtx_xy = sh->GetVertices();
-      for ( std::size_t i=0; i<8; ++i, vtx_xy +=2 )
+      for ( size_t i=0; i<8; ++i, vtx_xy +=2 )
         vertices.emplace_back(vtx_xy[0] * CM_2_MM, vtx_xy[1] * CM_2_MM);
       return new G4GenericTrap(sh->GetName(), sh->GetDz() * CM_2_MM, vertices);
     }
 
-    template <> G4VSolid* convertShape<TGeoPara>(const TGeoShape* shape) {
-      const auto* sh = static_cast<const TGeoPara*>(shape);
-      return new G4Para(sh->GetName(),
-                        sh->GetX() * CM_2_MM, sh->GetY() * CM_2_MM, sh->GetZ() * CM_2_MM,
-                        sh->GetAlpha() * DEGREE_2_RAD, sh->GetTheta() * DEGREE_2_RAD,
-                        sh->GetPhi() * DEGREE_2_RAD);
-    }
-
     template <> G4VSolid* convertShape<TGeoXtru>(const TGeoShape* shape)  {
       const TGeoXtru* sh = (const TGeoXtru*) shape;
-      std::size_t nz = sh->GetNz();
-      std::vector<G4ExtrudedSolid::ZSection> z;
+      size_t nz = sh->GetNz();
+      vector<G4ExtrudedSolid::ZSection> z;
+      vector<G4TwoVector> polygon;
       z.reserve(nz);
-      for(std::size_t i=0; i<nz; ++i)   {
+      polygon.reserve(nz);
+      for(size_t i=0; i<nz; ++i)   {
         z.emplace_back(G4ExtrudedSolid::ZSection(sh->GetZ(i) * CM_2_MM, {sh->GetXOffset(i), sh->GetYOffset(i)}, sh->GetScale(i)));
-      }
-      std::size_t np = sh->GetNvert();
-      std::vector<G4TwoVector> polygon;
-      polygon.reserve(np);
-      for(std::size_t i=0; i<np; ++i) {
         polygon.emplace_back(sh->GetX(i) * CM_2_MM,sh->GetY(i) * CM_2_MM);
       }
       return new G4ExtrudedSolid(sh->GetName(), polygon, z);
@@ -168,26 +144,28 @@ namespace dd4hep {
 
     template <> G4VSolid* convertShape<TGeoPgon>(const TGeoShape* shape)  {
       const TGeoPgon* sh = (const TGeoPgon*) shape;
-      std::vector<double> rmin, rmax, z;
+      double phi_start = sh->GetPhi1() * DEGREE_2_RAD;
+      double phi_total = (sh->GetDphi() + sh->GetPhi1()) * DEGREE_2_RAD;
+      vector<double> rmin, rmax, z;
       for (Int_t i = 0; i < sh->GetNz(); ++i) {
         rmin.emplace_back(sh->GetRmin(i) * CM_2_MM);
         rmax.emplace_back(sh->GetRmax(i) * CM_2_MM);
         z.emplace_back(sh->GetZ(i) * CM_2_MM);
       }
-      return new G4Polyhedra(sh->GetName(), sh->GetPhi1() * DEGREE_2_RAD, sh->GetDphi() * DEGREE_2_RAD,
-                             sh->GetNedges(), sh->GetNz(), &z[0], &rmin[0], &rmax[0]);
+      return new G4Polyhedra(sh->GetName(), phi_start, phi_total, sh->GetNedges(), sh->GetNz(), &z[0], &rmin[0], &rmax[0]);
     }
 
     template <> G4VSolid* convertShape<TGeoPcon>(const TGeoShape* shape)  {
       const TGeoPcon* sh = (const TGeoPcon*) shape;
-      std::vector<double> rmin, rmax, z;
+      double phi_start = sh->GetPhi1() * DEGREE_2_RAD;
+      double phi_total = (sh->GetDphi() + sh->GetPhi1()) * DEGREE_2_RAD;
+      vector<double> rmin, rmax, z;
       for (Int_t i = 0; i < sh->GetNz(); ++i) {
         rmin.emplace_back(sh->GetRmin(i) * CM_2_MM);
         rmax.emplace_back(sh->GetRmax(i) * CM_2_MM);
         z.emplace_back(sh->GetZ(i) * CM_2_MM);
       }
-      return new G4Polycone(sh->GetName(), sh->GetPhi1() * DEGREE_2_RAD, sh->GetDphi() * DEGREE_2_RAD,
-                            sh->GetNz(), &z[0], &rmin[0], &rmax[0]);
+      return new G4Polycone(sh->GetName(), phi_start, phi_total, sh->GetNz(), &z[0], &rmin[0], &rmax[0]);
     }
 
     template <> G4VSolid* convertShape<TGeoCone>(const TGeoShape* shape)  {
@@ -211,9 +189,8 @@ namespace dd4hep {
 
     template <> G4VSolid* convertShape<TGeoSphere>(const TGeoShape* shape)  {
       const TGeoSphere* sh = (const TGeoSphere*) shape;
-      return new G4Sphere(sh->GetName(), sh->GetRmin() * CM_2_MM, sh->GetRmax() * CM_2_MM,
-                          sh->GetPhi1() * DEGREE_2_RAD, (sh->GetPhi2()-sh->GetPhi1()) * DEGREE_2_RAD,
-                          sh->GetTheta1() * DEGREE_2_RAD, (sh->GetTheta2()- sh->GetTheta1()) * DEGREE_2_RAD);
+      return new G4Sphere(sh->GetName(), sh->GetRmin() * CM_2_MM, sh->GetRmax() * CM_2_MM, sh->GetPhi1() * DEGREE_2_RAD,
+                          sh->GetPhi2() * DEGREE_2_RAD, sh->GetTheta1() * DEGREE_2_RAD, sh->GetTheta2() * DEGREE_2_RAD);
     }
 
     template <> G4VSolid* convertShape<TGeoTorus>(const TGeoShape* shape)  {
@@ -230,74 +207,12 @@ namespace dd4hep {
     }
 
     template <> G4VSolid* convertShape<G4GenericTrap>(const TGeoShape* shape)  {
-      std::vector<G4TwoVector> vertices;
+      vector<G4TwoVector> vertices;
       TGeoTrap* sh = (TGeoTrap*) shape;
       Double_t* vtx_xy = sh->GetVertices();
-      for ( std::size_t i=0; i<8; ++i, vtx_xy +=2 )
+      for ( size_t i=0; i<8; ++i, vtx_xy +=2 )
         vertices.emplace_back(vtx_xy[0] * CM_2_MM, vtx_xy[1] * CM_2_MM);
       return new G4GenericTrap(sh->GetName(), sh->GetDz() * CM_2_MM, vertices);
     }
   }    // End namespace sim
 }      // End namespace dd4hep
-
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-#include <G4TessellatedSolid.hh>
-#include <G4TriangularFacet.hh>
-#include <G4QuadrangularFacet.hh>
-
-/// Namespace for the AIDA detector description toolkit
-namespace dd4hep {
-  /// Namespace for the Geant4 based simulation part of the AIDA detector description toolkit
-  namespace sim {
-
-    template <> G4VSolid* convertShape<TGeoTessellated>(const TGeoShape* shape)  {
-      TGeoTessellated*   sh  = (TGeoTessellated*) shape;
-      G4TessellatedSolid* g4 = new G4TessellatedSolid(sh->GetName());
-      int num_facet = sh->GetNfacets();
-
-      printout(DEBUG,"TessellatedSolid","+++ %s> Converting %d facets", sh->GetName(), num_facet);
-      for(int i=0; i<num_facet; ++i)  {
-        const TGeoFacet& facet = sh->GetFacet(i);
-        int nv = facet.GetNvert();
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,31,1)
-        const auto& v0 = sh->GetVertex(facet[0]);
-        const auto& v1 = sh->GetVertex(facet[1]);
-        const auto& v2 = sh->GetVertex(facet[2]);
-#else
-        const auto& v0 = sh->GetVertex(facet.GetVertexIndex(0));
-        const auto& v1 = sh->GetVertex(facet.GetVertexIndex(1));
-        const auto& v2 = sh->GetVertex(facet.GetVertexIndex(2));
-#endif
-        G4VFacet* g4f = 0;
-        if ( nv == 3 )    {
-          g4f = new G4TriangularFacet(G4ThreeVector(v0.x() * CM_2_MM, v0.y() * CM_2_MM, v0.z() * CM_2_MM),
-                                      G4ThreeVector(v1.x() * CM_2_MM, v1.y() * CM_2_MM, v1.z() * CM_2_MM),
-                                      G4ThreeVector(v2.x() * CM_2_MM, v2.y() * CM_2_MM, v2.z() * CM_2_MM),
-                                      ABSOLUTE);
-        }
-        else if ( nv == 4 )    {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,31,1)
-          const auto& v3 = sh->GetVertex(facet[3]);
-#else
-          const auto& v3 = sh->GetVertex(facet.GetVertexIndex(3));
-#endif
-          g4f = new G4QuadrangularFacet(G4ThreeVector(v0.x() * CM_2_MM, v0.y() * CM_2_MM, v0.z() * CM_2_MM),
-                                        G4ThreeVector(v1.x() * CM_2_MM, v1.y() * CM_2_MM, v1.z() * CM_2_MM),
-                                        G4ThreeVector(v2.x() * CM_2_MM, v2.y() * CM_2_MM, v2.z() * CM_2_MM),
-                                        G4ThreeVector(v3.x() * CM_2_MM, v3.y() * CM_2_MM, v3.z() * CM_2_MM),
-                                        ABSOLUTE);
-        }
-        else   {
-          except("TGeoTessellated", "Tessellated shape [%s] has facet with wrong number of vertices: %d",
-                 sh->GetName(), nv);
-        }
-        g4->AddFacet(g4f);
-      }
-      g4->SetSolidClosed(sh->IsClosedBody());
-      return g4;
-    }
-    
-  }    // End namespace sim
-}      // End namespace dd4hep
-#endif // ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-

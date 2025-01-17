@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_GENERICEVENTHANDLER_H
-#define DDEVE_GENERICEVENTHANDLER_H
+#ifndef DD4HEP_DDEVE_GENERICEVENTHANDLER_H
+#define DD4HEP_DDEVE_GENERICEVENTHANDLER_H
 
 // Framework include files
 #include "DDEve/EventHandler.h"
@@ -76,5 +76,5 @@ namespace dd4hep {
   };
 } /* End namespace dd4hep   */
 
-#endif // DDEVE_GENERICEVENTHANDLER_H
+#endif /* DD4HEP_DDEVE_GENERICEVENTHANDLER_H */
 

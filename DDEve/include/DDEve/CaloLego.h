@@ -11,8 +11,8 @@
 // Original Author: Matevz Tadel 2009 (MultiView.C)
 //
 //====================================================================
-#ifndef DDEVE_CALOLEGO_H
-#define DDEVE_CALOLEGO_H
+#ifndef DD4HEP_DDEVE_CALOLEGO_H
+#define DD4HEP_DDEVE_CALOLEGO_H
 
 // Framework include files
 #include "DDEve/View.h"
@@ -52,4 +52,4 @@ namespace dd4hep {
     ClassDefOverride(CaloLego,0);
   };
 }      /* End namespace dd4hep    */
-#endif // DDEVE_CALOLEGO_H
+#endif /* DD4HEP_DDEVE_CALOLEGO_H */

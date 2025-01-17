@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_EVESHAPECONTEXTMENU_H
-#define DDEVE_EVESHAPECONTEXTMENU_H
+#ifndef DD4HEP_DDEVE_EVESHAPECONTEXTMENU_H
+#define DD4HEP_DDEVE_EVESHAPECONTEXTMENU_H
 
 // ROOT include files
 #include "DDEve/EveUserContextMenu.h"
@@ -38,4 +38,4 @@ namespace dd4hep {
     ClassDefOverride(EveShapeContextMenu,0);
   };
 }      /* End namespace dd4hep               */
-#endif // DDEVE_EVESHAPECONTEXTMENU_H
+#endif /* DD4HEP_DDEVE_EVESHAPECONTEXTMENU_H */

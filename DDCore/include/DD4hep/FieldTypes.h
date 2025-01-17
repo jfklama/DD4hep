@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_FIELDTYPES_H
-#define DD4HEP_FIELDTYPES_H
+#ifndef DD4HEP_DDCORE_FIELDTYPES_H
+#define DD4HEP_DDCORE_FIELDTYPES_H
 
 // Framework include files
 #include "DD4hep/Fields.h"
@@ -149,26 +149,12 @@ namespace dd4hep {
    */
   class MultipoleField : public CartesianField::Object {
   public:
-    /// Multi-pole coefficients
-    Coefficents  coefficents { };
-    /// Multi-pole skews
-    Coefficents  skews       { };
-    /// Boundary volume (optional)
-    Solid        volume      { };
-    /// Position transformation of the field. Only stored here for reference
-    Transform3D  transform   { };
-    /// Inverse position transformation of the field
-    Transform3D  inverse     { };
-    /// The rotation part of the transformation. Need to rotate the field
-    Rotation3D   rotation    { };
-    /// Constant Z field overlay
-    double       B_z         { 0e0 };
+    Coefficents  coefficents;
+    Coefficents  skews;
+    Solid volume;
+    Transform3D  transform;
+    double       B_z;
 
-  private:
-    /// The access to the field will be optimized. Remember properties.
-    unsigned char flag       { 0 };
-    /// Translation of the transformation
-    Transform3D::Point translation { };
   public:
     /// Initializing constructor
     MultipoleField();
@@ -177,4 +163,4 @@ namespace dd4hep {
   };
 
 }         /* End namespace dd4hep             */
-#endif // DD4HEP_FIELDTYPES_H
+#endif    /* DD4HEP_DDCORE_FIELDTYPES_H     */

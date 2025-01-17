@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_OBJECTS_H
-#define DD4HEP_OBJECTS_H
+#ifndef DD4HEP_DDCORE_OBJECTS_H
+#define DD4HEP_DDCORE_OBJECTS_H
 
 // Framework include files
 #include "DD4hep/Handle.h"
@@ -43,9 +43,6 @@ class TGeoIdentity;
 #include "Math/RotationZYX.h"
 #include "Math/EulerAngles.h"
 #include "Math/VectorUtil.h"
-#include <TGeoElement.h>
-#include <TGeoMaterial.h>
-#include <TGeoMedium.h>
 #include "TGeoPhysicalNode.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
 #include "TGDMLMatrix.h"
@@ -79,6 +76,7 @@ namespace dd4hep {
 
   typedef ROOT::Math::RhoZPhiVector PositionRhoZPhi;
   typedef ROOT::Math::Polar3DVector PositionPolar;
+  typedef ROOT::Math::XYZVector     Position;
   typedef ROOT::Math::XYZVector     Position;
   typedef ROOT::Math::XYZVector     Direction;
   typedef ROOT::Math::XYZVector     XYZAngles;
@@ -161,13 +159,13 @@ namespace dd4hep {
     /// Default constructor
     Header() = default;
     /// Constructorto be used for assignment from a handle
-    Header(const Header& copy) = default;
+    Header(const Header& e) = default;
     /// Constructor to be used when reading the already parsed DOM tree
     template <typename Q> Header(const Handle<Q>& e) : Handle<HeaderObject>(e) {  }
     /// Constructor to be used when creating a new DOM tree
     Header(const std::string& author, const std::string& url);
     /// Assignment operator
-    Header& operator=(const Header& copy) = default;
+    Header& operator=(const Header& e) = default;
     /// Accessor to object name
     const std::string name() const;
     /// Accessor: set object name
@@ -211,20 +209,14 @@ namespace dd4hep {
   public:
     /// Default constructor
     Constant() = default;
-    /// Constructor to be used for assignment from a handle
-    Constant(const Constant& copy) = default;
+    /// Constructorto be used for assignment from a handle
+    Constant(const Constant& e) = default;
     /// Constructor to be used when reading the already parsed DOM tree
     template <typename Q> Constant(const Handle<Q>& e) : Handle<ConstantObject> (e) {  }
     /// Constructor to be used when creating a new DOM tree
     Constant(const std::string& name);
     /// Constructor to be used when creating a new DOM tree
     Constant(const std::string& name, const std::string& val, const std::string& typ="number");
-    /// Copy assignment
-    Constant& operator=(const Constant& copy) = default;
-    /// Equality operator
-    bool operator==(const Constant& rhs) const   {
-      return m_element == rhs.m_element;
-    }
     /// Access the constant
     std::string dataType() const;
     /// String representation of this object
@@ -309,12 +301,6 @@ namespace dd4hep {
     Property property(const char* name)  const;
     /// Access to tabular properties of the material
     Property property(const std::string& name)  const;
-    /// Access string property value from the material table
-    std::string propertyRef(const std::string& name, const std::string& default_value="");
-    /// Access to tabular properties of the material
-    double constProperty(const std::string& name)  const;
-    /// Access string property value from the material table
-    std::string constPropertyRef(const std::string& name, const std::string& default_value="");
 #endif
   };
 
@@ -369,16 +355,16 @@ namespace dd4hep {
 
     /// Get alpha value
     float alpha() const;
+    /// Set alpha value
+    void setAlpha(float value);
 
     /// Get object color
     int color() const;
     /// Set object color
-    void setColor(float alpha, float red, float green, float blue);
+    void setColor(float red, float green, float blue);
 
     /// Get RGB values of the color (if valid)
     bool rgb(float& red, float& green, float& blue) const;
-    /// Get alpha and RGB values of the color (if valid)
-    bool argb(float& alpha, float& red, float& green, float& blue) const;
 
     /// String representation of this object
     std::string toString() const;
@@ -536,4 +522,5 @@ namespace ROOT {
     bool operator<(const PxPyPzEVector& a, const PxPyPzEVector& b);
   }
 }
-#endif // DD4HEP_OBJECTS_H
+
+#endif    /* DD4HEP_DDCORE_OBJECTS_H        */

@@ -12,37 +12,19 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Printout.h>
-#include <DD4hep/Primitives.h>
-#include <DD4hep/InstanceCount.h>
+#include "DD4hep/Printout.h"
+#include "DD4hep/Primitives.h"
+#include "DD4hep/InstanceCount.h"
 
-#include <DDG4/Geant4Kernel.h>
-#include <DDG4/Geant4Context.h>
-#include <DDG4/Geant4FastSimSpot.h>
-#include <DDG4/Geant4HitCollection.h>
-#include <DDG4/Geant4SensDetAction.h>
+#include "DDG4/Geant4Kernel.h"
+#include "DDG4/Geant4Context.h"
+#include "DDG4/Geant4HitCollection.h"
+#include "DDG4/Geant4SensDetAction.h"
 
 // Geant4 include files
-#include <G4Run.hh>
-#include <G4Event.hh>
-#include "G4Version.hh"
-#include <G4TouchableHistory.hh>
-#include <G4VSensitiveDetector.hh>
-#include <G4VGFlashSensitiveDetector.hh>
-#if G4VERSION_NUMBER < 1070
-/// Lower versions of Geant4 do not provide G4VFastSimSensitiveDetector
-class G4VFastSimSensitiveDetector  {
-public:
-  G4VFastSimSensitiveDetector() = default;
-  virtual ~G4VFastSimSensitiveDetector() = default;
-  /// Geant4 Fast simulation interface
-  virtual G4bool ProcessHits(const G4FastHit* hit,
-			     const G4FastTrack* track,
-			     G4TouchableHistory* hist) = 0;
-};
-#else
-#include <G4VFastSimSensitiveDetector.hh>
-#endif
+#include "G4VSensitiveDetector.hh"
+#include "G4Event.hh"
+#include "G4Run.hh"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -83,8 +65,6 @@ namespace dd4hep {
      *  \ingroup DD4HEP_SIMULATION
      */
     class Geant4SensDet : virtual public G4VSensitiveDetector,
-			  virtual public G4VGFlashSensitiveDetector,
-			  virtual public G4VFastSimSensitiveDetector,
                           virtual public G4VSDFilter,
                           virtual public Geant4ActionSD,
                           virtual public RefCountedSequence<Geant4SensDetActionSequence>
@@ -95,12 +75,8 @@ namespace dd4hep {
     public:
       /// Constructor. The detector element is identified by the name
       Geant4SensDet(const std::string& nam, Detector& description)
-        : G4VSensitiveDetector(nam),
-	  G4VGFlashSensitiveDetector(),
-	  G4VFastSimSensitiveDetector(),
-	  G4VSDFilter(nam),
-          Geant4Action(0,nam),
-	  Geant4ActionSD(nam),
+        : G4VSensitiveDetector(nam), G4VSDFilter(nam),
+          Geant4Action(0,nam), Geant4ActionSD(nam),
           RefCountedSequence<Geant4SensDetActionSequence>()
       {
         Geant4Kernel& master = Geant4Kernel::instance(description);
@@ -115,66 +91,48 @@ namespace dd4hep {
       }
 
       /// Destructor
-      virtual ~Geant4SensDet() = default;
+      virtual ~Geant4SensDet()        {                                 }
       /// Overload to avoid ambiguity between G4VSensitiveDetector and G4VSDFilter
       inline G4String GetName() const
       {  return this->G4VSensitiveDetector::SensitiveDetectorName;      }
       /// G4VSensitiveDetector internals: Access to the detector path name
-      virtual std::string path()  const  override  final
+      virtual std::string path()  const
       {  return this->G4VSensitiveDetector::GetPathName();              }
       /// G4VSensitiveDetector internals: Access to the detector path name
-      virtual std::string fullPath()  const  override  final
+      virtual std::string fullPath()  const
       {  return this->G4VSensitiveDetector::GetFullPathName();          }
       /// Is the detector active?
-      virtual bool isActive() const  override
+      virtual bool isActive() const
       {  return this->G4VSensitiveDetector::isActive();                 }
       /// This is a utility method which returns the hits collection ID
-      virtual G4int GetCollectionID(G4int i)  override  final
+      virtual G4int GetCollectionID(G4int i)
       {  return this->G4VSensitiveDetector::GetCollectionID(i);         }
       /// Access to the readout geometry of the sensitive detector
-      virtual G4VReadOutGeometry* readoutGeometry() const  override
+      virtual G4VReadOutGeometry* readoutGeometry() const
       {  return this->G4VSensitiveDetector::GetROgeometry();            }
       /// Access to the Detector sensitive detector handle
-      virtual SensitiveDetector sensitiveDetector() const  override  final
+      virtual SensitiveDetector sensitiveDetector() const
       {  return m_sensitive;                                            }
       /// Access to the sensitive type of the detector
-      virtual const std::string& sensitiveType() const  override  final
+      virtual const std::string& sensitiveType() const
       {  return m_sequence->sensitiveType();                            }
       /// Callback if the sequence should be accepted or filtered off
-      virtual G4bool Accept(const G4Step* step) const  override  final
+      virtual G4bool Accept(const G4Step* step) const
       {  return m_sequence->accept(step);                               }
       /// Method invoked at the begining of each event.
-      virtual void Initialize(G4HCofThisEvent* hce)  override  final
+      virtual void Initialize(G4HCofThisEvent* hce)
       {  m_sequence->begin(hce);                                        }
       /// Method invoked at the end of each event.
-      virtual void EndOfEvent(G4HCofThisEvent* hce)  override  final
+      virtual void EndOfEvent(G4HCofThisEvent* hce)
       {  m_sequence->end(hce);                                          }
       /// Method for generating hit(s) using the information of G4Step object.
-      virtual G4bool ProcessHits(G4Step* step,
-				 G4TouchableHistory* hist)   override  final
+      virtual G4bool ProcessHits(G4Step* step,G4TouchableHistory* hist)
       {  return m_sequence->process(step,hist);                         }
-      /// GFLASH interface
-      virtual G4bool ProcessHits(G4GFlashSpot* sp,
-				 G4TouchableHistory* hist)   override final
-      {
-	const GFlashEnergySpot* esp = sp->GetEnergySpot();
-	G4FastHit         hit(esp->GetPosition(), esp->GetEnergy());
-	Geant4FastSimSpot spot(&hit, sp->GetOriginatorTrack(), (sp->GetTouchableHandle())());
-	return m_sequence->processFastSim(&spot, hist);
-      }
-      /// Geant4 Fast simulation interface
-      virtual G4bool ProcessHits(const G4FastHit* hit,
-				 const G4FastTrack* track,
-				 G4TouchableHistory* hist)   override final
-      {
-	Geant4FastSimSpot spot(hit, track, hist);
-	return m_sequence->processFastSim(&spot, hist);
-      }
       /// G4VSensitiveDetector interface: Method invoked if the event was aborted.
-      virtual void clear()  override
+      virtual void clear()
       {  m_sequence->clear();                                           }
       /// Initialize the usage of a hit collection. Returns the collection identifier
-      virtual size_t defineCollection(const std::string& coll)   override  {
+      virtual size_t defineCollection(const std::string& coll)  {
         if ( coll.empty() ) {
           except("Geant4Sensitive: No collection defined for %s [Invalid name]",c_name());
         }
@@ -187,7 +145,7 @@ namespace dd4hep {
 }      // End namespace dd4hep
 
 
-#include <DDG4/Factories.h>
+#include "DDG4/Factories.h"
 
 typedef dd4hep::sim::Geant4SensDet Geant4SensDet;
 typedef dd4hep::sim::Geant4SensDet Geant4tracker;

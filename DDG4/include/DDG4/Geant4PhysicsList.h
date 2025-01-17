@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4PHYSICSLIST_H
-#define DDG4_GEANT4PHYSICSLIST_H
+#ifndef DD4HEP_DDG4_GEANT4PHYSICSLIST_H
+#define DD4HEP_DDG4_GEANT4PHYSICSLIST_H
 
 // Framework include files
 #include "DDG4/Geant4Action.h"
@@ -65,11 +65,6 @@ namespace dd4hep {
       typedef std::map<std::string, ParticleProcesses> PhysicsProcesses;
 
       /// Structure describing a G4 particle constructor
-      /**
-       *  \author  M.Frank
-       *  \version 1.0
-       *  \ingroup DD4HEP_SIMULATION
-       */
       class ParticleConstructor : public std::string {
       public:
         /// Default constructor
@@ -116,10 +111,8 @@ namespace dd4hep {
       Geant4PhysicsList(Geant4Context* context, const std::string& nam);
       /// Default destructor
       virtual ~Geant4PhysicsList();
-
       /// Dump content to stdout
       void dump();
-
       /// Install command control messenger if wanted
       virtual void installCommandMessenger();
       /// Access all physics processes
@@ -148,9 +141,6 @@ namespace dd4hep {
       /// Access discrete processes for one particle type (CONST)
       const ParticleProcesses& discreteProcesses(const std::string& part_name) const;
 
-      /// Access physics constructor by name
-      PhysicsConstructor physics(const std::string& name)  const;
-      
       /// Access all physics particles
       ParticleConstructors& particles() {
         return m_particles;
@@ -192,7 +182,7 @@ namespace dd4hep {
        */
       void addPhysicsConstructor(const std::string& physics_name);
       /// Add PhysicsConstructor as Geant4Action object
-      /** The action object must be a sub-class of type G4VPhysicsConstructor.
+      /** The action object must bve a sub-class of type G4VPhysicsConstructor.
        *  -- The Geant4Action object to supports properties.
        *  -- Specific user actions may be implemented in the 
        *     base class calls to 'ConstructParticle' or 'ConstructProcess'.
@@ -295,4 +285,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4PHYSICSLIST_H
+#endif // DD4HEP_DDG4_GEANT4PHYSICSLIST_H

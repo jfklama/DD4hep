@@ -30,10 +30,10 @@ using namespace std;
 using namespace dd4hep;
 
 template <typename T>
-static inline typename T::const_iterator find(const T& cont,const string& str)  {
-  for(typename T::const_iterator i=cont.begin(); i!=cont.end(); ++i)  
-    if ( (*i).name == str ) return i;
-  return cont.end();
+static inline typename T::const_iterator find(const T& c,const string& s)  {
+  for(typename T::const_iterator i=c.begin(); i!=c.end(); ++i)  
+    if ( (*i).name == s ) return i;
+  return c.end();
 }
 
 /// Initializing constructor
@@ -91,9 +91,9 @@ TEveElementList* View::AddToGlobalItems(const string& nam)   {
 
 /// Call an element to a event element list
 TEveElement* View::ImportGeoElement(TEveElement* el, TEveElementList* list)  { 
-  TEveScene* scene = dynamic_cast<TEveScene*>(el);
-  if ( scene )   {
-    printf("ERROR: Adding a Scene [%s] to a list. This is BAD and causes crashes!\n",scene->GetName());
+  TEveScene* s = dynamic_cast<TEveScene*>(el);
+  if ( s )   {
+    printf("ERROR: Adding a Scene [%s] to a list. This is BAD and causes crashes!\n",s->GetName());
   }
   if ( el ) list->AddElement(el);
   return el;
@@ -106,13 +106,13 @@ TEveElement* View::ImportGeoTopic(TEveElement* element, TEveElementList* list)  
 
 /// Call an element to a event element list
 TEveElement* View::ImportEventElement(TEveElement* el, TEveElementList* list)  { 
-  TEveScene* scene = dynamic_cast<TEveScene*>(el);
-  if ( scene )   {
-    printf("ERROR: Adding a Scene [%s] to a list. This is BAD and causes crashes!\n",scene->GetName());
+  TEveScene* s = dynamic_cast<TEveScene*>(el);
+  if ( s )   {
+    printf("ERROR: Adding a Scene [%s] to a list. This is BAD and causes crashes!\n",s->GetName());
   }
   if ( el )   {
     printout(INFO,"View","ImportElement %s [%s] into list: %s",
-             Utilities::GetName(el), el->IsA()->GetName(), list->GetName());
+             Utilities::GetName(el),el->IsA()->GetName(),list->GetName());
     list->AddElement(el);
   }
   return el;
@@ -160,8 +160,7 @@ void View::ConfigureGeometry(const DisplayConfiguration::ViewConfig& config)    
   string dets;
   DisplayConfiguration::Configurations::const_iterator ic;
   float legend_y = Annotation::DefaultTextSize()+Annotation::DefaultMargin();
-  DetElement world = m_eve->detectorDescription().world();
-  const DetElement::Children& c = world.children();
+  const DetElement::Children& c = m_eve->detectorDescription().world().children();
   for( ic=config.subdetectors.begin(); ic != config.subdetectors.end(); ++ic)   {
     const DisplayConfiguration::Config& cfg = *ic;
     string nam = cfg.name;

@@ -18,7 +18,6 @@
 #include "DDG4/Geant4Mapping.h"
 #include "DDG4/Geant4StepHandler.h"
 #include "DDG4/Geant4VolumeManager.h"
-#include "DDG4/Geant4FastSimHandler.h"
 #include "DDG4/Geant4ReadoutVolumeFilter.h"
 
 using namespace dd4hep::sim;
@@ -49,22 +48,11 @@ Geant4ReadoutVolumeFilter::~Geant4ReadoutVolumeFilter() {
 }
 
 /// Filter action. Return true if hits should be processed
-bool Geant4ReadoutVolumeFilter::operator()(const G4Step* step) const    {
-  Geant4StepHandler stepH(step);
+bool Geant4ReadoutVolumeFilter::operator()(const G4Step* s) const    {
+  Geant4StepHandler step(s);
   Geant4VolumeManager volMgr = Geant4Mapping::instance().volumeManager();
-  VolumeID id  = volMgr.volumeID(stepH.preTouchable());
-  FieldID  key = m_key->value(id);
-  if ( m_collection->key_min <= key && m_collection->key_max >= key )
-    return true;
-  return false;
-}
-
-/// GFLASH/FastSim interface: Filter action. Return true if hits should be processed
-bool Geant4ReadoutVolumeFilter::operator()(const Geant4FastSimSpot* spot) const    {
-  Geant4FastSimHandler spotH(spot);
-  Geant4VolumeManager volMgr = Geant4Mapping::instance().volumeManager();
-  VolumeID id  = volMgr.volumeID(spotH.touchable());
-  FieldID  key = m_key->value(id);
+  VolumeID id = volMgr.volumeID(step.preTouchable());
+  long64 key = m_key->value(id);
   if ( m_collection->key_min <= key && m_collection->key_max >= key )
     return true;
   return false;

@@ -1,12 +1,11 @@
 """Helper object for physicslist properties"""
 
+from __future__ import absolute_import, unicode_literals
 import os
 
 from DDSim.Helper.ConfigHelper import ConfigHelper
 from g4units import mm
-import logging
-
-logger = logging.getLogger(__name__)
+import ddsix as six
 
 
 class Physics(ConfigHelper):
@@ -18,16 +17,8 @@ class Physics(ConfigHelper):
     self._list = "FTFP_BERT"
     self._decays = False
     self._pdgfile = None
-    self._rejectPDGs = {1, 2, 3, 4, 5, 6,  # quarks
-                        21, 23, 24, 25,  # bosons
-                        1103,  # d? diquarks
-                        2101, 2103, 2203,  # u? diquarks
-                        3101, 3103, 3201, 3203, 3303,  # s? diquarks
-                        4101, 4103, 4201, 4203, 4301, 4303, 4403,  # c? diquarks
-                        5101, 5103, 5201, 5203, 5301, 5303, 5401, 5403, 5503}  # b? diquarks
+    self._rejectPDGs = {1, 2, 3, 4, 5, 6, 21, 23, 24, 25}
     self._zeroTimePDGs = {11, 13, 15, 17}
-    self._userFunctions = []
-    self._closeProperties()
 
   @property
   def rejectPDGs(self):
@@ -71,7 +62,7 @@ class Physics(ConfigHelper):
     if val is None:
       self._rangecut = None
       return
-    if isinstance(val, str):
+    if isinstance(val, six.string_types):
       if val == "None":
         self._rangecut = None
         return
@@ -107,12 +98,12 @@ class Physics(ConfigHelper):
     self._decays = val
 
   @property
-  def list(self):  # noqa: A003
+  def list(self):
     """The name of the Geant4 Physics list."""
     return self._list
 
   @list.setter
-  def list(self, val):  # noqa: A003
+  def list(self, val):
     self._list = val
 
   def setupPhysics(self, kernel, name=None):
@@ -140,39 +131,4 @@ class Physics(ConfigHelper):
       seq.adopt(rg)
       rg.RangeCut = self.rangecut
 
-    for func in self._userFunctions:
-      try:
-        func(kernel)
-      except Exception as e:
-        logger.error("Exception in UserFunction: %r", e)
-        raise RuntimeError("Exception in UserFunction: %r" % e)
-
     return seq
-
-  def setupUserPhysics(self, userFunction):
-    """Add a function to setup physics plugins.
-
-    The function must take the DDG4.Kernel() object as the only argument.
-
-    For example, add a function definition and the call to a steering file::
-
-      def setupCerenkov(kernel):
-        from DDG4 import PhysicsList
-        seq = kernel.physicsList()
-        cerenkov = PhysicsList(kernel, 'Geant4CerenkovPhysics/CerenkovPhys')
-        cerenkov.MaxNumPhotonsPerStep = 10
-        cerenkov.MaxBetaChangePerStep = 10.0
-        cerenkov.TrackSecondariesFirst = True
-        cerenkov.VerboseLevel = 2
-        cerenkov.enableUI()
-        seq.adopt(cerenkov)
-        ph = PhysicsList(kernel, 'Geant4OpticalPhotonPhysics/OpticalGammaPhys')
-        ph.addParticleConstructor('G4OpticalPhoton')
-        ph.VerboseLevel = 2
-        ph.enableUI()
-        seq.adopt(ph)
-        return None
-
-      SIM.physics.setupUserPhysics(setupCerenkov)
-    """
-    self._userFunctions.append(userFunction)

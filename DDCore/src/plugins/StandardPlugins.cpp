@@ -13,34 +13,33 @@
 
 // Framework include files
 #define DD4HEP_MUST_USE_DETECTORIMP_H
-#include <DD4hep/Detector.h>
-#include <DD4hep/DetectorImp.h>
-#include <DD4hep/Memory.h>
-#include <DD4hep/DD4hepUI.h>
-#include <DD4hep/Factories.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/DD4hepUnits.h>
-#include <DD4hep/DetectorTools.h>
-#include <DD4hep/PluginCreators.h>
-#include <DD4hep/VolumeProcessor.h>
-#include <DD4hep/DetectorProcessor.h>
-#include <DD4hep/DD4hepRootPersistency.h>
-#include <XML/DocumentHandler.h>
-#include <XML/XMLElements.h>
-#include <XML/XMLTags.h>
+#include "DD4hep/Detector.h"
+#include "DD4hep/DetectorImp.h"
+#include "DD4hep/Memory.h"
+#include "DD4hep/DD4hepUI.h"
+#include "DD4hep/Factories.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/DD4hepUnits.h"
+#include "DD4hep/DetectorTools.h"
+#include "DD4hep/PluginCreators.h"
+#include "DD4hep/VolumeProcessor.h"
+#include "DD4hep/DetectorProcessor.h"
+#include "DD4hep/DD4hepRootPersistency.h"
+#include "XML/DocumentHandler.h"
+#include "XML/XMLElements.h"
+#include "XML/XMLTags.h"
 
 // ROOT includes
-#include <TInterpreter.h>
-#include <TGeoElement.h>
-#include <TGeoManager.h>
-#include <TGeoVolume.h>
-#include <TSystem.h>
-#include <TClass.h>
-#include <TRint.h>
+#include "TInterpreter.h"
+#include "TGeoElement.h"
+#include "TGeoManager.h"
+#include "TGeoVolume.h"
+#include "TSystem.h"
+#include "TClass.h"
+#include "TRint.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
-#include <TGDMLMatrix.h>
+#include "TGDMLMatrix.h"
 #endif
-
 
 // C/C++ include files
 #include <cerrno>
@@ -48,6 +47,7 @@
 #include <fstream>
 #include <sstream>
 
+using namespace std;
 using namespace dd4hep;
 using namespace dd4hep::detail;
 
@@ -97,7 +97,7 @@ static long dummy_plugin(Detector& , int, char**) {
 }
 DECLARE_APPLY(DD4hep_DummyPlugin,dummy_plugin)
 
-/// Basic entry point to create/access the Detector instance
+/// Basic entry point to create a Detector instance
 /**
  *  Factory: Detector_constructor
  *
@@ -111,8 +111,7 @@ static void* create_description_instance(const char* /* name */) {
 DECLARE_CONSTRUCTOR(Detector_constructor,create_description_instance)
 
 /// Basic entry point to display the currently loaded geometry using the ROOT OpenGL viewer
-/** Invoke the ROOT geometry display using the factory mechanism.
- *
+/**
  *  Factory: DD4hep_GeometryDisplay
  *
  *  \author  M.Frank
@@ -122,9 +121,9 @@ DECLARE_CONSTRUCTOR(Detector_constructor,create_description_instance)
 static long display(Detector& description, int argc, char** argv) {
   TGeoManager& mgr = description.manager();
   int vislevel = 6, visopt = 1;
-  std::string detector = "/world";
+  string detector = "/world";
   const char* opt = "ogl";
-  for( int i = 0; i < argc && argv[i]; ++i )  {
+  for(int i = 0; i < argc && argv[i]; ++i)  {
     if ( 0 == ::strncmp("-option",argv[i],4) )
       opt = argv[++i];
     else if ( 0 == ::strncmp("-level",argv[i],4) )
@@ -134,16 +133,13 @@ static long display(Detector& description, int argc, char** argv) {
     else if ( 0 == ::strncmp("-detector",argv[i],4) )
       detector = argv[++i];
     else  {
-      std::cout <<
-        "Usage: -plugin DD4hep_GeometryDisplay  -arg [-arg]                                \n\n"
-	"     Invoke the ROOT geometry display using the factory mechanism.                \n\n"
+      cout <<
+        "Usage: -plugin <name> -arg [-arg]                                                   \n"
         "     -detector <string> Top level DetElement path. Default: '/world'                \n"
         "     -option   <string> ROOT Draw option.    Default: 'ogl'                         \n"
         "     -level    <number> Visualization level  [TGeoManager::SetVisLevel]  Default: 4 \n"
-        "     -visopt   <number> Visualization option [TGeoManager::SetVisOption] Default: 1\n"       
-        "     -load              Only load the geometry. Do not invoke the display          \n"
-        "     -help              Print this help output  \n"       
-        "     Arguments given: " << arguments(argc,argv) << std::endl << std::flush;
+        "     -visopt   <number> Visualization option [TGeoManager::SetVisOption] Default: 1 \n"       
+        "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
   }
@@ -177,7 +173,7 @@ DECLARE_APPLY(DD4hep_GeometryDisplay,display)
  *  \date    01/04/2014
  */
 static long run_function(Detector&, int argc, char** argv) {
-  std::string lib, func;
+  string lib, func;
   std::vector<char*> args;
   for(int i = 0; i < argc && argv[i]; ++i)  {
     if ( 0 == ::strncmp("-library",argv[i],4) )
@@ -188,12 +184,11 @@ static long run_function(Detector&, int argc, char** argv) {
       args.emplace_back(argv[i]);
   }
   if ( lib.empty() || func.empty() )  {
-    std::cout <<
-      "Usage: -plugin DD4hep_Function -arg [-arg]                        \n\n"
-      "       Execute a function without arguments inside a library.     \n\n"
-      "     -library   <string>    Library to be loaded                    \n"
-      "     -function  <string>    name of the entry point to be executed. \n"
-      "\tArguments given: " << arguments(argc,argv) << std::endl << std::flush;
+    cout <<
+      "Usage: -plugin <name> -arg [-arg]                                \n"
+      "     -library   <string> Library to be loaded                    \n"
+      "     -function  <string> name of the entry point to be executed. \n"
+      "\tArguments given: " << arguments(argc,argv) << endl << flush;
     ::exit(EINVAL);
   }
   Func_t f = gSystem->DynFindSymbol("*",func.c_str());
@@ -226,12 +221,12 @@ DECLARE_APPLY(DD4hep_Function,run_function)
  */
 static long run_interpreter(Detector& /* description */, int argc, char** argv) {
   if ( 0 == gApplication )  {
-    std::pair<int, char**> a(argc,argv);
+    pair<int, char**> a(argc,argv);
     gApplication = new TRint("DD4hepRint", &a.first, a.second);
     printout(INFO,"DD4hepRint","++ Created ROOT interpreter instance for DD4hepUI.");
   }
   for(int i=0; i<argc; ++i)   {
-    printout(INFO,"DD4hepRint","Excecute[%d]: %s", i, argv[i]);
+    printout(INFO,"DD4hepRint","Excecute[%d]: %s",i,argv[i]);
     gInterpreter->ProcessLine(argv[i]);
   }
   if ( !gApplication->IsRunning() )  {
@@ -241,7 +236,7 @@ static long run_interpreter(Detector& /* description */, int argc, char** argv) 
 }
 DECLARE_APPLY(DD4hep_Rint,run_interpreter)
 
-/// Basic entry point to start the ROOT UI
+/// Basic entry point to start the ROOT interpreter.
 /**
  *  The UI will show up in the ROOT prompt and is accessible
  *  in the interpreter with the global variable 
@@ -255,10 +250,12 @@ DECLARE_APPLY(DD4hep_Rint,run_interpreter)
  */
 static long root_ui(Detector& description, int /* argc */, char** /* argv */) {
   char cmd[256];
-  std::snprintf(cmd, sizeof(cmd),
-		"dd4hep::detail::DD4hepUI* gDD4hepUI = new "
-		"dd4hep::detail::DD4hepUI(*(dd4hep::Detector*)%p);",
-		(void*)&description);
+  //DD4hepUI* ui = new DD4hepUI(description);
+  //::snprintf(cmd,sizeof(cmd),"dd4hep::detail::DD4hepUI* gDD4hepUI = (dd4hep::detail::DD4hepUI*)%p;",(void*)ui);
+  ::snprintf(cmd,sizeof(cmd),
+             "dd4hep::detail::DD4hepUI* gDD4hepUI = new "
+             "dd4hep::detail::DD4hepUI(*(dd4hep::Detector*)%p);",
+             (void*)&description);
   gInterpreter->ProcessLine(cmd);
   printout(ALWAYS,"DD4hepUI",
            "Use the ROOT interpreter variable gDD4hepUI "
@@ -392,39 +389,17 @@ DECLARE_APPLY(DD4hep_Dump_BorderSurfaces,root_dump_border_surfaces)
  *  \date    01/04/2014
  */
 static long root_elements(Detector& description, int argc, char** argv) {
-  using elt_h = xml::Element;
-
-  /// Generic printer object. Calls the print method of TObject
-  /**
-   *  \author  M.Frank
-   *  \version 1.0
-   *  \date    01/04/2014
-   */
   struct ElementPrint {
-    /// Default constructor
     ElementPrint() = default;
-    /// Default destructor
     virtual ~ElementPrint() = default;
-    /// Element writer
-    virtual void operator()(TGeoElement* elt)  {   elt->Print();    }
-    /// Isotope writer
-    virtual void operator()(TGeoIsotope* iso)  {   iso->Print();    }
+    virtual void operator()(TGeoElement* elt)  { elt->Print();  }
+    virtual void operator()(TGeoIsotope* iso)  { iso->Print();  }
   };
-
-  /// XML printer to produce XML output
-  /**
-   *  \author  M.Frank
-   *  \version 1.0
-   *  \date    01/04/2014
-   */
   struct ElementPrintXML : public ElementPrint  {
-    /// Root XML element
+    typedef xml::Element elt_h;
     elt_h root;
-    /// Initializing constructor
     ElementPrintXML(elt_h r) : root(r) {}
-    /// Default destructor
     virtual ~ElementPrintXML() {}
-    /// Element writer
     virtual void operator()(TGeoElement* element)  {
       elt_h elt = root.addChild(_U(element));
       elt.setAttr(_U(Z),element->Z());
@@ -436,7 +411,6 @@ static long root_elements(Detector& description, int argc, char** argv) {
       atom.setAttr(_U(unit),"g/mole");
       atom.setAttr(_U(value),element->A());
     }
-    /// Isotope writer
     virtual void operator()(TGeoIsotope* isotope)  {
       elt_h iso = root.addChild(_U(isotope));
       iso.setAttr(_U(Z),isotope->GetZ());
@@ -450,7 +424,7 @@ static long root_elements(Detector& description, int argc, char** argv) {
     }
   };
 
-  std::string type = "text", output = "";
+  string type = "text", output = "";
   for(int i=0; i<argc; ++i)  {
     if ( argv[i][0] == '-' )  {
       char c = ::tolower(argv[i][1]);
@@ -466,9 +440,9 @@ static long root_elements(Detector& description, int argc, char** argv) {
     }
   }
 
-  xml::Document        doc(0);
+  xml::Document doc(0);
   xml::DocumentHandler docH;
-  xml::Element         element(0);
+  xml::Element  element(0);
   if ( type == "xml" )  {
      const char comment[] = "\n"
     "      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
@@ -520,50 +494,23 @@ DECLARE_APPLY(DD4hep_ElementTable,root_elements)
  *  \date    01/04/2014
  */
 static long root_materials(Detector& description, int argc, char** argv) {
-
-  using elt_h = xml::Element;
-
-  /// Material printer object
-  /**
-   *  \author  M.Frank
-   *  \version 1.0
-   *  \date    01/04/2014
-   */
   struct MaterialPrint {
-  public:
-    /// Reference to the detector description
+    typedef xml::Element elt_h;
     Detector& description;
-
-  public:
-    /// Initializing constructor
     MaterialPrint(Detector& desc) : description(desc) {}
-    /// Default destructor
     virtual ~MaterialPrint() = default;
-    /// Print single material
     virtual elt_h print(TGeoMaterial* mat)  {
-      const char* st = "Undefined";
-      switch( mat->GetState() )   {
-      case TGeoMaterial::kMatStateSolid:     st = "solid";     break;
-      case TGeoMaterial::kMatStateLiquid:    st = "liquid";    break;
-      case TGeoMaterial::kMatStateGas:       st = "gas";       break;
-      case TGeoMaterial::kMatStateUndefined:
-      default:                               st = "Undefined"; break;
-      }
-      ::printf("%-32s %-8s\n", mat->GetName(), mat->IsMixture() ? "Mixture" : "Material");
-      ::printf("         Aeff=%7.3f Zeff=%7.4f rho=%8.3f [g/mole] radlen=%8.3g [cm] intlen=%8.3g [cm] index=%3d\n",
-               mat->GetA(), mat->GetZ(), mat->GetDensity(),
+      ::printf("%-8s %-32s  Aeff=%7.3f Zeff=%7.4f rho=%8.3f [g/mole] radlen=%8.3g [cm] intlen=%8.3g [cm] index=%3d\n",
+               mat->IsMixture() ? "Mixture" : "Material",
+               mat->GetName(), mat->GetA(), mat->GetZ(), mat->GetDensity(),
                mat->GetRadLen(), mat->GetIntLen(), mat->GetIndex());
-      ::printf("         Temp=%.3g [Kelvin] Pressure=%.5g [hPa] state=%s\n",
-               mat->GetTemperature(), mat->GetPressure()/dd4hep::pascal/100.0, st);
       return elt_h(0);
     }
-    /// Print element entry
     virtual void print(elt_h, TGeoElement* elt, double frac)   {
       ::printf("  %-6s Fraction: %7.3f Z=%3d A=%6.2f N=%3d Neff=%6.2f\n",
                elt->GetName(), frac, elt->Z(), elt->A(), elt->N(), elt->Neff());
     }
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
-    /// Print material property
     virtual void printProperty(elt_h, TNamed* prop, TGDMLMatrix* matrix)   {
       if ( matrix )
         ::printf("  Property: %-20s [%ld x %ld] --> %s\n",
@@ -575,25 +522,19 @@ static long root_materials(Detector& description, int argc, char** argv) {
 #endif
     virtual void operator()(TGeoMaterial* mat)  {
       Double_t* mix = mat->IsMixture() ? ((TGeoMixture*)mat)->GetWmixt() : 0;
-      elt_h     mh  = print(mat);
-      for( int n=mat->GetNelements(), i=0; i<n; ++i )   {
+      elt_h  mh = print(mat);
+      for(int n=mat->GetNelements(), i=0; i<n; ++i)   {
         TGeoElement* elt = mat->GetElement(i);
         print(mh, elt, mix ? mix[i] : 1);
       }
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
       TListIter mat_iter(&mat->GetProperties());
-      for( TObject* i = mat_iter.Next(); i; i=mat_iter.Next() )   {
+      for(TObject* i = mat_iter.Next(); i; i=mat_iter.Next())   {
         printProperty(mh, (TNamed*)i, description.manager().GetGDMLMatrix(i->GetTitle()));
       }
 #endif
     }
   };
-  /// XML printer to produce XML output
-  /**
-   *  \author  M.Frank
-   *  \version 1.0
-   *  \date    01/04/2014
-   */
   struct MaterialPrintXML : public MaterialPrint  {
     elt_h root;
     MaterialPrintXML(elt_h elt, Detector& desc) : MaterialPrint(desc), root(elt) {}
@@ -606,34 +547,11 @@ static long root_materials(Detector& description, int argc, char** argv) {
       }
       else if ( mat->GetNelements() == 1 )   {
         elt.setAttr(_U(formula),mat->GetElement(0)->GetName());
-#if 0
-        // We do not need this. It shall be computed by TGeo using the Geant4 formula.
-        elt_h RL = elt.addChild(_U(RL));
-        RL.setAttr(_U(type),  "X0");
-        RL.setAttr(_U(value), mat->GetRadLen());
-        RL.setAttr(_U(unit),  "cm");
-        elt_h NIL = elt.addChild(_U(NIL));
-        NIL.setAttr(_U(type),  "lambda");
-        NIL.setAttr(_U(value), mat->GetIntLen());
-        NIL.setAttr(_U(unit),  "cm");
-#endif
       }
       elt_h D = elt.addChild(_U(D));
-      D.setAttr(_U(type),  "density");
-      D.setAttr(_U(value), mat->GetDensity());
-      D.setAttr(_U(unit),  "g/cm3");
-      if ( mat->GetTemperature() != description.stdConditions().temperature )  {
-        elt_h T = elt.addChild(_U(T));
-        T.setAttr(_U(type), "temperature");
-        T.setAttr(_U(value), mat->GetTemperature());
-        T.setAttr(_U(unit), "kelvin");
-      }
-      if ( mat->GetPressure() != description.stdConditions().pressure )  {
-        elt_h P = elt.addChild(_U(P));
-        P.setAttr(_U(type),  "pressure");
-        P.setAttr(_U(value), mat->GetPressure());
-        P.setAttr(_U(unit),  "pascal");
-      }
+      D.setAttr(_U(type),"density");
+      D.setAttr(_U(value),mat->GetDensity());
+      D.setAttr(_U(unit),"g/cm3");
       return elt;
     }
     virtual void print(elt_h mat, TGeoElement* element, double frac)  {
@@ -650,7 +568,7 @@ static long root_materials(Detector& description, int argc, char** argv) {
 #endif
   };
 
-  std::string type = "text", output = "", name = "";
+  string type = "text", output = "", name = "";
   for(int i=0; i<argc; ++i)  {
     if ( argv[i][0] == '-' )  {
       char c = ::tolower(argv[i][1]);
@@ -667,31 +585,31 @@ static long root_materials(Detector& description, int argc, char** argv) {
     }
   }
 
-  xml::Document        doc(0);
+  xml::Document doc(0);
   xml::DocumentHandler docH;
-  xml::Element         element(0);
+  xml::Element  element(0);
   if ( type == "xml" )  {
-    const char comment[] = "\n"
-      "      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-      "      ++++   Generic detector description in C++               ++++\n"
-      "      ++++   dd4hep Detector description generator.            ++++\n"
-      "      ++++                                                     ++++\n"
-      "      ++++   Parser:"
-      XML_IMPLEMENTATION_TYPE
-      "                ++++\n"
-      "      ++++                                                     ++++\n"
-      "      ++++   Table of elements as defined in ROOT: " ROOT_RELEASE "     ++++\n"
-      "      ++++                                                     ++++\n"
-      "      ++++                              M.Frank CERN/LHCb      ++++\n"
-      "      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n  ";
-    doc = docH.create("materials", comment);
-    element = doc.root();
+     const char comment[] = "\n"
+    "      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+    "      ++++   Generic detector description in C++               ++++\n"
+    "      ++++   dd4hep Detector description generator.            ++++\n"
+    "      ++++                                                     ++++\n"
+    "      ++++   Parser:"
+    XML_IMPLEMENTATION_TYPE
+    "                ++++\n"
+    "      ++++                                                     ++++\n"
+    "      ++++   Table of elements as defined in ROOT: " ROOT_RELEASE "     ++++\n"
+    "      ++++                                                     ++++\n"
+    "      ++++                              M.Frank CERN/LHCb      ++++\n"
+    "      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n  ";
+     doc = docH.create("materials", comment);
+     element = doc.root();
   }
   dd4hep_ptr<MaterialPrint> printer(element
                                     ? new MaterialPrintXML(element, description)
-                                    : new MaterialPrint(description));
+                                   : new MaterialPrint(description));
   TObject* obj = 0;
-  TList*   mats = description.manager().GetListOfMaterials();
+  TList* mats = description.manager().GetListOfMaterials();
   dd4hep_ptr<TIterator> iter(mats->MakeIterator());
   while( (obj=iter->Next()) != 0 )  {
     TGeoMaterial* mat = (TGeoMaterial*)obj;
@@ -722,7 +640,7 @@ DECLARE_APPLY(DD4hep_MaterialTable,root_materials)
 static long load_compact(Detector& description, int argc, char** argv) {
   if ( argc > 0 )   {
     DetectorBuildType type = BUILD_DEFAULT;
-    std::string input = argv[0];
+    string input = argv[0];
     if ( argc > 1 )  {
       type = buildType(argv[1]);
       printout(INFO,"CompactLoader","+++ Processing compact file: %s with flag %s",
@@ -756,7 +674,7 @@ DECLARE_APPLY(DD4hep_CompactLoader,load_compact)
 static long load_xml(Detector& description, int argc, char** argv) {
   if ( argc > 0 )   {
     DetectorBuildType type = BUILD_DEFAULT;
-    std::string input = argv[0];
+    string input = argv[0];
     if ( argc > 1 )  {
       type = buildType(argv[1]);
       printout(INFO,"XMLLoader","+++ Processing XML file: %s with flag %s",
@@ -793,7 +711,7 @@ static long process_xml_doc(Detector& description, int argc, char** argv) {
     DetectorImp* imp = dynamic_cast<DetectorImp*>(&description);
     if ( imp )  {
       xml::XmlElement* h = (xml::XmlElement*)argv[0];
-      xml::Handle_t    input(h);
+      xml::Handle_t input(h);
       if ( input.ptr() )   {
         if ( argc > 1 )  {
           type = buildType(argv[1]);
@@ -829,13 +747,12 @@ static long load_volmgr(Detector& description, int, char**) {
       return 1;
     }
   }
-  catch (const std::exception& e) {
-    except("DD4hep_VolumeManager", "Exception: %s\n     %s", e.what(),
-	   "dd4hep: while programming VolumeManager. Are your volIDs correct?");
+  catch (const exception& e) {
+    throw runtime_error(string(e.what()) + "\n"
+                        "dd4hep: while programming VolumeManager. Are your volIDs correct?");
   }
   catch (...) {
-    except("DD4hep_VolumeManager",
-	   "UNKNOWN exception while programming VolumeManager. Are your volIDs correct?");
+    throw runtime_error("UNKNOWN exception while programming VolumeManager. Are your volIDs correct?");
   }
   return 0;
 }
@@ -852,17 +769,17 @@ DECLARE_APPLY(DD4hepVolumeManager,load_volmgr)
  */
 static long dump_geometry2root(Detector& description, int argc, char** argv) {
   if ( argc > 0 )   {
-    std::string output;
+    string output;
     for(int i = 0; i < argc && argv[i]; ++i)  {
       if ( 0 == ::strncmp("-output",argv[i],4) )
         output = argv[++i];
     }
     if ( output.empty() )   {
-      std::cout <<
-        "Usage: -plugin DD4hep_Geometry2ROOT -arg [-arg]                             \n\n"
-	"     Output DD4hep detector description object to a ROOT file.              \n\n"
+      cout <<
+        "Usage: -plugin <name> -arg [-arg]                                             \n"
+        "     name:   factory name     DD4hepGeometry2ROOT                             \n"
         "     -output <string>         Output file name.                               \n"
-        "\tArguments given: " << arguments(argc,argv) << std::endl << std::flush;
+        "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
     printout(INFO,"Geometry2ROOT","+++ Dump geometry to root file:%s",output.c_str());
@@ -886,17 +803,17 @@ DECLARE_APPLY(DD4hep_Geometry2ROOT,dump_geometry2root)
  */
 static long load_geometryFromroot(Detector& description, int argc, char** argv) {
   if ( argc > 0 )   {
-    std::string input = argv[0];  // <-- for backwards compatibility
+    string input = argv[0];  // <-- for backwards compatibility
     for(int i = 0; i < argc && argv[i]; ++i)  {
       if ( 0 == ::strncmp("-input",argv[i],4) )
         input = argv[++i];
     }
     if ( input.empty() )   {
-      std::cout <<
-        "Usage: DD4hep_RootLoader -arg [-arg]                                        \n\n"
-	"     Load DD4hep detector description from ROOT file to memory.             \n\n"
+      cout <<
+        "Usage: DD4hep_RootLoader -arg [-arg]                                          \n"
+        "     name:   factory name     DD4hepGeometry2ROOT                             \n"
         "     -input  <string>         Input file name.                                \n"
-        "\tArguments given: " << arguments(argc,argv) << std::endl << std::flush;
+        "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
     printout(INFO,"DD4hepRootLoader","+++ Read geometry from root file:%s",input.c_str());
@@ -909,42 +826,6 @@ static long load_geometryFromroot(Detector& description, int argc, char** argv) 
 }
 DECLARE_APPLY(DD4hep_RootLoader,load_geometryFromroot)
 
-/// Basic entry point to dump a dd4hep geometry as TGeo to a ROOT file
-/**
- *  Factory: DD4hep_Geometry2TGeo
- *
- *  \author  W.Deconinck
- *  \version 1.0
- *  \date    14/09/2022
- */
-static long dump_geometry2tgeo(Detector& description, int argc, char** argv) {
-  if ( argc > 0 )   {
-    std::string output( argc == 1 ? argv[0] : "" );
-    printout(INFO,"Geometry2TGeo","+++ output: %d %s", argc, output.c_str());
-    for(int i = 0; i < argc && argv[i]; ++i)  {
-      if ( 0 == ::strncmp("-output",argv[i],4) )
-        output = argv[++i];
-    }
-    if ( output.empty() )   {
-      std::cout <<
-        "Usage: -plugin <name> -arg [-arg]                                             \n"
-	"     Output TGeo information to a ROOT file.                                \n\n"
-        "     name:   factory name     DD4hepGeometry2TGeo                             \n"
-        "     -output <string>         Output file name.                               \n"
-        "\tArguments given: " << arguments(argc,argv) << std::endl << std::flush;
-      ::exit(EINVAL);
-    }
-    printout(INFO,"Geometry2TGeo","+++ Dump geometry to root file:%s",output.c_str());
-    if ( description.manager().Export(output.c_str()) > 1 ) {
-      return 1;
-    }
-  }
-  printout(ERROR,"Geometry2TGeo","+++ No output file name given.");
-  return 0;
-}
-DECLARE_APPLY(DD4hep_Geometry2TGeo,dump_geometry2tgeo)
-DECLARE_APPLY(DD4hepGeometry2TGeo,dump_geometry2tgeo)
-
 /// Basic entry point to check sensitive detector strictures
 /**
  *  Factory: DD4hep_CheckDetectors
@@ -955,8 +836,7 @@ DECLARE_APPLY(DD4hepGeometry2TGeo,dump_geometry2tgeo)
  */
 static long check_detectors(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkDetectors();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkDetectors();
 }
 DECLARE_APPLY(DD4hep_CheckDetectors,check_detectors)
 
@@ -970,8 +850,7 @@ DECLARE_APPLY(DD4hep_CheckDetectors,check_detectors)
  */
 static long check_sensitives(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkSensitives();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkSensitives();
 }
 DECLARE_APPLY(DD4hep_CheckSensitives,check_sensitives)
 
@@ -985,8 +864,7 @@ DECLARE_APPLY(DD4hep_CheckSensitives,check_sensitives)
  */
 static long check_segmentations(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkSegmentations();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkSegmentations();
 }
 DECLARE_APPLY(DD4hep_CheckSegmentations,check_segmentations)
 
@@ -1000,8 +878,7 @@ DECLARE_APPLY(DD4hep_CheckSegmentations,check_segmentations)
  */
 static long check_readouts(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkReadouts();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkReadouts();
 }
 DECLARE_APPLY(DD4hep_CheckReadouts,check_readouts)
 
@@ -1015,8 +892,7 @@ DECLARE_APPLY(DD4hep_CheckReadouts,check_readouts)
  */
 static long check_idspecs(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkIdSpecs();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkIdSpecs();
 }
 DECLARE_APPLY(DD4hep_CheckIdspecs,check_idspecs)
 
@@ -1030,8 +906,7 @@ DECLARE_APPLY(DD4hep_CheckIdspecs,check_idspecs)
  */
 static long check_volumemanager(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkVolManager();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkVolManager();
 }
 DECLARE_APPLY(DD4hep_CheckVolumeManager,check_volumemanager)
 
@@ -1045,8 +920,7 @@ DECLARE_APPLY(DD4hep_CheckVolumeManager,check_volumemanager)
  */
 static long check_nominals(Detector& description, int /* argc */, char** /* argv */) {
   DD4hepRootCheck check(&description);
-  auto ret = check.checkNominals();
-  return ret.first > 0 && ret.second == 0 ? 1 : 0;
+  return check.checkNominals();
 }
 DECLARE_APPLY(DD4hep_CheckNominals,check_nominals)
 
@@ -1077,8 +951,8 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
     long             m_numMaterialERR      = 0;
     bool             m_topStat             = false;
     std::string      m_detector;
-    std::string                currTop;
-    std::map<std::string,long> top_counts;
+    map<string,long> top_counts;
+    string           currTop;
     
     Actor(Detector& desc, int ac, char** av) : description(desc)  {
       m_detector = "/world";
@@ -1099,7 +973,7 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
         else if ( ::strncmp(p,"vis",3)        == 0  ) m_printVis            = true;
         else if ( ::strncmp(p,"detector",3)   == 0  ) m_detector            = av[++i];
         else if ( ::strncmp(p,"help",3)       == 0  )   {
-          std::cout <<
+          cout <<
             "Usage: -plugin <name> -arg [-arg]                                                   \n"
             "     -detector <string> Top level DetElement path. Default: '/world'                \n"
             "     -pathes            Print DetElement pathes                                     \n"
@@ -1112,8 +986,7 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
             "     -vis               Print visualisation attribute name(s) if present            \n"
             "     -sensitive         Only print information for sensitive volumes                \n"
             "     -topstats          Print statistics about top level node                       \n"       
-            "\tArguments given: " << arguments(ac,av) << std::endl << std::flush;
-	  _exit(0);
+            "\tArguments given: " << arguments(ac,av) << endl << flush;
         }
       }
       if ( m_printMaxLevel < 999999 )
@@ -1148,12 +1021,12 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
       }
     }
 
-    long dump(std::string prefix, TGeoNode* ideal, TGeoNode* aligned, int level, PlacedVolume::VolIDs volids)  {
+    long dump(string prefix, TGeoNode* ideal, TGeoNode* aligned, int level, PlacedVolume::VolIDs volids)  {
       char fmt[128];
-      std::stringstream log;
+      stringstream log;
       PlacedVolume pv(ideal);
       bool sensitive = false;
-      std::string opt_info, pref = prefix;
+      string opt_info, pref = prefix;
 
       if ( level >= m_printMaxLevel )    {
         return 1;
@@ -1173,13 +1046,12 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
         pref += "/";
         pref += aligned->GetName();
       }
-      /// 
       if ( m_printPositions || m_printVolIDs )  {
         if ( m_printPointers )    {
           if ( ideal != aligned )
-            std::snprintf(fmt,sizeof(fmt),"Ideal:%p Aligned:%p ",(void*)ideal,(void*)aligned);
+            ::snprintf(fmt,sizeof(fmt),"Ideal:%p Aligned:%p ",(void*)ideal,(void*)aligned);
           else
-            std::snprintf(fmt,sizeof(fmt),"Ideal:%p ",(void*)ideal);
+            ::snprintf(fmt,sizeof(fmt),"Ideal:%p ",(void*)ideal);
           log << fmt;
         }
         // Top level volume! have no volume ids
@@ -1190,7 +1062,7 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
             log << " VolID: ";
             volids.insert(volids.end(),vid.begin(),vid.end());
             for( const auto& i : volids )  {
-              std::snprintf(fmt, sizeof(fmt), "%s:%2d ",i.first.c_str(),i.second);
+              ::snprintf(fmt, sizeof(fmt), "%s:%2d ",i.first.c_str(),i.second);
               log << fmt;
             }
             if ( !vid.empty() || pv.volume().isSensitive() )  {
@@ -1198,52 +1070,42 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
               if ( sd.isValid() )  {
                 IDDescriptor dsc = sd.readout().idSpec();
                 if ( dsc.isValid() )  {
-                  log << std::hex << " (0x" << std::setfill('0') << std::setw(8)
+                  log << hex << " (0x" << setfill('0') << setw(8)
                       << dsc.encode(volids)
-                      << std::setfill(' ') << std::dec << ") ";
+                      << setfill(' ') << dec << ") ";
                 }
               }
             }
           }
         }
         opt_info = log.str();
-	log.str("");
-      }
-      ///  
-      if ( m_printVis && pv.volume().visAttributes().isValid() )   {
-        log << " Vis:" << pv.volume().visAttributes().name();
-	opt_info += log.str();
-	log.str("");
       }
       TGeoVolume* volume = ideal ? ideal->GetVolume() : 0;
       if ( !m_printSensitivesOnly || (m_printSensitivesOnly && sensitive) )  {
-	Volume vol = pv.volume();
-        char  sens = vol.isSensitive() ? 'S' : ' ';
+        char sens = pv.volume().isSensitive() ? 'S' : ' ';
         if ( m_printPointers )    {
           if ( ideal == aligned )  {
-            std::snprintf(fmt,sizeof(fmt),"%03d %%s [Ideal:%p] %%-%ds %%-16s Vol:%%s shape:%%s \t %c %%s",
+            ::snprintf(fmt,sizeof(fmt),"%03d %%s [Ideal:%p] %%-%ds %%-16s (%%s) \t %c %%s",
                        level+1,(void*)ideal,2*level+1,sens);
           }
           else  {
-            std::snprintf(fmt,sizeof(fmt),"%03d %%s Ideal:%p Aligned:%p %%-%ds %%-16s Vol:%%s shape:%%s %c %%s",
+            ::snprintf(fmt,sizeof(fmt),"%03d %%s Ideal:%p Aligned:%p %%-%ds %%-16s (%%s) %c %%s",
                        level+1,(void*)ideal,(void*)aligned,2*level+1,sens);
           }
         }
         else  {
           if ( ideal == aligned )  {
-            std::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds %%-16s Vol:%%s shape:%%s \t %c %%s",
+            ::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds %%-16s (%%s) \t %c %%s",
                        level+1,2*level+1,sens);
           }
           else  {
-            std::snprintf(fmt,sizeof(fmt),"%03d %%s Ideal:%p Aligned:%p %%-%ds %%-16s Vol:%%s shape:%%s %c %%s",
+            ::snprintf(fmt,sizeof(fmt),"%03d %%s Ideal:%p Aligned:%p %%-%ds %%-16s (%%s) %c %%s",
                        level+1,(void*)ideal,(void*)aligned,2*level+1,sens);
           }
         }
-	const auto* sh = volume ? volume->GetShape() : nullptr;
         printout(INFO,"VolumeDump",fmt,pref.c_str(),"",
                  aligned->GetName(),
-		 vol.name(),
-                 sh ? sh->IsA()->GetName() : "[Invalid Shape]",
+                 volume ? volume->GetShape()->IsA()->GetName() : "[Invalid Volume]",
                  opt_info.c_str());
         if ( sens == 'S' ) ++m_numSensitive;
       }
@@ -1252,7 +1114,7 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
         Material mat = vol.material();
         TGeoMaterial* mptr = mat->GetMaterial();
         bool ok = mat.A() == mptr->GetA() && mat.Z() == mptr->GetZ();
-        std::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds Material: %%-16s A:%%6.2f %%6.2f  Z:%%6.2f %%6.2f",
+        ::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds Material: %%-16s A:%%f %%f   Z:%%f %%f",
                    level+1,2*level+1);
         ++m_numMaterial;
         if ( !ok ) ++m_numMaterialERR;
@@ -1266,15 +1128,18 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
       if ( m_printPositions )  {
         if ( ideal )  {
           const double* trans = ideal->GetMatrix()->GetTranslation();
-          std::snprintf(fmt, sizeof(fmt), "Pos: (%f,%f,%f) ",trans[0],trans[1],trans[2]);
+          ::snprintf(fmt, sizeof(fmt), "Pos: (%f,%f,%f) ",trans[0],trans[1],trans[2]);
         }
         else  {
-          std::snprintf(fmt, sizeof(fmt), " <ERROR: INVALID Translation matrix> ");
+          ::snprintf(fmt, sizeof(fmt), " <ERROR: INVALID Translation matrix> ");
         }
         log << fmt << " \t";
       }
+      if ( m_printVis && pv.volume().visAttributes().isValid() )   {
+        log << " Vis:" << pv.volume().visAttributes().name();
+      }
       if ( !log.str().empty() )  {
-        std::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds %%s",level+1,2*level+1);
+        ::snprintf(fmt,sizeof(fmt),"%03d %%s %%-%ds %%s",level+1,2*level+1);
         printout(INFO, "VolumeDump", fmt, "  ->", "", log.str().c_str());
       }
       for (Int_t idau = 0, ndau = aligned->GetNdaughters(); idau < ndau; ++idau)  {
@@ -1290,7 +1155,6 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
       }
       return 1;
     }
-    ///
     int operator()()   {
       PlacedVolume pv;
       DetElement   top = description.world();
@@ -1299,17 +1163,17 @@ static long dump_volume_tree(Detector& description, int argc, char** argv) {
       if ( m_detector != "/world" )   {
         top = detail::tools::findElement(description,m_detector);
         if ( !top.isValid() )  {
-          except("VolumeDump","+++ Invalid DetElement path: %s",m_detector.c_str());
+          except("DD4hep_GeometryDisplay","+++ Invalid DetElement path: %s",m_detector.c_str());
         }
       }
       if ( !top.placement().isValid() )   {
-        except("VolumeDump","+++ Invalid DetElement placement: %s",m_detector.c_str());
+        except("DD4hep_GeometryDisplay","+++ Invalid DetElement placement: %s",m_detector.c_str());
       }
-      std::string place = top.placementPath();
+      string place = top.placementPath();
       detail::tools::placementPath(top, path);
       pv = detail::tools::findNode(description.world().placement(),place);
       if ( !pv.isValid() )   {
-        except("VolumeDump","+++ Invalid placement verification for placement:%s",place.c_str());
+        except("DD4hep_GeometryDisplay","+++ Invalid placement verification for placement:%s",place.c_str());
       }
       return this->dump("", top.placement().ptr(), pv.ptr(), 0, PlacedVolume::VolIDs());
     }
@@ -1333,11 +1197,10 @@ DECLARE_APPLY(DD4hep_VolumeDump,dump_volume_tree)
  *  \date    18/11/2016
  */
 static int detelement_processor(Detector& description, int argc, char** argv)   {
-  bool          recursive = true;
+  bool       recursive = true;
   ProcessorArgs args(argc, argv);
-  DetElement    det = description.world();
-  std::unique_ptr<DetectorProcessor>
-    proc(dd4hep::createProcessor<DetectorProcessor>(description, args.argc, &args.argv[0]));
+  DetElement det = description.world();
+  unique_ptr<DetectorProcessor> proc(dd4hep::createProcessor<DetectorProcessor>(description, args.argc, &args.argv[0]));
 
   for(int i=0; i<argc; ++i)  {
     if ( i >= args.start && i <= args.end )
@@ -1347,7 +1210,7 @@ static int detelement_processor(Detector& description, int argc, char** argv)   
     else if ( 0 == ::strncmp(argv[i],"-no-recursive",7) )
       recursive = false;
     else if ( 0 == ::strncmp(argv[i],"-detector",4) )  {
-      std::string path = argv[++i];
+      string path = argv[++i];
       det = detail::tools::findElement(description, path);
       if ( det.isValid() )   {
         continue;
@@ -1360,16 +1223,16 @@ static int detelement_processor(Detector& description, int argc, char** argv)   
       except("DetElementProcessor","++ Unknown plugin argument: %s",argv[i]);
     }
   }
-  return DetectorScanner().scan(*proc, det, 0, recursive) > 0 ? 1 : 0;
+  return DetectorScanner().scan(*proc, det, 0, recursive);
 }
 DECLARE_APPLY(DD4hep_DetElementProcessor,detelement_processor)
 
 // ======================================================================================
 /// Plugin function: Apply arbitrary functor callback on the tree of detector elements
 /**
- *  Factory: DD4hep_DetElementProcessor
+ *  Factory: dd4hep_DetElementProcessor
  *
- *  Invokation: -plugin DD4hep_DetElementProcessor 
+ *  Invokation: -plugin dd4hep_DetElementProcessor 
  *                      -detector /path/to/detElement (default: /world)
  *                      -processor <factory-name> <processor-args>
  *
@@ -1381,42 +1244,36 @@ static int placed_volume_processor(Detector& description, int argc, char** argv)
   bool         recursive = true;
   PlacedVolume pv = description.world().placement();
   ProcessorArgs args(argc, argv);
-  std::unique_ptr<PlacedVolumeProcessor>
-    proc(dd4hep::createProcessor<PlacedVolumeProcessor>(description, args.argc, &args.argv[0]));
-
-  std::string path = "/world";
+  unique_ptr<PlacedVolumeProcessor> proc(dd4hep::createProcessor<PlacedVolumeProcessor>(description, args.argc, &args.argv[0]));
+  
   for(int i=0; i<argc; ++i)  {
     if ( i >= args.start && i <= args.end )
       continue;
     else if ( 0 == ::strncmp(argv[i],"-recursive",4) )
       recursive = true;
-    else if ( 0 == ::strncmp(argv[i],"--recursive",5) )
-      recursive = true;
     else if ( 0 == ::strncmp(argv[i],"-no-recursive",7) )
       recursive = false;
-    else if ( 0 == ::strncmp(argv[i],"--no-recursive",8) )
-      recursive = false;
-    else if ( 0 == ::strncmp(argv[i],"-detector",4) )
-      path = argv[++i];
-    else if ( 0 == ::strncmp(argv[i],"--detector",5) )
-      path = argv[++i];
-    else
-      except("PlacedVolumeProcessor","++ Unknown plugin argument: %s",argv[i]);
-  }
-  DetElement det  = detail::tools::findElement(description, path);
-  if ( det.isValid() )  {
-    pv = det.placement();
-    if ( pv.isValid() )  {
-      return PlacedVolumeScanner().scanPlacements(*proc, pv, 0, recursive) > 0 ? 1 : 0;
+    else if ( 0 == ::strncmp(argv[i],"-detector",4) )  {
+      string     path = argv[++i];
+      DetElement det  = detail::tools::findElement(description, path);
+      if ( det.isValid() )  {
+        pv = det.placement();
+        if ( pv.isValid() )  {
+          continue;
+        }
+        except("PlacedVolumeProcessor",
+               "++ The detector element with path:%s has no valid placement!",
+               path.c_str());
+      }
+      except("PlacedVolumeProcessor",
+             "++ The detector element path:%s is not part of this description!",
+             path.c_str());
     }
-    except("PlacedVolumeProcessor",
-	   "++ The detector element with path:%s has no valid placement!",
-	   path.c_str());
+    else  {
+      except("PlacedVolumeProcessor","++ Unknown plugin argument: %s",argv[i]);
+    }
   }
-  except("PlacedVolumeProcessor",
-	 "++ The detector element path:%s is not part of this description!",
-	 path.c_str());
-  return 0;
+  return PlacedVolumeScanner().scanPlacements(*proc, pv, 0, recursive);
 }
 DECLARE_APPLY(DD4hep_PlacedVolumeProcessor,placed_volume_processor)
 
@@ -1429,136 +1286,57 @@ DECLARE_APPLY(DD4hep_PlacedVolumeProcessor,placed_volume_processor)
  *  \date    01/04/2014
  */
 template <int flag> long dump_detelement_tree(Detector& description, int argc, char** argv) {
-  using VolIDs = PlacedVolume::VolIDs;
-  /// Local helper class
   struct Actor {
-    Detector& descr;
-    std::string path     { };
-    DetElement det_world { };
-    long count          = 0;
-    int  have_match     = -1;
-    int  analysis_level = 999999;
-    bool dump_materials = false;
-    bool dump_shapes    = false;
-    bool dump_positions = false;
-    bool dump_volids    = false;
+    string path;
+    long count = 0;
+    int have_match = -1, analysis_level = 999999;
+    bool dump_materials = false, dump_shapes = false, dump_positions = false;
     bool sensitive_only = false;
 
-    /// Initializing constructor
-    Actor(Detector& det) : descr(det) {
-      det_world = descr.world();
-    }
-    /// Default destructor
+    Actor(const string& p, int level, bool mat, bool shap, bool pos, bool sens)
+      : path(p), analysis_level(level), dump_materials(mat), dump_shapes(shap), dump_positions(pos), sensitive_only(sens) {}
     ~Actor() {
       printout(ALWAYS,"DetectorDump", "+++ Scanned a total of %ld elements.",count);
     }
-    void parse_args(int ac, char** av)   {
-      for(int i=0; i<ac; ++i)  {
-	if      ( ::strncmp(av[i],"--sensitive",     5)==0 ) { sensitive_only = true;  }
-	else if ( ::strncmp(av[i], "-sensitive",     5)==0 ) { sensitive_only = true;  }
-	else if ( ::strncmp(av[i], "--no-sensitive", 8)==0 ) { sensitive_only = false; }
-	else if ( ::strncmp(av[i], "-materials",     4)==0 ) { dump_materials = true;  }
-	else if ( ::strncmp(av[i], "--materials",    5)==0 ) { dump_materials = true;  }
-	else if ( ::strncmp(av[i], "-shapes",        4)==0 ) { dump_shapes    = true;  }
-	else if ( ::strncmp(av[i], "--shapes",       5)==0 ) { dump_shapes    = true;  }
-	else if ( ::strncmp(av[i], "-positions",     4)==0 ) { dump_positions = true;  }
-	else if ( ::strncmp(av[i], "--positions",    5)==0 ) { dump_positions = true;  }
-	else if ( ::strncmp(av[i], "-no-sensitive",  7)==0 ) { sensitive_only = false; }
-	else if ( ::strncmp(av[i], "--volids",       5)==0 ) { dump_volids    = true;  }
-	else if ( ::strncmp(av[i], "-volids",        5)==0 ) { dump_volids    = true;  }
-	else if ( ::strncmp(av[i], "--detector",     5)==0 ) { path = av[++i];       }
-	else if ( ::strncmp(av[i], "-detector",      5)==0 ) { path = av[++i];       }
-	else if ( ::strncmp(av[i], "--level",        5)==0 ) { analysis_level = ::atol(av[++i]); }
-	else if ( ::strncmp(av[i], "-level",         5)==0 ) { analysis_level = ::atol(av[++i]); }
-	else   {
-	  std::cout << "  "
-	       << (flag==0 ? "DD4hep_DetectorDump" : "DD4hep_DetectorVolumeDump") << " -arg [-arg]   \n\n"
-	       << "         Dump " << (flag==0 ? "DetElement" : "Detector volume") << " tree.          \n"
-	       << "         Configure produced output information using the following options:       \n\n"
-	    "   --sensitive             Process only sensitive volumes.                                \n"
-	    "    -sensitive             dto.                                                           \n"
-	    "   --no-sensitive          Invert sensitive only flag.                                    \n"
-	    "    -no-sensitive          dto.                                                           \n"
-	    "   --shapes                Print shape information.                                       \n"
-	    "    -shapes                dto.                                                           \n"
-	    "   --positions             Print position information.                                    \n"
-	    "    -positions             dto.                                                           \n"
-	    "   --materials             Print material information.                                    \n"
-	    "    -materials             dto.                                                           \n"
-	    "   --detector    <path>    Process elements only if <path> is part of the DetElement path.\n"
-	    "    -detector    <path>    dto.                                                           \n"
-	    "    -level       <number>  Maximal depth to be explored by the scan                       \n"
-	    "   --level       <number>  dto.                                                           \n"
-	    "    -volids                Print volume identifiers of placements.                        \n"
-	    "   --volids                dto.                                                           \n"
-	    "\tArguments given: " << arguments(ac,av) << std::endl << std::flush;        
-	  ::exit(EINVAL);
-	}
-      }
-    }
-    IDDescriptor get_id_descriptor(PlacedVolume pv)   {
-      Volume v = pv.volume();
-      SensitiveDetector sd = v.sensitiveDetector();
-      if ( sd.isValid() )   {
-	IDDescriptor dsc = sd.readout().idSpec();
-	if ( dsc.isValid() ) return dsc;
-      }
-      for (Int_t idau = 0, ndau = v->GetNdaughters(); idau < ndau; ++idau)  {
-	IDDescriptor dsc = get_id_descriptor(v->GetNode(idau));
-	if ( dsc.isValid() ) return dsc;
-      }
-      return IDDescriptor();
-    }
-    void validate_id_descriptor(DetElement de, IDDescriptor& desc)   {
-      desc = (!de.parent() || de.parent() == det_world)
-	? IDDescriptor() : get_id_descriptor(de.placement());
-    }
-
-    long dump(DetElement de, int level, IDDescriptor& id_desc, VolIDs chain)   {
-      PlacedVolume place = de.placement();
-      const DetElement::Children& children = de.children();
-      bool  use_elt = path.empty() || de.path().find(path) != std::string::npos;
-
-      if ( have_match < 0 && use_elt )  {
-	have_match = level;
-      }
-      use_elt = use_elt && ((level-have_match) <= analysis_level);
-      if ( de != det_world )    {
-	chain.insert(chain.end(), place.volIDs().begin(), place.volIDs().end());
-      }
+    long dump(DetElement de,int level)   {
+      const DetElement::Children& c = de.children();
+      bool  use_elt = path.empty() || de.path().find(path) != string::npos;
+      if ( have_match<0 && use_elt ) have_match = level;
+      use_elt = use_elt && (level-have_match)<=analysis_level;
       if ( use_elt )   {
         if ( !sensitive_only || 0 != de.volumeID() )  {
-          char sens = place.isValid() && place.volume().isSensitive() ? 'S' : ' ';
+          PlacedVolume place = de.placement();
+          char sens = place.isValid() ? place.volume().isSensitive() ? 'S' : ' ' : ' ';
           char fmt[128];
           switch(flag)  {
           case 0:
             ++count;
             if ( de.placement() == de.idealPlacement() )  {
-              std::snprintf(fmt,sizeof(fmt),"%03d %%-%ds %%s NumDau:%%d VolID:%%08X Place:%%p  %%c",level+1,2*level+1);
-              printout(INFO,"DetectorDump",fmt,"",de.path().c_str(),int(children.size()),
+              ::snprintf(fmt,sizeof(fmt),"%03d %%-%ds %%s NumDau:%%d VolID:%%08X Place:%%p  %%c",level+1,2*level+1);
+              printout(INFO,"DetectorDump",fmt,"",de.path().c_str(),int(c.size()),
                        (unsigned long)de.volumeID(), (void*)place.ptr(), sens);
               break;
             }
-            std::snprintf(fmt,sizeof(fmt),"%03d %%-%ds %%s NumDau:%%d VolID:%%08X Place:%%p [ideal:%%p aligned:%%p]  %%c",
+            ::snprintf(fmt,sizeof(fmt),"%03d %%-%ds %%s NumDau:%%d VolID:%%08X Place:%%p [ideal:%%p aligned:%%p]  %%c",
                        level+1,2*level+1);
-            printout(INFO,"DetectorDump",fmt,"",de.path().c_str(),int(children.size()),
+            printout(INFO,"DetectorDump",fmt,"",de.path().c_str(),int(c.size()),
                      (unsigned long)de.volumeID(), (void*)de.idealPlacement().ptr(),
                      (void*)place.ptr(), sens);
             break;
           case 1:
             ++count;
-            std::snprintf(fmt,sizeof(fmt),
+            ::snprintf(fmt,sizeof(fmt),
                        "%03d %%-%ds Detector: %%s NumDau:%%d VolID:%%p",
                        level+1,2*level+1);
-            printout(INFO,"DetectorDump", fmt, "", de.path().c_str(), int(children.size()), (void*)de.volumeID());
+            printout(INFO,"DetectorDump", fmt, "", de.path().c_str(), int(c.size()), (void*)de.volumeID());
             if ( de.placement() == de.idealPlacement() )  {
-              std::snprintf(fmt,sizeof(fmt),
+              ::snprintf(fmt,sizeof(fmt),
                          "%03d %%-%ds Placement: %%s  %%c",
                          level+1,2*level+3);
               printout(INFO,"DetectorDump",fmt,"", de.placementPath().c_str(), sens);
               break;
             }
-            std::snprintf(fmt,sizeof(fmt),
+            ::snprintf(fmt,sizeof(fmt),
                        "%03d %%-%ds Placement: %%s  [ideal:%%p aligned:%%p] %%c",
                        level+1,2*level+3);
             printout(INFO,"DetectorDump",fmt,"", de.placementPath().c_str(),
@@ -1570,7 +1348,7 @@ template <int flag> long dump_detelement_tree(Detector& description, int argc, c
           if ( (dump_materials || dump_shapes) && place.isValid() )  {
             Volume vol = place.volume();
             Material mat = vol.material();
-            std::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Material: %%-12s Shape: %%s", level+1,2*level+3);
+            ::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Material: %%-12s Shape: %%s", level+1,2*level+3);
             printout(INFO,"DetectorDump",fmt,"", mat.name(), toStringSolid(vol->GetShape()).c_str());
           }
           if ( dump_positions && place.isValid() )  {
@@ -1579,55 +1357,76 @@ template <int flag> long dump_detelement_tree(Detector& description, int argc, c
             double   loc[3] = {0,0,0}, world[3] = {0,0,0};
             TGeoHMatrix   tr = de.nominal().worldTransformation();
             tr.LocalToMaster(loc, world);
-            std::snprintf(fmt,sizeof(fmt), "%03d %%-%ds BBox:     (%%9.4f,%%9.4f,%%9.4f) [cm]", level+1,2*level+3);
+            ::snprintf(fmt,sizeof(fmt), "%03d %%-%ds BBox:     (%%9.4f,%%9.4f,%%9.4f) [cm]", level+1,2*level+3);
             printout(INFO,"DetectorDump",fmt,"", box.x(), box.y(), box.z());
-            std::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Position: (%%9.4f,%%9.4f,%%9.4f) [cm] w/r to mother", level+1,2*level+3);
+            ::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Position: (%%9.4f,%%9.4f,%%9.4f) [cm] w/r to mother", level+1,2*level+3);
             printout(INFO,"DetectorDump",fmt,"", pos.X(), pos.Y(), pos.Z());
-            std::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Position: (%%9.4f,%%9.4f,%%9.4f) [cm] w/r to world",  level+1,2*level+3);
+            ::snprintf(fmt,sizeof(fmt), "%03d %%-%ds Position: (%%9.4f,%%9.4f,%%9.4f) [cm] w/r to world",  level+1,2*level+3);
             printout(INFO,"DetectorDump",fmt,"", world[0], world[1], world[2]);
           }
-	  if ( dump_volids && !place.volIDs().empty() )    {
-	    std::stringstream log;
-	    log << " VID:";
-	    for( const auto& i : chain )
-	      log << " " << i.first << ':' << std::dec << std::setw(2) << i.second;
-	    if ( id_desc.isValid() )  {
-	      log << " (encoded:0x" << std::setfill('0') << std::setw(8) << std::hex
-		  << id_desc.encode(chain)
-		  << std::setfill(' ') << std::dec << ") ";
-	    }
-	    std::snprintf(fmt,sizeof(fmt),"%03d %%-%ds %%s", level+1, 2*level+1);
-            printout(INFO,"DetectorDump", fmt, "", log.str().c_str());
-	  }
         }
       }
-      for ( const auto& c : children )   {
-	validate_id_descriptor(c.second, id_desc);
-	dump(c.second, level+1, id_desc, chain);
-      }
+      for (DetElement::Children::const_iterator i = c.begin(); i != c.end(); ++i)
+        dump((*i).second,level+1);
       return 1;
     }
   };
-  VolIDs chain;
-  IDDescriptor id_desc;
-  Actor  a(description);
-  a.parse_args(argc, argv);
-  return a.dump(description.world(), 0, id_desc, chain);
+  int  level = 999999;
+  bool sensitive_only = false, materials = false, shapes = false, positions = false;
+  string path;
+  for(int i=0; i<argc; ++i)  {
+    if      ( ::strncmp(argv[i],"--sensitive",     5)==0 ) { sensitive_only = true;    }
+    else if ( ::strncmp(argv[i], "-sensitive",     5)==0 ) { sensitive_only = true;    }
+    else if ( ::strncmp(argv[i], "--no-sensitive", 8)==0 ) { sensitive_only = false;   }
+    else if ( ::strncmp(argv[i], "-materials",     4)==0 ) { materials = true;         }
+    else if ( ::strncmp(argv[i], "--materials",    5)==0 ) { materials = true;         }
+    else if ( ::strncmp(argv[i], "-shapes",        4)==0 ) { shapes = true;            }
+    else if ( ::strncmp(argv[i], "--shapes",       5)==0 ) { shapes = true;            }
+    else if ( ::strncmp(argv[i], "-positions",     4)==0 ) { positions = true;         }
+    else if ( ::strncmp(argv[i], "--positions",    5)==0 ) { positions = true;         }
+    else if ( ::strncmp(argv[i], "-no-sensitive",  7)==0 ) { sensitive_only = false;   }
+    else if ( ::strncmp(argv[i], "--detector",     5)==0 ) { path = argv[++i];         }
+    else if ( ::strncmp(argv[i], "-detector",      5)==0 ) { path = argv[++i];         }
+    else if ( ::strncmp(argv[i], "--level",        5)==0 ) { level= ::atol(argv[++i]); }
+    else if ( ::strncmp(argv[i], "-level",         5)==0 ) { level= ::atol(argv[++i]); }
+    else   {
+      cout << "  "
+           << (flag==0 ? "DD4hep_DetectorDump" : "DD4hep_DetectorVolumeDump") << " -arg [-arg]     \n"
+        "    --sensitive            Process only sensitive volumes.                                \n"
+        "    -sensitive             dto.                                                           \n"
+        "    --no-sensitive         Invert sensitive only flag.                                    \n"
+        "    -no-sensitive          dto.                                                           \n"
+        "    --shapes               Print shape information.                                       \n"
+        "    -shapes                dto.                                                           \n"
+        "    --positions            Print position information.                                    \n"
+        "    -positions             dto.                                                           \n"
+        "    --materials            Print material information.                                    \n"
+        "    -materials             dto.                                                           \n"
+        "    --detector   <path>    Process elements only if <path> is part of the DetElement path.\n"
+        "    -detector    <path>    dto.                                                           \n"
+        "    -level       <number>  Maximal depth to be explored by the scan                       \n"
+        "    --level       <number> dto.                                                           \n"
+        "\tArguments given: " << arguments(argc,argv) << endl << flush;        
+      ::exit(EINVAL);
+    }
+  }
+  Actor a(path, level, materials, shapes, positions, sensitive_only);
+  return a.dump(description.world(),0);
 }
 DECLARE_APPLY(DD4hep_DetectorDump,dump_detelement_tree<0>)
 DECLARE_APPLY(DD4hep_DetectorVolumeDump,dump_detelement_tree<1>)
 
 /// Basic entry point to print out the volume hierarchy
 /**
- *  Factory: DD4hep_DetElementCache
+ *  Factory: dd4hepDetElementCache
  *
  *  \author  M.Frank
  *  \version 1.0
  *  \date    01/04/2014
  */
-static long detelement_cache(Detector& description, int argc, char** argv) {
+static long detelement_cache(Detector& description, int , char** ) {
   struct Actor {
-    long cache(DetElement de) {
+    static long cache(DetElement de) {
       const DetElement::Children& c = de.children();
       de.nominal().worldTransformation();
       de.nominal().detectorTransformation();
@@ -1636,32 +1435,8 @@ static long detelement_cache(Detector& description, int argc, char** argv) {
       for( const auto& i : c ) cache(i.second);
       return 1;
     }
-  } actor;
-  std::string detector = "/world";
-  for(int i = 0; i < argc && argv[i]; ++i)  {
-    if ( 0 == ::strncmp("-detector",argv[i],4) )
-      detector = argv[++i];
-    else if ( 0 == ::strncmp("--detector",argv[i],5) )
-      detector = argv[++i];
-    else  {
-      std::cout <<
-	"Usage: -plugin DD4hep_DetElementCache  -arg [-arg]                 \n\n"
-	"     Fill cache with transformation information in DetElements.    \n\n"
-	"     -detector <string>  Top level DetElement path. Default: '/world'\n"
-	"     --detector <string> dto.                                        \n"
-	"     -help              Print this help.                             \n"
-	"     Arguments given: " << arguments(argc,argv) << std::endl << std::flush;
-      ::exit(EINVAL);
-    }
-  }
-  DetElement element = description.world();
-  if ( detector != "/world" )   {
-    element = detail::tools::findElement(description, detector);
-    if ( !element.isValid() )  {
-      except("VolumeDump","+++ Invalid DetElement path: %s", detector.c_str());
-    }
-  }
-  return actor.cache(element);
+  };
+  return Actor::cache(description.world());
 }
 DECLARE_APPLY(DD4hep_DetElementCache,detelement_cache)
 
@@ -1681,6 +1456,30 @@ static long exec_GeometryTreeDump(Detector& description, int, char** ) {
 }
 DECLARE_APPLY(DD4hep_GeometryTreeDump,exec_GeometryTreeDump)
 
+/// Basic entry point to dump the geometry in GDML format
+/**
+ *  Factory: dd4hepSimpleGDMLWriter
+ *
+ *  \author  M.Frank
+ *  \version 1.0
+ *  \date    01/04/2014
+ */
+#include "../SimpleGDMLWriter.h"
+static long exec_SimpleGDMLWriter(Detector& description, int argc, char** argv) {
+  if ( argc > 1 )   {
+    string output = argv[1];
+    ofstream out(output.c_str()+1,ios_base::out);
+    SimpleGDMLWriter dmp(out);
+    dmp.create(description.world());
+  }
+  else   {
+    SimpleGDMLWriter dmp(cout);
+    dmp.create(description.world());
+  }
+  return 1;
+}
+DECLARE_APPLY(DD4hep_SimpleGDMLWriter,exec_SimpleGDMLWriter)
+
 /// Basic entry point to print out detector type map
 /**
  *  Factory: DD4hep_DetectorTypes
@@ -1689,32 +1488,14 @@ DECLARE_APPLY(DD4hep_GeometryTreeDump,exec_GeometryTreeDump)
  *  \version 1.0
  *  \date    01/04/2014
  */
-static long detectortype_cache(Detector& description, int argc, char** argv)  {
-  std::vector<std::string> types;
-  for(int i = 0; i < argc && argv[i]; ++i)  {
-    if ( 0 == ::strncmp("-type",argv[i],4) )
-      types.push_back(argv[++i]);
-    else if ( 0 == ::strncmp("--type",argv[i],4) )
-      types.push_back(argv[++i]);
-    else   {
-      std::cout <<
-        "Usage: DD4hep_DetectorTypes -type <type> -arg [-arg]                          \n"
-	"     Dump detector types from detector description.                         \n\n"
-        "     -type   <string>         Add new type to be listed. Multiple possible.   \n"
-        "\tArguments given: " << arguments(argc,argv) << std::endl << std::flush;
-      ::exit(EINVAL);
-    }
-  }
-  if ( types.empty() )   {
-    types = description.detectorTypes();
-  }
-  printout(INFO,"DetectorTypes","Detector type dump:  %ld types:", long(types.size()));
-  for( const auto& type : types )   {
-    const std::vector<DetElement>& detectors = description.detectors(type);
-    printout(INFO,"DetectorTypes","\t --> %ld %s detectors:",long(detectors.size()), type.c_str());
-    for( const auto& d : detectors )   {
-      printout(INFO,"DetectorTypes","\t\t %-16s --> %s  [%s]",type.c_str(),d.name(),d.type().c_str());
-    }
+static long detectortype_cache(Detector& description, int , char** ) {
+  vector<string> v = description.detectorTypes();
+  printout(INFO,"DetectorTypes","Detector type dump:  %ld types:",long(v.size()));
+  for(vector<string>::const_iterator i=v.begin(); i!=v.end(); ++i)   {
+    const vector<DetElement>& vv=description.detectors(*i);
+    printout(INFO,"DetectorTypes","\t --> %ld %s detectors:",long(vv.size()),(*i).c_str());
+    for(vector<DetElement>::const_iterator j=vv.begin(); j!=vv.end(); ++j)
+      printout(INFO,"DetectorTypes","\t\t %-16s --> %s  [%s]",(*i).c_str(),(*j).name(),(*j).type().c_str());
   }
   return 1;
 }

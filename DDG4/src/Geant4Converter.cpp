@@ -12,69 +12,75 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Detector.h>
-#include <DD4hep/Plugins.h>
-#include <DD4hep/Shapes.h>
-#include <DD4hep/Volumes.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/DD4hepUnits.h>
-#include <DD4hep/PropertyTable.h>
-#include <DD4hep/detail/ShapesInterna.h>
-#include <DD4hep/detail/ObjectsInterna.h>
-#include <DD4hep/detail/DetectorInterna.h>
+#include "DD4hep/Detector.h"
+#include "DD4hep/Plugins.h"
+#include "DD4hep/Shapes.h"
+#include "DD4hep/Volumes.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/DD4hepUnits.h"
+#include "DD4hep/PropertyTable.h"
+#include "DD4hep/detail/ObjectsInterna.h"
+#include "DD4hep/detail/DetectorInterna.h"
 
-#include <DDG4/Geant4Field.h>
-#include <DDG4/Geant4Helpers.h>
-#include <DDG4/Geant4Converter.h>
-#include <DDG4/Geant4UserLimits.h>
-#include <DDG4/Geant4PlacementParameterisation.h>
+#include "DDG4/Geant4Field.h"
+#include "DDG4/Geant4Converter.h"
+#include "DDG4/Geant4UserLimits.h"
+#include "DDG4/Geant4SensitiveDetector.h"
 #include "Geant4ShapeConverter.h"
 
 // ROOT includes
-#include <TClass.h>
-#include <TGeoBoolNode.h>
+#include "TROOT.h"
+#include "TColor.h"
+#include "TGeoNode.h"
+
+#include "TGeoMatrix.h"
+#include "TGeoBoolNode.h"
+#include "TGeoParaboloid.h"
+#include "TGeoScaledShape.h"
+#include "TGeoManager.h"
+#include "TClass.h"
+#include "TMath.h"
 
 // Geant4 include files
-#include <G4Version.hh>
-#include <G4VisAttributes.hh>
-#include <G4PVParameterised.hh>
-#include <G4ProductionCuts.hh>
-#include <G4VUserRegionInformation.hh>
+#include "G4VisAttributes.hh"
+#include "G4ProductionCuts.hh"
+#include "G4VUserRegionInformation.hh"
 
-#include <G4Box.hh>
-#include <G4Tubs.hh>
-#include <G4Ellipsoid.hh>
-#include <G4UnionSolid.hh>
-#include <G4ReflectedSolid.hh>
-#include <G4SubtractionSolid.hh>
-#include <G4IntersectionSolid.hh>
-#include <G4VSensitiveDetector.hh>
+#include "G4Box.hh"
+#include "G4Tubs.hh"
+#include "G4Ellipsoid.hh"
+#include "G4UnionSolid.hh"
+#include "G4ReflectedSolid.hh"
+#include "G4EllipticalTube.hh"
+#include "G4SubtractionSolid.hh"
+#include "G4IntersectionSolid.hh"
 
-#include <G4Region.hh>
-#include <G4Element.hh>
-#include <G4Isotope.hh>
-#include <G4Material.hh>
-#include <G4UserLimits.hh>
-#include <G4RegionStore.hh>
-#include <G4FieldManager.hh>
-#include <G4LogicalVolume.hh>
-#include <G4OpticalSurface.hh>
-#include <G4ReflectionFactory.hh>
-#include <G4LogicalSkinSurface.hh>
-#include <G4ElectroMagneticField.hh>
-#include <G4LogicalBorderSurface.hh>
-#include <G4MaterialPropertiesTable.hh>
+#include "G4Element.hh"
+#include "G4Region.hh"
+#include "G4UserLimits.hh"
+#include "G4LogicalVolume.hh"
+#include "G4Material.hh"
+#include "G4Element.hh"
+#include "G4Isotope.hh"
+#include "G4Transform3D.hh"
+#include "G4ThreeVector.hh"
+#include "G4PVPlacement.hh"
+#include "G4ElectroMagneticField.hh"
+#include "G4FieldManager.hh"
+#include "G4ReflectionFactory.hh"
+#include "G4OpticalSurface.hh"
+#include "G4LogicalSkinSurface.hh"
+#include "G4LogicalBorderSurface.hh"
+#include "G4MaterialPropertiesTable.hh"
 #if G4VERSION_NUMBER >= 1040
-#include <G4MaterialPropertiesIndex.hh>
+#include "G4MaterialPropertiesIndex.hh"
 #endif
-#include <G4ScaledSolid.hh>
-#include <CLHEP/Units/SystemOfUnits.h>
+#include "CLHEP/Units/SystemOfUnits.h"
 
 // C/C++ include files
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <limits>
 
 namespace units = dd4hep;
 using namespace dd4hep::detail;
@@ -82,35 +88,153 @@ using namespace dd4hep::sim;
 using namespace dd4hep;
 using namespace std;
 
-#include <DDG4/Geant4AssemblyVolume.h>
-#include <DD4hep/DetectorTools.h>
+#include "DDG4/Geant4AssemblyVolume.h"
+#include "DD4hep/DetectorTools.h"
+#include "G4RotationMatrix.hh"
+#include "G4AffineTransform.hh"
+#include "G4LogicalVolume.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4ReflectionFactory.hh"
 
-static constexpr const double CM_2_MM = (CLHEP::centimeter/dd4hep::centimeter);
-static constexpr const char* GEANT4_TAG_IGNORE = "Geant4-ignore";
-static constexpr const char* GEANT4_TAG_PLUGIN = "Geant4-plugin";
-static constexpr const char* GEANT4_TAG_BIRKSCONSTANT    = "BirksConstant";
-static constexpr const char* GEANT4_TAG_MEE              = "MeanExcitationEnergy";
-static constexpr const char* GEANT4_TAG_ENE_PER_ION_PAIR = "MeanEnergyPerIonPair";
+static const double CM_2_MM = (CLHEP::centimeter/dd4hep::centimeter);
+
+void Geant4AssemblyVolume::imprint(Geant4GeometryInfo& info,
+                                   const TGeoNode*   parent,
+                                   Chain chain,
+                                   Geant4AssemblyVolume* pAssembly,
+                                   G4LogicalVolume*  pMotherLV,
+                                   G4Transform3D&    transformation,
+                                   G4int copyNumBase,
+                                   G4bool surfCheck )
+{
+  TGeoVolume* vol = parent->GetVolume();
+  static int level=0;
+  ++level;
+
+
+  unsigned int  numberOfDaughters;
+
+  if( copyNumBase == 0 )
+  {
+    numberOfDaughters = pMotherLV->GetNoDaughters();
+  }
+  else
+  {
+    numberOfDaughters = copyNumBase;
+  }
+
+  // We start from the first available index
+  //
+  numberOfDaughters++;
+
+  ImprintsCountPlus();
+
+  vector<G4AssemblyTriplet> triplets = pAssembly->fTriplets;
+  //cout << " Assembly:" << detail::tools::placementPath(chain) << endl;
+
+  for( unsigned int i = 0; i < triplets.size(); i++ )  {
+    const TGeoNode* node = pAssembly->m_entries[i];
+    Chain new_chain = chain;
+    new_chain.emplace_back(node);
+    //cout << " Assembly: Entry: " << detail::tools::placementPath(new_chain) << endl;
+
+    G4Transform3D Ta( *(triplets[i].GetRotation()),
+                      triplets[i].GetTranslation() );
+    if ( triplets[i].IsReflection() )  { Ta = Ta * G4ReflectZ3D(); }
+
+    G4Transform3D Tfinal = transformation * Ta;
+
+    if ( triplets[i].GetVolume() )
+    {
+      // Generate the unique name for the next PV instance
+      // The name has format:
+      //
+      // av_WWW_impr_XXX_YYY_ZZZ
+      // where the fields mean:
+      // WWW - assembly volume instance number
+      // XXX - assembly volume imprint number
+      // YYY - the name of a log. volume we want to make a placement of
+      // ZZZ - the log. volume index inside the assembly volume
+      //
+      stringstream pvName;
+      pvName << "av_"
+             << GetAssemblyID()
+             << "_impr_"
+             << GetImprintsCount()
+             << "_"
+             << triplets[i].GetVolume()->GetName().c_str()
+             << "_pv_"
+             << i
+             << ends;
+
+      // Generate a new physical volume instance inside a mother
+      // (as we allow 3D transformation use G4ReflectionFactory to
+      //  take into account eventual reflection)
+      //
+      G4PhysicalVolumesPair pvPlaced
+        = G4ReflectionFactory::Instance()->Place( Tfinal,
+                                                  pvName.str().c_str(),
+                                                  triplets[i].GetVolume(),
+                                                  pMotherLV,
+                                                  false,
+                                                  numberOfDaughters + i,
+                                                  surfCheck );
+
+      // Register the physical volume created by us so we can delete it later
+      //
+      //fPVStore.emplace_back( pvPlaced.first );
+      info.g4VolumeImprints[vol].emplace_back(new_chain,pvPlaced.first);
+#if 0
+      cout << " Assembly:Parent:" << parent->GetName() << " " << node->GetName()
+           << " " <<  (void*)node << " G4:" << pvName.str() << " Daughter:"
+           << detail::tools::placementPath(new_chain) << endl;
+      cout << endl;
+#endif
+
+      if ( pvPlaced.second )  {
+        G4Exception("G4AssemblyVolume::MakeImprint(..)", "GeomVol0003", FatalException,
+                    "Fancy construct popping new mother from the stack!");
+        //fPVStore.emplace_back( pvPlaced.second );
+      }
+    }
+    else if ( triplets[i].GetAssembly() )  {
+      // Place volumes in this assembly with composed transformation
+      imprint(info, parent, new_chain, (Geant4AssemblyVolume*)triplets[i].GetAssembly(), pMotherLV, Tfinal, i*100+copyNumBase, surfCheck );
+    }
+    else   {
+      --level;
+      G4Exception("G4AssemblyVolume::MakeImprint(..)",
+                  "GeomVol0003", FatalException,
+                  "Triplet has no volume and no assembly");
+    }
+  }
+  //cout << "Imprinted assembly level:" << level << " in mother:" << pMotherLV->GetName() << endl;
+  --level;
+}
 
 namespace {
   static string indent = "";
-
-  string make_NCName(const string& in)   {
-    string res = detail::str_replace(in, "/", "_");
-    res = detail::str_replace(res, "#", "_");
-    return res;
-  }
-
-  bool is_left_handed(const TGeoMatrix* m)   {
-    const Double_t* r = m->GetRotationMatrix();
-    if ( r )    {
-      Double_t det =
-        r[0]*r[4]*r[8] + r[3]*r[7]*r[2] + r[6]*r[1]*r[5] -
-        r[2]*r[4]*r[6] - r[5]*r[7]*r[0] - r[8]*r[1]*r[3];
-      return det < 0e0;
+  static Double_t s_identity_rot[] = { 1., 0., 0., 0., 1., 0., 0., 0., 1. };
+  struct MyTransform3D : public G4Transform3D {
+    MyTransform3D(double XX, double XY, double XZ, double DX, double YX, double YY, double YZ, double DY, double ZX, double ZY,
+                  double ZZ, double DZ)
+      : G4Transform3D(XX, XY, XZ, DX, YX, YY, YZ, DY, ZX, ZY, ZZ, DZ) {
     }
-    return false;
+    MyTransform3D(const double* t, const double* r = s_identity_rot)
+      : G4Transform3D(r[0],r[1],r[2],t[0]*CM_2_MM,r[3],r[4],r[5],t[1]*CM_2_MM,r[6],r[7],r[8],t[2]*CM_2_MM)  {
+    }
+  };
+
+#if 0  // warning: unused function 'handleName' [-Wunused-function]
+  void handleName(const TGeoNode* n) {
+    TGeoVolume* v = n->GetVolume();
+    TGeoMedium* m = v->GetMedium();
+    TGeoShape* s = v->GetShape();
+    string nam;
+    printout(DEBUG, "G4", "TGeoNode:'%s' Vol:'%s' Shape:'%s' Medium:'%s'", n->GetName(), v->GetName(), s->GetName(),
+             m->GetName());
   }
+#endif
 
   class G4UserRegionInformation : public G4VUserRegionInformation {
   public:
@@ -127,6 +251,7 @@ namespace {
         printout(DEBUG, "Region", "Name:%s", region.name());
     }
   };
+
 
   pair<double,double> g4PropertyConversion(int index)   {
 #if G4VERSION_NUMBER >= 1040
@@ -146,16 +271,8 @@ namespace {
     case kWLSCOMPONENT:                   return make_pair(CLHEP::keV/units::keV, 1.0);
     case kWLSABSLENGTH:                   return make_pair(CLHEP::keV/units::keV, CLHEP::m/units::m);
     case kABSLENGTH:                      return make_pair(CLHEP::keV/units::keV, CLHEP::m/units::m);
-#if G4VERSION_NUMBER >= 1100
-    case kWLSCOMPONENT2:                  return make_pair(CLHEP::keV/units::keV, 1.0);
-    case kWLSABSLENGTH2:                  return make_pair(CLHEP::keV/units::keV, CLHEP::m/units::m);
-    case kSCINTILLATIONCOMPONENT1:        return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV);
-    case kSCINTILLATIONCOMPONENT2:        return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV);
-    case kSCINTILLATIONCOMPONENT3:        return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV);
-#else
     case kFASTCOMPONENT:                  return make_pair(CLHEP::keV/units::keV, 1.0);
     case kSLOWCOMPONENT:                  return make_pair(CLHEP::keV/units::keV, 1.0);
-#endif
     case kPROTONSCINTILLATIONYIELD:       return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV); // Yields: 1/energy
     case kDEUTERONSCINTILLATIONYIELD:     return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV);
     case kTRITONSCINTILLATIONYIELD:       return make_pair(CLHEP::keV/units::keV, units::keV/CLHEP::keV);
@@ -185,6 +302,11 @@ namespace {
     case kMIEHG_FORWARD_RATIO:         return 1.0;
     case kSCINTILLATIONYIELD:          return units::keV/CLHEP::keV;                         // Energy
     case kRESOLUTIONSCALE:             return 1.0;
+    case kFASTTIMECONSTANT:            return CLHEP::second/units::second;                   // Time
+    case kFASTSCINTILLATIONRISETIME:   return CLHEP::second/units::second;                   // Time
+    case kSLOWTIMECONSTANT:            return CLHEP::second/units::second;                   // Time
+    case kSLOWSCINTILLATIONRISETIME:   return CLHEP::second/units::second;                   // Time
+    case kYIELDRATIO:                  return 1.0;
     case kFERMIPOT:                    return CLHEP::keV/units::keV;                         // Energy
     case kDIFFUSION:                   return 1.0;
     case kSPINFLIP:                    return 1.0;
@@ -203,39 +325,6 @@ namespace {
     case kMR_ANGNOTHETA:               return 1.0;
     case kMR_ANGNOPHI:                 return 1.0;
     case kMR_ANGCUT:                   return 1.0;
-
-#if G4VERSION_NUMBER >= 1100
-    case kSCINTILLATIONTIMECONSTANT1:  return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONTIMECONSTANT2:  return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONTIMECONSTANT3:  return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONRISETIME1:      return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONRISETIME2:      return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONRISETIME3:      return CLHEP::second/units::second;                   // Time
-    case kSCINTILLATIONYIELD1:         return 1.0;
-    case kSCINTILLATIONYIELD2:         return 1.0;
-    case kSCINTILLATIONYIELD3:         return 1.0;
-    case kPROTONSCINTILLATIONYIELD1:   return 1.0;
-    case kPROTONSCINTILLATIONYIELD2:   return 1.0;
-    case kPROTONSCINTILLATIONYIELD3:   return 1.0;
-    case kDEUTERONSCINTILLATIONYIELD1: return 1.0;
-    case kDEUTERONSCINTILLATIONYIELD2: return 1.0;
-    case kDEUTERONSCINTILLATIONYIELD3: return 1.0;
-    case kALPHASCINTILLATIONYIELD1:    return 1.0;
-    case kALPHASCINTILLATIONYIELD2:    return 1.0;
-    case kALPHASCINTILLATIONYIELD3:    return 1.0;
-    case kIONSCINTILLATIONYIELD1:      return 1.0;
-    case kIONSCINTILLATIONYIELD2:      return 1.0;
-    case kIONSCINTILLATIONYIELD3:      return 1.0;
-    case kELECTRONSCINTILLATIONYIELD1: return 1.0;
-    case kELECTRONSCINTILLATIONYIELD2: return 1.0;
-    case kELECTRONSCINTILLATIONYIELD3: return 1.0;
-#else
-    case kFASTTIMECONSTANT:            return CLHEP::second/units::second;                   // Time
-    case kFASTSCINTILLATIONRISETIME:   return CLHEP::second/units::second;                   // Time
-    case kSLOWTIMECONSTANT:            return CLHEP::second/units::second;                   // Time
-    case kSLOWSCINTILLATIONRISETIME:   return CLHEP::second/units::second;                   // Time
-    case kYIELDRATIO:                  return 1.0;
-#endif
     default:
       break;
     }
@@ -267,43 +356,56 @@ Geant4Converter::Geant4Converter(const Detector& description_ref, PrintLevel lev
 Geant4Converter::~Geant4Converter() {
 }
 
-/// Handle the conversion of isotopes
-void* Geant4Converter::handleIsotope(const string& /* name */, const TGeoIsotope* iso) const {
-  G4Isotope* g4i = data().g4Isotopes[iso];
-  if ( !g4i )  {
-    double a_conv = (CLHEP::g / CLHEP::mole);
-    g4i = new G4Isotope(iso->GetName(), iso->GetZ(), iso->GetN(), iso->GetA()*a_conv);
-    printout(debugElements ? ALWAYS : outputLevel,
-             "Geant4Converter", "++ Created G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
-             iso->GetName(), iso->GetZ(), iso->GetN(), iso->GetA());
-    data().g4Isotopes[iso] = g4i;
-  }
-  return g4i;
-}
-
-/// Handle the conversion of elements
+/// Dump element in GDML format to output stream
 void* Geant4Converter::handleElement(const string& name, const Atom element) const {
   G4Element* g4e = data().g4Elements[element];
-  if ( !g4e ) {
-    PrintLevel lvl = debugElements ? ALWAYS : outputLevel;
-    if (element->GetNisotopes() > 0) {
-      g4e = new G4Element(name, element->GetTitle(), element->GetNisotopes());
-      for (int i = 0, n = element->GetNisotopes(); i < n; ++i) {
-        TGeoIsotope* iso = element->GetIsotope(i);
-        G4Isotope* g4iso = (G4Isotope*)handleIsotope(iso->GetName(), iso);
-        g4e->AddIsotope(g4iso, element->GetRelativeAbundance(i));
-      }
-    }
-    else {
-      // This adds in Geant4 the natural isotopes, which we normally do not want. We want to steer it outselves.
+  if (!g4e) {
+    g4e = G4Element::GetElement(name, false);
+    if (!g4e) {
+      PrintLevel lvl = debugElements ? ALWAYS : outputLevel;
       double a_conv = (CLHEP::g / CLHEP::mole);
-      g4e = new G4Element(element->GetTitle(), name, element->Z(), element->A()*a_conv);
-      printout(lvl, "Geant4Converter", "++ Created G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
-               element->GetName(), element->Z(), element->N(), element->A());
+      if (element->GetNisotopes() > 0) {
+        g4e = new G4Element(name, element->GetTitle(), element->GetNisotopes());
+        for (int i = 0, n = element->GetNisotopes(); i < n; ++i) {
+          TGeoIsotope* iso = element->GetIsotope(i);
+          G4Isotope* g4iso = G4Isotope::GetIsotope(iso->GetName(), false);
+          if (!g4iso) {
+            g4iso = new G4Isotope(iso->GetName(), iso->GetZ(), iso->GetN(), iso->GetA()*a_conv);
+            printout(lvl, "Geant4Converter", "++ Created G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
+                     iso->GetName(), iso->GetZ(), iso->GetN(), iso->GetA());
+          }
+          else  {
+            printout(lvl, "Geant4Converter", "++ Re-used G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
+                     iso->GetName(), iso->GetZ(), iso->GetN(), iso->GetA());
+          }
+          g4e->AddIsotope(g4iso, element->GetRelativeAbundance(i));
+        }
+      }
+      else {
+        // This adds in Geant4 the natural isotopes, which we normally do not want. We want to steer it outselves.
+        g4e = new G4Element(element->GetTitle(), name, element->Z(), element->A()*a_conv);
+        printout(lvl, "Geant4Converter", "++ Created G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
+                 element->GetName(), element->Z(), element->N(), element->A());
+#if 0  // Disabled for now!
+        g4e = new G4Element(name, element->GetTitle(), 1);
+        G4Isotope* g4iso = G4Isotope::GetIsotope(name, false);
+        if (!g4iso) {
+          g4iso = new G4Isotope(name, element->Z(), element->N(), element->A()*a_conv);
+          printout(lvl, "Geant4Converter", "++ Created G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
+                   element->GetName(), element->Z(), element->N(), element->A());
+        }
+        else  {
+          printout(lvl, "Geant4Converter", "++ Re-used G4 Isotope %s from data: Z=%d N=%d A=%.3f [g/mole]",
+                   element->GetName(), element->Z(), element->N(), element->A());
+        }
+        g4e->AddIsotope(g4iso, 1.0);
+#endif
+      }
+      stringstream str;
+      str << (*g4e);
+      printout(lvl, "Geant4Converter", "++ Created G4 %s No.Isotopes:%d",
+               str.str().c_str(),element->GetNisotopes());
     }
-    stringstream str;
-    str << (*g4e) << endl;
-    printout(lvl, "Geant4Converter", "++ Created G4 element %s", str.str().c_str());
     data().g4Elements[element] = g4e;
   }
   return g4e;
@@ -312,245 +414,132 @@ void* Geant4Converter::handleElement(const string& name, const Atom element) con
 /// Dump material in GDML format to output stream
 void* Geant4Converter::handleMaterial(const string& name, Material medium) const {
   Geant4GeometryInfo& info = data();
-  G4Material*         mat  = info.g4Materials[medium];
-  if ( !mat )  {
-    PrintLevel    lvl      = debugMaterials ? ALWAYS : outputLevel;
-    TGeoMaterial* material = medium->GetMaterial();
-    G4State       state    = kStateUndefined;
-    double        density  = material->GetDensity() * (CLHEP::gram / CLHEP::cm3);
-    if ( density < 1e-25 )
-      density = 1e-25;
-    switch ( material->GetState() ) {
-    case TGeoMaterial::kMatStateSolid:
-      state = kStateSolid;
-      break;
-    case TGeoMaterial::kMatStateLiquid:
-      state = kStateLiquid;
-      break;
-    case TGeoMaterial::kMatStateGas:
-      state = kStateGas;
-      break;
-    default:
-    case TGeoMaterial::kMatStateUndefined:
-      state = kStateUndefined;
-      break;
-    }
-    printout(lvl,"Geant4Material","+++ Setting up material %s", name.c_str());
-    if ( material->IsMixture() )  {
-      double A_total = 0.0;
-      double W_total = 0.0;
-      TGeoMixture* mix = (TGeoMixture*) material;
-      int    nElements = mix->GetNelements();
-      mat = new G4Material(name, density, nElements, state, 
-                           material->GetTemperature(), material->GetPressure());
-      for (int i = 0; i < nElements; ++i)  {
-        A_total += (mix->GetAmixt())[i];
-        W_total += (mix->GetWmixt())[i];
+  G4Material* mat = info.g4Materials[medium];
+  if (!mat) {
+    PrintLevel lvl = debugMaterials ? ALWAYS : outputLevel;
+    mat = G4Material::GetMaterial(name, false);
+    if (!mat) {
+      TGeoMaterial* material = medium->GetMaterial();
+      G4State state   = kStateUndefined;
+      double  density = material->GetDensity() * (CLHEP::gram / CLHEP::cm3);
+      if (density < 1e-25)
+        density = 1e-25;
+      switch (material->GetState()) {
+      case TGeoMaterial::kMatStateSolid:
+        state = kStateSolid;
+        break;
+      case TGeoMaterial::kMatStateLiquid:
+        state = kStateLiquid;
+        break;
+      case TGeoMaterial::kMatStateGas:
+        state = kStateGas;
+        break;
+      default:
+      case TGeoMaterial::kMatStateUndefined:
+        state = kStateUndefined;
+        break;
       }
-      for (int i = 0; i < nElements; ++i) {
-        TGeoElement* e = mix->GetElement(i);
-        G4Element* g4e = (G4Element*) handleElement(e->GetName(), Atom(e));
-        if (!g4e) {
-          printout(ERROR, name, 
-                   "Missing element component %s for material %s. A=%f W=%f", 
-                   e->GetName(), mix->GetName(), A_total, W_total);
+      if (material->IsMixture()) {
+        double A_total = 0.0;
+        double W_total = 0.0;
+        TGeoMixture* mix = (TGeoMixture*) material;
+        int nElements = mix->GetNelements();
+        mat = new G4Material(name, density, nElements, state, 
+                             material->GetTemperature(), material->GetPressure());
+        for (int i = 0; i < nElements; ++i)  {
+          A_total += (mix->GetAmixt())[i];
+          W_total += (mix->GetWmixt())[i];
         }
-        //mat->AddElement(g4e, (mix->GetAmixt())[i] / A_total);
-        mat->AddElement(g4e, (mix->GetWmixt())[i] / W_total);
+        for (int i = 0; i < nElements; ++i) {
+          TGeoElement* e = mix->GetElement(i);
+          G4Element* g4e = (G4Element*) handleElement(e->GetName(), Atom(e));
+          if (!g4e) {
+            printout(ERROR, "Material", 
+                     "Missing component %s for material %s. A=%f W=%f", 
+                     e->GetName(), mix->GetName(), A_total, W_total);
+          }
+          //mat->AddElement(g4e, (mix->GetAmixt())[i] / A_total);
+          mat->AddElement(g4e, (mix->GetWmixt())[i] / W_total);
+        }
       }
-    }
-    else {
-      double z = material->GetZ(), a = material->GetA();
-      if ( z < 1.0000001 ) z = 1.0;
-      if ( a < 0.5000001 ) a = 1.0;
-      mat = new G4Material(name, z, a, density, state, 
-                           material->GetTemperature(), material->GetPressure());
-    }
-
-    string plugin_name;
-    double value;
-    double ionisation_mee = -2e100;
-    double ionisation_birks_constant = -2e100;
-    double ionisation_ene_per_ion_pair = -2e100;
-
+      else {
+        double z = material->GetZ(), a = material->GetA();
+        if ( z < 1.0000001 ) z = 1.0;
+        if ( a < 0.5000001 ) a = 1.0;
+        mat = new G4Material(name, z, a, density, state, 
+                             material->GetTemperature(), material->GetPressure());
+      }
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
-    /// Attach the material properties if any
-    G4MaterialPropertiesTable* tab = 0;
-    TListIter propIt(&material->GetProperties());
-    for(TObject* obj=propIt.Next(); obj; obj = propIt.Next())  {
-      string       exc_str;
-      TNamed*      named  = (TNamed*)obj;
-      TGDMLMatrix* matrix = info.manager->GetGDMLMatrix(named->GetTitle());
-      const char*  cptr   = ::strstr(matrix->GetName(), GEANT4_TAG_IGNORE);
-      if ( nullptr != cptr )   {
-        printout(INFO,name,"++ Ignore property %s [%s]. Not Suitable for Geant4.",
-                 matrix->GetName(), matrix->GetTitle());
-        continue;
-      }
-      cptr = ::strstr(matrix->GetTitle(), GEANT4_TAG_IGNORE);
-      if ( nullptr != cptr )   {
-        printout(INFO,name,"++ Ignore property %s [%s]. Not Suitable for Geant4.",
-                 matrix->GetName(), matrix->GetTitle());
-        continue;
-      }
-      Geant4GeometryInfo::PropertyVector* v =
-        (Geant4GeometryInfo::PropertyVector*)handleMaterialProperties(matrix);
-      if ( nullptr == v )   {
-        except("Geant4Converter", "++ FAILED to create G4 material %s [Cannot convert property:%s]",
-               material->GetName(), named->GetName());
-      }
-      if ( nullptr == tab )  {
-        tab = new G4MaterialPropertiesTable();
-        mat->SetMaterialPropertiesTable(tab);
-      }
-      int idx = -1;
-      try   {
-        idx = tab->GetPropertyIndex(named->GetName());
-      }
-      catch(const std::exception& e)   {
-        exc_str = e.what();
-        idx = -1;
-      }
-      catch(...)   {
-        idx = -1;
-      }
-      if ( idx < 0 )   {
-        printout(ERROR, "Geant4Converter",
-                 "++ UNKNOWN Geant4 Property: %-20s %s [IGNORED]",
-                 exc_str.c_str(), named->GetName());
-        continue;
-      }
-      // We need to convert the property from TGeo units to Geant4 units
-      auto conv = g4PropertyConversion(idx);
-      vector<double> bins(v->bins), vals(v->values);
-      for(std::size_t i=0, count=bins.size(); i<count; ++i)
-        bins[i] *= conv.first, vals[i] *= conv.second;
+      /// Attach the material properties if any
+      G4MaterialPropertiesTable* tab = 0;
+      TListIter propIt(&material->GetProperties());
+      for(TObject* obj=propIt.Next(); obj; obj = propIt.Next())  {
+        TNamed*      named  = (TNamed*)obj;
+        TGDMLMatrix* matrix = info.manager->GetGDMLMatrix(named->GetTitle());
+        Geant4GeometryInfo::PropertyVector* v =
+          (Geant4GeometryInfo::PropertyVector*)handleMaterialProperties(matrix);
+        if ( 0 == v )   {
+          except("Geant4Converter", "++ FAILED to create G4 material %s [Cannot convert property:%s]",
+                 material->GetName(), named->GetName());
+        }
+        if ( 0 == tab )  {
+          tab = new G4MaterialPropertiesTable();
+          mat->SetMaterialPropertiesTable(tab);
+        }
+        int idx = tab->GetPropertyIndex(named->GetName(), false);
+        if ( idx < 0 )   {
+          printout(ERROR, "Geant4Converter", "++ UNKNOWN Geant4 CONST Property: %-20s [IGNORED]", named->GetName());
+          continue;
+        }
+        // We need to convert the property from TGeo units to Geant4 units
+        auto conv = g4PropertyConversion(idx);
+        vector<double> bins(v->bins), vals(v->values);
+        for(size_t i=0, count=bins.size(); i<count; ++i)
+          bins[i] *= conv.first, vals[i] *= conv.second;
 
-      G4MaterialPropertyVector* vec =
-        new G4MaterialPropertyVector(&bins[0], &vals[0], bins.size());
-      tab->AddProperty(named->GetName(), vec);
-      printout(lvl, name, "++      Property: %-20s [%ld x %ld] -> %s ",
-               named->GetName(), matrix->GetRows(), matrix->GetCols(), named->GetTitle());
-      for(std::size_t i=0, count=v->bins.size(); i<count; ++i)
-        printout(lvl, name, "  Geant4: %s %8.3g [MeV]  TGeo: %8.3g [GeV] Conversion: %8.3g",
-                 named->GetName(), bins[i], v->bins[i], conv.first);
-    }
-
-    /// Attach the material properties if any
-    TListIter cpropIt(&material->GetConstProperties());
-    for(TObject* obj=cpropIt.Next(); obj; obj = cpropIt.Next())  {
-      string  exc_str;
-      Bool_t     err = kFALSE;
-      TNamed*  named = (TNamed*)obj;
-
-      const char*  cptr = ::strstr(named->GetName(), GEANT4_TAG_IGNORE);
-      if ( nullptr != cptr )   {
-        printout(INFO, name, "++ Ignore CONST property %s [%s].",
-                 named->GetName(), named->GetTitle());
-        continue;
+        G4MaterialPropertyVector* vec = new G4MaterialPropertyVector(&bins[0], &vals[0], bins.size());
+        tab->AddProperty(named->GetName(), vec);
+        printout(lvl, "Geant4Converter", "++      Property: %-20s [%ld x %ld] -> %s ",
+                 named->GetName(), matrix->GetRows(), matrix->GetCols(), named->GetTitle());
+        for(size_t i=0, count=v->bins.size(); i<count; ++i)
+          printout(lvl,named->GetName(),"  Geant4: %8.3g [MeV]  TGeo: %8.3g [GeV] Conversion: %8.3g",
+                   bins[i], v->bins[i], conv.first);
       }
-      cptr = ::strstr(named->GetTitle(), GEANT4_TAG_IGNORE);
-      if ( nullptr != cptr )   {
-        printout(INFO, name,"++ Ignore CONST property %s [%s].",
-                 named->GetName(), named->GetTitle());
-        continue;
+      /// Attach the material properties if any
+      TListIter cpropIt(&material->GetConstProperties());
+      for(TObject* obj=cpropIt.Next(); obj; obj = cpropIt.Next())  {
+        Bool_t     err = kFALSE;
+        TNamed*  named = (TNamed*)obj;
+        double       v = info.manager->GetProperty(named->GetTitle(),&err);
+        if ( err != kFALSE )   {
+          except("Geant4Converter",
+                 "++ FAILED to create G4 material %s "
+                 "[Cannot convert const property: %s]",
+                 material->GetName(), named->GetName());
+        }
+        if ( 0 == tab )  {
+          tab = new G4MaterialPropertiesTable();
+          mat->SetMaterialPropertiesTable(tab);
+        }
+        int idx = tab->GetConstPropertyIndex(named->GetName(), false);
+        if ( idx < 0 )   {
+          printout(ERROR, "Geant4Converter", "++ UNKNOWN Geant4 CONST Property: %-20s [IGNORED]", named->GetName());
+          continue;
+        }
+        // We need to convert the property from TGeo units to Geant4 units
+        double conv = g4ConstPropertyConversion(idx);
+        printout(lvl, "Geant4Converter", "++      CONST Property: %-20s %g ", named->GetName(), v);
+        tab->AddConstProperty(named->GetName(), v * conv);
       }
-      cptr = ::strstr(named->GetName(), GEANT4_TAG_PLUGIN);
-      if ( nullptr != cptr )   {
-        printout(INFO, name, "++ Ignore CONST property %s [%s]  --> Plugin.",
-                 named->GetName(), named->GetTitle());
-	plugin_name = named->GetTitle();
-        continue;
-      }
-      cptr = ::strstr(named->GetName(), GEANT4_TAG_BIRKSCONSTANT);
-      if ( nullptr != cptr )   {
-	err = kFALSE;
-	value = material->GetConstProperty(GEANT4_TAG_BIRKSCONSTANT,&err);
-	if ( err == kFALSE ) ionisation_birks_constant = value * (CLHEP::mm/CLHEP::MeV)/(units::mm/units::MeV);
-        continue;
-      }
-      cptr = ::strstr(named->GetName(), GEANT4_TAG_MEE);
-      if ( nullptr != cptr )   {
-	err = kFALSE;
-	value = material->GetConstProperty(GEANT4_TAG_MEE,&err);
-	if ( err == kFALSE ) ionisation_mee = value * (CLHEP::MeV/units::MeV);
-        continue;
-      }
-      cptr = ::strstr(named->GetName(), GEANT4_TAG_ENE_PER_ION_PAIR);
-      if ( nullptr != cptr )   {
-	err = kFALSE;
-	value = material->GetConstProperty(GEANT4_TAG_ENE_PER_ION_PAIR,&err);
-	if ( err == kFALSE ) ionisation_ene_per_ion_pair = value * (CLHEP::MeV/units::MeV);
-        continue;
-      }
-
-      err = kFALSE;
-      value = info.manager->GetProperty(named->GetTitle(),&err);
-      if ( err != kFALSE )   {
-        except(name,
-               "++ FAILED to create G4 material %s [Cannot convert const property: %s]",
-               material->GetName(), named->GetName());
-      }
-      if ( nullptr == tab )  {
-        tab = new G4MaterialPropertiesTable();
-        mat->SetMaterialPropertiesTable(tab);
-      }
-      int idx = -1;
-      try   {
-        idx = tab->GetConstPropertyIndex(named->GetName());
-      }
-      catch(const std::exception& e)   {
-        exc_str = e.what();
-        idx = -1;
-      }
-      catch(...)   {
-        idx = -1;
-      }
-      if ( idx < 0 )   {
-        printout(ERROR, name,
-                 "++ UNKNOWN Geant4 CONST Property: %-20s %s [IGNORED]",
-                 exc_str.c_str(), named->GetName());
-        continue;
-      }
-      // We need to convert the property from TGeo units to Geant4 units
-      double conv = g4ConstPropertyConversion(idx);
-      printout(lvl, name, "++      CONST Property: %-20s %g ", named->GetName(), value);
-      tab->AddConstProperty(named->GetName(), value * conv);
-    }
 #endif
-    // Set Birk's constant if it was supplied in the material table of the TGeoMaterial
-    auto* ionisation = mat->GetIonisation();
-    stringstream str;
-    str << (*mat);
-    if ( ionisation )   {
-      if ( ionisation_birks_constant > 0e0 )   {
-	ionisation->SetBirksConstant(ionisation_birks_constant);
-      }
-      if ( ionisation_mee > -1e100 )   {
-	ionisation->SetMeanExcitationEnergy(ionisation_mee);
-      }
-      if ( ionisation_ene_per_ion_pair > 0e0 )   {
-	ionisation->SetMeanEnergyPerIonPair(ionisation_ene_per_ion_pair);
-      }
-      str << "          log(MEE): " << std::setprecision(4) << ionisation->GetLogMeanExcEnergy();
-      if ( ionisation_birks_constant > 0e0 )
-	str << "  Birk's constant: " << std::setprecision(4) << ionisation->GetBirksConstant() << " [mm/MeV]";
-      if ( ionisation_ene_per_ion_pair > 0e0 )
-	str << "  Mean Energy Per Ion Pair: " << std::setprecision(4) << ionisation->GetMeanEnergyPerIonPair()/CLHEP::eV << " [eV]";
-    }
-    else  {
-      str << "          No ionisation parameters availible.";
-    }
-    printout(lvl, name, "++ Created G4 material %s", str.str().c_str());
-
-    if ( !plugin_name.empty() )    {
-      // Call plugin to create extended material if requested
-      Detector* det = const_cast<Detector*>(&m_detDesc);
-      G4Material* extended_mat = PluginService::Create<G4Material*>(plugin_name, det, medium, mat);
-      if ( !extended_mat )   {
-	except("G4Cnv::material["+name+"]","++ FATAL Failed to call plugin to create material.");
-      }
-      mat = extended_mat;
+      auto* ionization = mat->GetIonisation();
+      stringstream str;
+      str << (*mat) << endl;
+      if ( ionization )
+        str << "              log(MEE): " << ionization->GetLogMeanExcEnergy();
+      else
+        str << "              log(MEE): UNKNOWN";
+      printout(lvl, "Geant4Converter", "++ Created G4 %s", str.str().c_str());
     }
     info.g4Materials[medium] = mat;
   }
@@ -559,12 +548,12 @@ void* Geant4Converter::handleMaterial(const string& name, Material medium) const
 
 /// Dump solid in GDML format to output stream
 void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) const {
-  G4VSolid* solid = nullptr;
+  G4VSolid* solid = 0;
   if ( shape ) {
-    if ( nullptr != (solid = data().g4Solids[shape]) )   {
+    if (0 != (solid = data().g4Solids[shape])) {
       return solid;
     }
-    TClass*    isa = shape->IsA();
+    TClass* isa = shape->IsA();
     PrintLevel lvl = debugShapes ? ALWAYS : outputLevel;
     if (isa == TGeoShapeAssembly::Class()) {
       // Assemblies have no corresponding 'shape' in Geant4. Ignore the shape translation.
@@ -582,8 +571,6 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
       solid = convertShape<TGeoCtub>(shape);
     else if (isa == TGeoEltu::Class())
       solid = convertShape<TGeoEltu>(shape);
-    else if (isa == TwistedTubeObject::Class())
-      solid = convertShape<TwistedTubeObject>(shape);
     else if (isa == TGeoTrd1::Class())
       solid = convertShape<TGeoTrd1>(shape);
     else if (isa == TGeoTrd2::Class())
@@ -610,27 +597,15 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
       solid = convertShape<TGeoTrap>(shape);
     else if (isa == TGeoArb8::Class()) 
       solid = convertShape<TGeoArb8>(shape);
-    else if (isa == TGeoPara::Class())
-      solid = convertShape<TGeoPara>(shape);
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-    else if (isa == TGeoTessellated::Class()) 
-      solid = convertShape<TGeoTessellated>(shape);
-#endif
     else if (isa == TGeoScaledShape::Class())  {
-      TGeoScaledShape* sh   = (TGeoScaledShape*) shape;
-      TGeoShape*       sol  = sh->GetShape();
-      if ( sol->IsA() == TGeoShapeAssembly::Class() )  {
-	return solid;
-      }
+      TGeoScaledShape* sh = (TGeoScaledShape*) shape;
       const double*    vals = sh->GetScale()->GetScale();
-      G4Scale3D        scal(vals[0], vals[1], vals[2]);
-      G4VSolid* g4solid = (G4VSolid*)handleSolid(sol->GetName(), sol);
-      if ( scal.xx()>0e0 && scal.yy()>0e0 && scal.zz()>0e0 )
-        solid = new G4ScaledSolid(sh->GetName(), g4solid, scal);
-      else
-        solid = new G4ReflectedSolid(g4solid->GetName()+"_refl", g4solid, scal);
+      Solid            s_sh(sh->GetShape());
+      G4VSolid* scaled = (G4VSolid*)handleSolid(s_sh.name(), s_sh.ptr());
+      solid = new G4ReflectedSolid(scaled->GetName() + "_refl",
+                               scaled, G4Scale3D(vals[0],vals[1],vals[2]));
     }
-    else if ( isa == TGeoCompositeShape::Class() )   {
+    else if (isa == TGeoCompositeShape::Class())   {
       const TGeoCompositeShape* sh = (const TGeoCompositeShape*) shape;
       const TGeoBoolNode* boolean = sh->GetBoolNode();
       TGeoBoolNode::EGeoBoolType oper = boolean->GetBooleanOperator();
@@ -645,6 +620,10 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
         except("Geant4Converter","++ No right Geant4 Solid present for composite shape: %s",name.c_str());
       }
 
+      //specific case!
+      //Ellipsoid tag preparing
+      //if left == TGeoScaledShape AND right  == TGeoBBox
+      //   AND if TGeoScaledShape->GetShape == TGeoSphere
       TGeoShape* ls = boolean->GetLeftShape();
       TGeoShape* rs = boolean->GetRightShape();
       if (strcmp(ls->ClassName(), "TGeoScaledShape") == 0 &&
@@ -672,9 +651,8 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
         }
       }
 
-      if ( matrix->IsRotation() ) {
-        G4Transform3D transform;
-	g4Transform(matrix, transform);
+      if (matrix->IsRotation()) {
+        MyTransform3D transform(matrix->GetTranslation(),matrix->GetRotationMatrix());
         if (oper == TGeoBoolNode::kGeoSubtraction)
           solid = new G4SubtractionSolid(name, left, right, transform);
         else if (oper == TGeoBoolNode::kGeoUnion)
@@ -694,7 +672,7 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
       }
     }
 
-    if ( !solid )
+    if (!solid)
       except("Geant4Converter","++ Failed to handle unknown solid shape: %s of type %s",
              name.c_str(), isa->GetName());
     printout(lvl,"Geant4Converter","++ Successessfully converted shape [%p] of type:%s to %s.",
@@ -706,103 +684,76 @@ void* Geant4Converter::handleSolid(const string& name, const TGeoShape* shape) c
 
 /// Dump logical volume in GDML format to output stream
 void* Geant4Converter::handleVolume(const string& name, const TGeoVolume* volume) const {
-  Volume _v(volume);
   Geant4GeometryInfo& info = data();
   PrintLevel lvl = debugVolumes ? ALWAYS : outputLevel;
   Geant4GeometryMaps::VolumeMap::const_iterator volIt = info.g4Volumes.find(volume);
+  Volume     _v(volume);
   if ( _v.testFlagBit(Volume::VETO_SIMU) )  {
     printout(lvl, "Geant4Converter", "++ Volume %s not converted [Veto'ed for simulation]",volume->GetName());
-    return nullptr;
+    return 0;
   }
   else if (volIt == info.g4Volumes.end() ) {
-    const char*  vnam = volume->GetName();
-    TGeoMedium*  med  = volume->GetMedium();
-    Solid        sh   = volume->GetShape();
-    bool         is_assembly = sh->IsA() == TGeoShapeAssembly::Class() || volume->IsAssembly();
+    const TGeoVolume* v = volume;
+    string      n   = v->GetName();
+    TGeoMedium* med = v->GetMedium();
+    TGeoShape* sh   = v->GetShape();
+    G4VSolid* solid = (G4VSolid*) handleSolid(sh->GetName(), sh);
+    G4Material* medium = 0;
+    bool assembly = sh->IsA() == TGeoShapeAssembly::Class() || v->IsA() == TGeoVolumeAssembly::Class();
 
+    LimitSet lim = _v.limitSet();
+    G4UserLimits* user_limits = 0;
+    if (lim.isValid()) {
+      user_limits = info.g4Limits[lim];
+      if (!user_limits) {
+        throw runtime_error("G4Cnv::volume[" + name + "]:    + FATAL Failed to "
+                            "access Geant4 user limits.");
+      }
+    }
+    VisAttr vis = _v.visAttributes();
+    G4VisAttributes* vis_attr = 0;
+    if (vis.isValid()) {
+      vis_attr = (G4VisAttributes*)handleVis(vis.name(), vis);
+    }
+    Region reg = _v.region();
+    G4Region* region = 0;
+    if (reg.isValid()) {
+      region = info.g4Regions[reg];
+      if (!region) {
+        throw runtime_error("G4Cnv::volume[" + name + "]:    + FATAL Failed to "
+                            "access Geant4 region.");
+      }
+    }
     printout(lvl, "Geant4Converter", "++ Convert Volume %-32s: %p %s/%s assembly:%s",
-             vnam, volume, sh.type(), _v.type(), yes_no(is_assembly));
-    if ( is_assembly ) {
-      return nullptr;
-    }
-    Region        reg      = _v.region();
-    LimitSet      lim      = _v.limitSet();
-    VisAttr       vis      = _v.visAttributes();
-    G4Region*     g4region = reg.isValid() ? info.g4Regions[reg] : nullptr;
-    G4UserLimits* g4limits = lim.isValid() ? info.g4Limits[lim]  : nullptr;
-    G4VSolid*     g4solid  = (G4VSolid*)   handleSolid(sh->GetName(), sh);
-    G4Material*   g4medium = (G4Material*) handleMaterial(med->GetName(), Material(med));
-    /// Check all pre-conditions
-    if ( !g4solid )   {
-      except("G4Converter","++ No Geant4 Solid present for volume: %s", vnam);
-    }
-    else if ( !g4medium )   {
-      except("G4Converter","++ No Geant4 material present for volume: %s", vnam);
-    }
-    else if ( reg.isValid() && !g4region )  {
-      except("G4Cnv::volume["+name+"]"," ++ Failed to access Geant4 region %s.", reg.name());
-    }
-    else if ( lim.isValid() && !g4limits )  {
-      except("G4Cnv::volume["+name+"]","++ FATAL Failed to access Geant4 user limits %s.", lim.name());
-    }
-    else if ( g4limits )   {
-      printout(lvl, "Geant4Converter", "++ Volume     + Apply LIMITS settings: %-24s to volume %s.",
-               lim.name(), vnam);
-    }
+             n.c_str(), v, sh->IsA()->GetName(), v->IsA()->GetName(), yes_no(assembly));
 
-    G4LogicalVolume* g4vol = nullptr;
-    if ( _v.hasProperties() && !_v.getProperty(GEANT4_TAG_PLUGIN,"").empty() )   {
-      Detector* det = const_cast<Detector*>(&m_detDesc); 
-      string plugin = _v.getProperty(GEANT4_TAG_PLUGIN,"");
-      g4vol = PluginService::Create<G4LogicalVolume*>(plugin, det, _v, g4solid, g4medium);
-      if ( !g4vol )    {
-	except("G4Cnv::volume["+name+"]","++ FATAL Failed to call plugin to create logical volume.");
-      }
+    if (assembly) {
+      //info.g4AssemblyVolumes[v] = new Geant4AssemblyVolume();
+      return 0;
     }
-    else  {
-      g4vol = new G4LogicalVolume(g4solid, g4medium, vnam, nullptr, nullptr, nullptr);
+    medium = (G4Material*) handleMaterial(med->GetName(), Material(med));
+    if (!solid) {
+      throw runtime_error("G4Converter: No Geant4 Solid present for volume:" + n);
     }
-
-    if ( g4limits )   {
-      g4vol->SetUserLimits(g4limits);
+    if (!medium) {
+      throw runtime_error("G4Converter: No Geant4 material present for volume:" + n);
     }
-    if ( g4region )   {
-      PrintLevel plevel = (debugVolumes||debugRegions||debugLimits) ? ALWAYS : outputLevel;
-      printout(plevel, "Geant4Converter", "++ Volume     + Apply REGION settings: %-24s to volume %s.",
-	       reg.name(), vnam);
-      // Handle the region settings for the world volume seperately.
-      // Geant4 does NOT WANT any regions assigned to the workd volume.
-      // The world's region is created in the G4RunManagerKernel!
-      if ( _v == m_detDesc.worldVolume() )   {
-	const char* wrd_nam = "DefaultRegionForTheWorld";
-	const char* src_nam = g4region->GetName().c_str();
-	auto* world_region  = G4RegionStore::GetInstance()->GetRegion(wrd_nam, false);
-	if ( auto* cuts = g4region->GetProductionCuts() )   {
-	  world_region->SetProductionCuts(cuts);
-	  printout(plevel, "Geant4Converter",
-		   "++ Volume %s Region: %s. Apply production cuts from %s", 
-		   vnam, wrd_nam, src_nam);
-	}
-	if ( auto* lims = g4region->GetUserLimits() )   {
-	  world_region->SetUserLimits(lims);
-	  printout(plevel, "Geant4Converter",
-		   "++ Volume %s Region: %s. Apply user limits from %s", 
-		   vnam, wrd_nam, src_nam);
-	}
-      }
-      else   {
-	g4vol->SetRegion(g4region);
-	g4region->AddRootLogicalVolume(g4vol);
-      }
+    if (user_limits) {
+      printout(lvl, "Geant4Converter", "++ Volume     + Apply LIMITS settings:%-24s to volume %s.",
+               lim.name(), _v.name());
     }
-    G4VisAttributes* g4vattr = vis.isValid()
-      ? (G4VisAttributes*)handleVis(vis.name(), vis) : nullptr;
-    if ( g4vattr )   {
-      g4vol->SetVisAttributes(g4vattr);
+    G4LogicalVolume* vol = new G4LogicalVolume(solid, medium, n, 0, 0, user_limits);
+    if (region) {
+      printout(lvl, "Geant4Converter", "++ Volume     + Apply REGION settings: %s to volume %s.",
+               reg.name(), _v.name());
+      vol->SetRegion(region);
+      region->AddRootLogicalVolume(vol);
     }
-    info.g4Volumes[volume] = g4vol;
-    printout(lvl, "Geant4Converter",
-	     "++ Volume     + %s converted: %p ---> G4: %p", vnam, volume, g4vol);
+    if (vis_attr) {
+      vol->SetVisAttributes(vis_attr);
+    }
+    info.g4Volumes[v] = vol;
+    printout(lvl, "Geant4Converter", "++ Volume     + %s converted: %p ---> G4: %p", n.c_str(), v, vol);
   }
   return nullptr;
 }
@@ -810,21 +761,19 @@ void* Geant4Converter::handleVolume(const string& name, const TGeoVolume* volume
 /// Dump logical volume in GDML format to output stream
 void* Geant4Converter::collectVolume(const string& /* name */, const TGeoVolume* volume) const {
   Geant4GeometryInfo& info = data();
-  Volume              _v(volume);
-  Region              reg = _v.region();
-  LimitSet            lim = _v.limitSet();
-  SensitiveDetector   det = _v.sensitiveDetector();
-  bool              world = (volume == m_detDesc.worldVolume().ptr());
+  const TGeoVolume* v = volume;
+  Volume _v(v);
+  Region reg = _v.region();
+  LimitSet lim = _v.limitSet();
+  SensitiveDetector det = _v.sensitiveDetector();
 
-  if ( !world )   {
-    if ( lim.isValid() )
-      info.limits[lim].insert(volume);
-    if ( reg.isValid() )
-      info.regions[reg].insert(volume);
-    if ( det.isValid() )
-      info.sensitives[det].insert(volume);
-  }
-  return (void*)volume;
+  if (lim.isValid())
+    info.limits[lim].insert(v);
+  if (reg.isValid())
+    info.regions[reg].insert(v);
+  if (det.isValid())
+    info.sensitives[det].insert(v);
+  return (void*) v;
 }
 
 /// Dump volume placement in GDML format to output stream
@@ -832,63 +781,45 @@ void* Geant4Converter::handleAssembly(const string& name, const TGeoNode* node) 
   TGeoVolume* mot_vol = node->GetVolume();
   PrintLevel lvl = debugVolumes ? ALWAYS : outputLevel;
   if ( mot_vol->IsA() != TGeoVolumeAssembly::Class() )    {
-    return nullptr;
+    return 0;
   }
   Volume _v(mot_vol);
   if ( _v.testFlagBit(Volume::VETO_SIMU) )  {
     printout(lvl, "Geant4Converter", "++ AssemblyNode %s not converted [Veto'ed for simulation]",node->GetName());
-    return nullptr;
+    return 0;
   }
   Geant4GeometryInfo& info = data();
   Geant4AssemblyVolume* g4 = info.g4AssemblyVolumes[node];
-  if ( g4 )  {
-    printout(ALWAYS, "Geant4Converter", "+++ Assembly: **** : Re-using existing assembly: %s",node->GetName());
-  }
+
   if ( !g4 )  {
     g4 = new Geant4AssemblyVolume();
     for(Int_t i=0; i < mot_vol->GetNdaughters(); ++i)   {
-      TGeoNode*     dau     = mot_vol->GetNode(i);
-      TGeoVolume*   dau_vol = dau->GetVolume();
-      TGeoMatrix*   tr      = dau->GetMatrix();
-      G4Transform3D transform;
-
-      g4Transform(tr, transform);
-      if ( is_left_handed(tr) )   {
-        G4Scale3D     scale;
-        G4Rotate3D    rot;
-        G4Translate3D trans;
-        transform.getDecomposition(scale, rot, trans);
-        printout(debugReflections ? ALWAYS : lvl, "Geant4Converter",
-                 "++ Placing reflected ASSEMBLY. dau:%s to mother %s "
-                 "Tr:x=%8.1f y=%8.1f z=%8.1f   Scale:x=%4.2f y=%4.2f z=%4.2f",
-                 dau_vol->GetName(), mot_vol->GetName(),
-                 transform.dx(), transform.dy(), transform.dz(),
-                 scale.xx(), scale.yy(), scale.zz());
-      }
-
+      TGeoNode*   d = mot_vol->GetNode(i);
+      TGeoVolume* dau_vol = d->GetVolume();
+      TGeoMatrix* tr = d->GetMatrix();
+      MyTransform3D transform(tr->GetTranslation(),tr->IsRotation() ? tr->GetRotationMatrix() : s_identity_rot);
       if ( dau_vol->IsA() == TGeoVolumeAssembly::Class() )  {
-        Geant4GeometryMaps::AssemblyMap::iterator ia = info.g4AssemblyVolumes.find(dau);
-        if ( ia == info.g4AssemblyVolumes.end() )  {
+        Geant4GeometryMaps::AssemblyMap::iterator assIt = info.g4AssemblyVolumes.find(d);
+        if ( assIt == info.g4AssemblyVolumes.end() )  {
           printout(FATAL, "Geant4Converter", "+++ Invalid child assembly at %s : %d  parent: %s child:%s",
-                   __FILE__, __LINE__, name.c_str(), dau->GetName());
-          delete g4;
-          return nullptr;
+                   __FILE__, __LINE__, name.c_str(), d->GetName());
+          return 0;
         }
-        g4->placeAssembly(dau, (*ia).second, transform);
+        g4->placeAssembly(d,(*assIt).second,transform);
         printout(lvl, "Geant4Converter", "+++ Assembly: AddPlacedAssembly : dau:%s "
                  "to mother %s Tr:x=%8.3f y=%8.3f z=%8.3f",
                  dau_vol->GetName(), mot_vol->GetName(),
                  transform.dx(), transform.dy(), transform.dz());
       }
       else   {
-        Geant4GeometryMaps::VolumeMap::iterator iv = info.g4Volumes.find(dau_vol);
-        if ( iv == info.g4Volumes.end() )  {
+        Geant4GeometryMaps::VolumeMap::iterator volIt = info.g4Volumes.find(dau_vol);
+        if ( volIt == info.g4Volumes.end() )  {
           printout(FATAL,"Geant4Converter", "+++ Invalid child volume at %s : %d  parent: %s child:%s",
-                   __FILE__, __LINE__, name.c_str(), dau->GetName());
+                   __FILE__, __LINE__, name.c_str(), d->GetName());
           except("Geant4Converter", "+++ Invalid child volume at %s : %d  parent: %s child:%s",
-                 __FILE__, __LINE__, name.c_str(), dau->GetName());
+                 __FILE__, __LINE__, name.c_str(), d->GetName());
         }
-        g4->placeVolume(dau,(*iv).second, transform);
+        g4->placeVolume(d,(*volIt).second, transform);
         printout(lvl, "Geant4Converter", "+++ Assembly: AddPlacedVolume : dau:%s "
                  "to mother %s Tr:x=%8.3f y=%8.3f z=%8.3f",
                  dau_vol->GetName(), mot_vol->GetName(),
@@ -908,33 +839,28 @@ void* Geant4Converter::handlePlacement(const string& name, const TGeoNode* node)
   G4VPhysicalVolume* g4 = (g4it == info.g4Placements.end()) ? 0 : (*g4it).second;
   TGeoVolume* vol = node->GetVolume();
   Volume _v(vol);
-
   if ( _v.testFlagBit(Volume::VETO_SIMU) )  {
     printout(lvl, "Geant4Converter", "++ Placement %s not converted [Veto'ed for simulation]",node->GetName());
-    return nullptr;
+    return 0;
   }
-  //g4 = nullptr;
-  if ( !g4 ) {
+  if (!g4) {
     TGeoVolume* mot_vol = node->GetMotherVolume();
     TGeoMatrix* tr = node->GetMatrix();
-    if ( !tr ) {
-      except("Geant4Converter",
-             "++ Attempt to handle placement without transformation:%p %s of type %s vol:%p",
-             node, node->GetName(), node->IsA()->GetName(), vol);
+    if (!tr) {
+      except("Geant4Converter", "++ Attempt to handle placement without transformation:%p %s of type %s vol:%p", node,
+             node->GetName(), node->IsA()->GetName(), vol);
     }
-    else if (nullptr == vol) {
-      except("Geant4Converter", "++ Unknown G4 volume:%p %s of type %s ptr:%p",
-             node, node->GetName(), node->IsA()->GetName(), vol);
+    else if (0 == vol) {
+      except("Geant4Converter", "++ Unknown G4 volume:%p %s of type %s ptr:%p", node, node->GetName(),
+             node->IsA()->GetName(), vol);
     }
     else {
-      int           copy               = node->GetNumber();
-      bool          node_is_reflected  = is_left_handed(tr);
-      bool          node_is_assembly   = vol->IsA() == TGeoVolumeAssembly::Class();
-      bool          mother_is_assembly = mot_vol ? mot_vol->IsA() == TGeoVolumeAssembly::Class() : false;
-      G4Transform3D transform;
+      int copy = node->GetNumber();
+      bool node_is_assembly = vol->IsA() == TGeoVolumeAssembly::Class();
+      bool mother_is_assembly = mot_vol ? mot_vol->IsA() == TGeoVolumeAssembly::Class() : false;
+      MyTransform3D transform(tr->GetTranslation(),tr->IsRotation() ? tr->GetRotationMatrix() : s_identity_rot);
       Geant4GeometryMaps::VolumeMap::const_iterator volIt = info.g4Volumes.find(mot_vol);
 
-      g4Transform(tr, transform);
       if ( mother_is_assembly )   {
         //
         // Mother is an assembly:
@@ -946,125 +872,40 @@ void* Geant4Converter::handlePlacement(const string& name, const TGeoNode* node)
                  "to mother %s Tr:x=%8.3f y=%8.3f z=%8.3f",
                  vol->GetName(), mot_vol->GetName(),
                  transform.dx(), transform.dy(), transform.dz());
-        return nullptr;
+        return 0;
       }
-      G4Scale3D        scale;
-      G4Rotate3D       rot;
-      G4Translate3D    trans;
-      transform.getDecomposition(scale, rot, trans);
-      if ( node_is_assembly )   {
+      else if ( node_is_assembly )   {
         //
         // Node is an assembly:
         // Imprint the assembly. The mother MUST already be transformed.
         //
-        printout(lvl, "Geant4Converter", "++ Assembly: makeImprint: dau:%-12s %s in mother %-12s "
-                 "Tr:x=%8.1f y=%8.1f z=%8.1f   Scale:x=%4.2f y=%4.2f z=%4.2f",
-                 node->GetName(), node_is_reflected ? "(REFLECTED)" : "",
-                 mot_vol ? mot_vol->GetName() : "<unknown>",
-                 transform.dx(), transform.dy(), transform.dz(),
-                 scale.xx(), scale.yy(), scale.zz());
+        printout(lvl, "Geant4Converter", "+++ Assembly: makeImprint: dau:%s in mother %s "
+                 "Tr:x=%8.3f y=%8.3f z=%8.3f",
+                 node->GetName(), mot_vol ? mot_vol->GetName() : "<unknown>",
+                 transform.dx(), transform.dy(), transform.dz());
         Geant4AssemblyVolume* ass = (Geant4AssemblyVolume*)info.g4AssemblyVolumes[node];
         Geant4AssemblyVolume::Chain chain;
         chain.emplace_back(node);
-        ass->imprint(*this, node, chain, ass, (*volIt).second, transform, copy, checkOverlaps);
-        return nullptr;
+        ass->imprint(info,node,chain,ass,(*volIt).second, transform, copy, checkOverlaps);
+        return 0;
       }
       else if ( node != info.manager->GetTopNode() && volIt == info.g4Volumes.end() )  {
         throw logic_error("Geant4Converter: Invalid mother volume found!");
       }
-      PlacedVolume pv(node);
-      const auto*  pv_data = pv.data();
       G4LogicalVolume* g4vol = info.g4Volumes[vol];
       G4LogicalVolume* g4mot = info.g4Volumes[mot_vol];
-      G4PhysicalVolumesPair pvPlaced  { nullptr, nullptr };
-
-      if ( pv_data && pv_data->params && (pv_data->params->flags&Volume::REPLICATED) )   {
-	EAxis  axis = kUndefined;
-	double width = 0e0, offset = 0e0;
-	auto flags = pv_data->params->flags;
-	auto count = pv_data->params->trafo1D.second;
-	auto start = pv_data->params->start.Translation().Vect();
-	auto delta = pv_data->params->trafo1D.first.Translation().Vect();
-
-	if ( flags&Volume::X_axis )
-	  { axis = kXAxis; width = delta.X(); offset = start.X(); }
-	else if ( flags&Volume::Y_axis )
-	  { axis = kYAxis; width = delta.Y(); offset = start.Y(); }
-	else if ( flags&Volume::Z_axis )
-	  { axis = kZAxis; width = delta.Z(); offset = start.Z(); }
-	else
-	  except("Geant4Converter",
-		 "++ Replication around unknown axis is not implemented. flags: %16X", flags);
-	printout(INFO,"Geant4Converter","++ Replicate: Axis: %ld Count: %ld offset: %f width: %f",
-		 axis, count, offset, width);
-	auto* g4pv = new G4PVReplica(name,      // its name
-				     g4vol,     // its logical volume
-				     g4mot,     // its mother (logical) volume
-				     axis,      // its replication axis
-				     count,     // Number of replicas
-				     width,     // Distance between 2 replicas
-				     offset);   // Placement offset in axis direction
-	pvPlaced = { g4pv, nullptr };
-#if 0
-	pvPlaced =
-	  G4ReflectionFactory::Instance()->Replicate(name,      // its name
-						     g4vol,     // its logical volume
-						     g4mot,     // its mother (logical) volume
-						     axis,      // its replication axis
-						     count,     // Number of replicas
-						     width,     // Distance between 2 replicas
-						     offset);   // Placement offset in axis direction
-	/// Update replica list to avoid additional conversions...
-	auto* g4pv = pvPlaced.second ? pvPlaced.second : pvPlaced.first;
-#endif
-	for( auto& handle : pv_data->params->placements )
-	  info.g4Placements[handle.ptr()] = g4pv;
-      }
-      else if ( pv_data && pv_data->params )   {
-	auto*  g4par = new Geant4PlacementParameterisation(pv);
-	auto*  g4pv  = new G4PVParameterised(name,              // its name
-					     g4vol,             // its logical volume
-					     g4mot,             // its mother (logical) volume
-					     g4par->axis(),     // its replication axis
-					     g4par->count(),    // Number of replicas
-					     g4par);            // G4 parametrization
-	pvPlaced = { g4pv, nullptr };
-	/// Update replica list to avoid additional conversions...
-	for( auto& handle : pv_data->params->placements )
-	  info.g4Placements[handle.ptr()] = g4pv;
-      }
-      else    {
-	pvPlaced =
-	  G4ReflectionFactory::Instance()->Place(transform,     // no rotation
-						 name,          // its name
-						 g4vol,         // its logical volume
-						 g4mot,         // its mother (logical) volume
-						 false,         // no boolean operations
-						 copy,          // its copy number
-						 checkOverlaps);
-      }
-      printout(debugReflections||debugPlacements ? ALWAYS : lvl, "Geant4Converter",
-               "++ Place %svolume %-12s in mother %-12s "
-               "Tr:x=%8.1f y=%8.1f z=%8.1f   Scale:x=%4.2f y=%4.2f z=%4.2f",
-               node_is_reflected ? "REFLECTED " : "", _v.name(),
-               mot_vol ? mot_vol->GetName() : "<unknown>",
-               transform.dx(), transform.dy(), transform.dz(),
-               scale.xx(), scale.yy(), scale.zz());
-      // First 2 cases can be combined.
-      // Leave them separated for debugging G4ReflectionFactory for now...
-      if ( node_is_reflected  && !pvPlaced.second )
-        return info.g4Placements[node] = pvPlaced.first;
-      else if ( !node_is_reflected && !pvPlaced.second )
-        return info.g4Placements[node] = pvPlaced.first;
-      // Now deal with valid pvPlaced.second ...
-      if ( node_is_reflected )
-        return info.g4Placements[node] = pvPlaced.first;
-      else if ( !node_is_reflected )
-        return info.g4Placements[node] = pvPlaced.first;
-      g4 = pvPlaced.second ? pvPlaced.second : pvPlaced.first;
+      g4 = new G4PVPlacement(transform,   // no rotation
+                             g4vol,     // its logical volume
+                             name,      // its name
+                             g4mot,     // its mother (logical) volume
+                             false,     // no boolean operations
+                             copy,      // its copy number
+                             checkOverlaps);
     }
     info.g4Placements[node] = g4;
-    printout(ERROR, "Geant4Converter", "++ DEAD code. Should not end up here!");
+  }
+  else {
+    printout(ERROR, "Geant4Converter", "++ Attempt to DOUBLE-place physical volume: %s No:%d", name.c_str(), node->GetNumber());
   }
   return g4;
 }
@@ -1072,10 +913,10 @@ void* Geant4Converter::handlePlacement(const string& name, const TGeoNode* node)
 /// Convert the geometry type region into the corresponding Geant4 object(s).
 void* Geant4Converter::handleRegion(Region region, const set<const TGeoVolume*>& /* volumes */) const {
   G4Region* g4 = data().g4Regions[region];
-  if ( !g4 ) {
+  if (!g4) {
     PrintLevel lvl = debugRegions ? ALWAYS : outputLevel;
     Region r = region;
-    g4 = new G4Region(region.name());
+    g4 = new G4Region(r.name());
 
     // create region info with storeSecondaries flag
     if( not r.wasThresholdSet() and r.storeSecondaries() ) {
@@ -1096,49 +937,49 @@ void* Geant4Converter::handleRegion(Region region, const set<const TGeoVolume*>&
       cuts = new G4ProductionCuts();
       cuts->SetProductionCut(r.cut()*CLHEP::mm/units::mm);
       printout(lvl, "Geant4Converter", "++ %s: Using default cut: %f [mm]",
-	       r.name(), r.cut()*CLHEP::mm/units::mm);
+               r.name(), r.cut()*CLHEP::mm/units::mm);
     }
-    for( const auto& nam : limits )  {
+    for (const auto& nam : limits )  {
       LimitSet ls = m_detDesc.limitSet(nam);
-      if ( ls.isValid() ) {
-	const LimitSet::Set& cts = ls.cuts();
-	for (const auto& c : cts )   {
-	  int pid = 0;
-	  if ( c.particles == "*" ) pid = -1;
-	  else if ( c.particles == "e-"     ) pid = idxG4ElectronCut;
-	  else if ( c.particles == "e+"     ) pid = idxG4PositronCut;
-	  else if ( c.particles == "e[+-]"  ) pid = -idxG4PositronCut-idxG4ElectronCut;
-	  else if ( c.particles == "e[-+]"  ) pid = -idxG4PositronCut-idxG4ElectronCut;
-	  else if ( c.particles == "gamma"  ) pid = idxG4GammaCut;
-	  else if ( c.particles == "proton" ) pid = idxG4ProtonCut;
-	  else throw runtime_error("G4Region: Invalid production cut particle-type:" + c.particles);
-	  if ( !cuts ) cuts = new G4ProductionCuts();
-	  if ( pid == -(idxG4PositronCut+idxG4ElectronCut) )  {
-	    cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, idxG4PositronCut);
-	    cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, idxG4ElectronCut);
-	  }
-	  else  {
-	    cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, pid);
-	  }
-	  printout(lvl, "Geant4Converter", "++ %s: Set cut  [%s/%d] = %f [mm]",
-		   r.name(), c.particles.c_str(), pid, c.value*CLHEP::mm/units::mm);
-	}
-	bool found = false;
-	const auto& lm = data().g4Limits;
-	for (const auto& j : lm )   {
-	  if (nam == j.first->GetName()) {
-	    g4->SetUserLimits(j.second);
-	    printout(lvl, "Geant4Converter", "++ %s: Set limits %s to region type %s",
-		     r.name(), nam.c_str(), j.second->GetType().c_str());
-	    found = true;
-	    break;
-	  }
-	}
-	if ( found )   {
-	  continue;
-	}
+      if (ls.isValid()) {
+        const LimitSet::Set& cts = ls.cuts();
+        for (const auto& c : cts )   {
+          int pid = 0;
+          if ( c.particles == "*" ) pid = -1;
+          else if ( c.particles == "e-"     ) pid = idxG4ElectronCut;
+          else if ( c.particles == "e+"     ) pid = idxG4PositronCut;
+          else if ( c.particles == "e[+-]"  ) pid = -idxG4PositronCut-idxG4ElectronCut;
+          else if ( c.particles == "e[-+]"  ) pid = -idxG4PositronCut-idxG4ElectronCut;
+          else if ( c.particles == "gamma"  ) pid = idxG4GammaCut;
+          else if ( c.particles == "proton" ) pid = idxG4ProtonCut;
+          else throw runtime_error("G4Region: Invalid production cut particle-type:" + c.particles);
+          if ( !cuts ) cuts = new G4ProductionCuts();
+          if ( pid == -(idxG4PositronCut+idxG4ElectronCut) )  {
+            cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, idxG4PositronCut);
+            cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, idxG4ElectronCut);
+          }
+          else  {
+            cuts->SetProductionCut(c.value*CLHEP::mm/units::mm, pid);
+          }
+          printout(lvl, "Geant4Converter", "++ %s: Set cut  [%s/%d] = %f [mm]",
+                   r.name(), c.particles.c_str(), pid, c.value*CLHEP::mm/units::mm);
+        }
+        bool found = false;
+        const auto& lm = data().g4Limits;
+        for (const auto& j : lm )   {
+          if (nam == j.first->GetName()) {
+            g4->SetUserLimits(j.second);
+            printout(lvl, "Geant4Converter", "++ %s: Set limits %s to region type %s",
+                     r.name(), nam.c_str(), j.second->GetType().c_str());
+            found = true;
+            break;
+          }
+        }
+        if ( found )   {
+          continue;
+        }
       }
-      except("Geant4Converter", "++ G4Region: Failed to resolve limitset: " + nam);
+      throw runtime_error("G4Region: Failed to resolve user limitset:" + nam);
     }
     /// Assign cuts to region if they were created
     if ( cuts ) g4->SetProductionCuts(cuts);
@@ -1150,33 +991,28 @@ void* Geant4Converter::handleRegion(Region region, const set<const TGeoVolume*>&
 /// Convert the geometry type LimitSet into the corresponding Geant4 object(s).
 void* Geant4Converter::handleLimitSet(LimitSet limitset, const set<const TGeoVolume*>& /* volumes */) const {
   G4UserLimits* g4 = data().g4Limits[limitset];
-  if ( !g4 ) {
-    PrintLevel lvl = debugLimits || debugRegions ? ALWAYS : outputLevel;
+  if (!g4) {
     struct LimitPrint  {
       const LimitSet& ls;
       LimitPrint(const LimitSet& lset) : ls(lset) {}
       const LimitPrint& operator()(const std::string& pref, const Geant4UserLimits::Handler& h)  const {
         if ( !h.particleLimits.empty() )  {
           printout(ALWAYS,"Geant4Converter",
-                   "+++ LimitSet: Explicit Limit %s.%s applied for particles:",ls.name(), pref.c_str());
+                   "+++ LimitSet: Limit %s.%s applied for particles:",ls.name(), pref.c_str());
           for(const auto& p : h.particleLimits)
             printout(ALWAYS,"Geant4Converter","+++ LimitSet:    Particle type: %-18s PDG: %-6d : %f",
                      p.first->GetParticleName().c_str(), p.first->GetPDGEncoding(), p.second);
         }
-        else if ( h.defaultValue > std::numeric_limits<double>::epsilon() )  {
+        else  {
           printout(ALWAYS,"Geant4Converter",
-                   "+++ LimitSet: Implicit Limit %s.%s for wildcard particles: %f",
-		   ls.name(), pref.c_str(), float(h.defaultValue));
+                   "+++ LimitSet: Limit %s.%s NOT APPLIED.",ls.name(), pref.c_str());
         }
         return *this;
       }
     };
     Geant4UserLimits* limits = new Geant4UserLimits(limitset);
     g4 = limits;
-    printout(lvl, "Geant4Converter",
-             "++ Successfully converted LimitSet: %s [%ld cuts, %ld limits]",
-	     limitset.name(), limitset.cuts().size(), limitset.limits().size());
-    if ( debugRegions || debugLimits )    {
+    if ( debugRegions )    {
       LimitPrint print(limitset);
       print("maxTime",    limits->maxTime)
         ("minEKine",      limits->minEKine)
@@ -1192,20 +1028,20 @@ void* Geant4Converter::handleLimitSet(LimitSet limitset, const set<const TGeoVol
 /// Convert the geometry visualisation attributes to the corresponding Geant4 object(s).
 void* Geant4Converter::handleVis(const string& /* name */, VisAttr attr) const {
   Geant4GeometryInfo& info = data();
-  G4VisAttributes*    g4   = info.g4Vis[attr];
-  if ( !g4 ) {
+  G4VisAttributes* g4 = info.g4Vis[attr];
+  if (!g4) {
     float red = 0, green = 0, blue = 0;
-    int   style = attr.lineStyle();
+    int style = attr.lineStyle();
     attr.rgb(red, green, blue);
     g4 = new G4VisAttributes(attr.visible(), G4Colour(red, green, blue, attr.alpha()));
     //g4->SetLineWidth(attr->GetLineWidth());
     g4->SetDaughtersInvisible(!attr.showDaughters());
-    if ( style == VisAttr::SOLID ) {
+    if (style == VisAttr::SOLID) {
       g4->SetLineStyle(G4VisAttributes::unbroken);
       g4->SetForceWireframe(false);
       g4->SetForceSolid(true);
     }
-    else if ( style == VisAttr::WIREFRAME || style == VisAttr::DASHED ) {
+    else if (style == VisAttr::WIREFRAME || style == VisAttr::DASHED) {
       g4->SetLineStyle(G4VisAttributes::dashed);
       g4->SetForceSolid(false);
       g4->SetForceWireframe(true);
@@ -1219,26 +1055,37 @@ void* Geant4Converter::handleVis(const string& /* name */, VisAttr attr) const {
 void Geant4Converter::handleProperties(Detector::Properties& prp) const {
   map < string, string > processors;
   static int s_idd = 9999999;
-  for( const auto& [nam, vals] : prp ) {
-    if ( nam.substr(0, 6) == "geant4" ) {
-      auto id_it = vals.find("id");
-      string id = (id_it == vals.end()) ? _toString(++s_idd,"%d") : (*id_it).second;
+  string id;
+  for (Detector::Properties::const_iterator i = prp.begin(); i != prp.end(); ++i) {
+    const string& nam = (*i).first;
+    const Detector::PropertyValues& vals = (*i).second;
+    if (nam.substr(0, 6) == "geant4") {
+      Detector::PropertyValues::const_iterator id_it = vals.find("id");
+      if (id_it != vals.end()) {
+        id = (*id_it).second;
+      }
+      else {
+        char txt[32];
+        ::snprintf(txt, sizeof(txt), "%d", ++s_idd);
+        id = txt;
+      }
       processors.emplace(id, nam);
     }
   }
-  for( const auto& p : processors ) {
+  for (map<string, string>::const_iterator i = processors.begin(); i != processors.end(); ++i) {
     const GeoHandler* hdlr = this;
-    const Detector::PropertyValues& vals = prp[p.second];
+    string nam = (*i).second;
+    const Detector::PropertyValues& vals = prp[nam];
     string type = vals.find("type")->second;
-    string tag  = type + "_Geant4_action";
-    Detector* det = const_cast<Detector*>(&m_detDesc);
-    long      res = PluginService::Create<long>(tag, det, hdlr, &vals);
-    if ( 0 == res ) {
+    string tag = type + "_Geant4_action";
+    Detector* detPtr = const_cast<Detector*>(&m_detDesc);
+    long result = PluginService::Create<long>(tag, detPtr, hdlr, &vals);
+    if (0 == result) {
       throw runtime_error("Failed to locate plugin to interprete files of type"
                           " \"" + tag + "\" - no factory:" + type);
     }
-    res = *(long*)res;
-    if ( res != 1 ) {
+    result = *(long*) result;
+    if (result != 1) {
       throw runtime_error("Failed to invoke the plugin " + tag + " of type " + type);
     }
     printout(outputLevel, "Geant4Converter", "+++++ Executed Successfully Geant4 setup module *%s*.", type.c_str());
@@ -1247,40 +1094,25 @@ void Geant4Converter::handleProperties(Detector::Properties& prp) const {
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
 /// Convert the geometry type material into the corresponding Geant4 object(s).
-void* Geant4Converter::handleMaterialProperties(TObject* mtx) const    {
-  Geant4GeometryInfo& info   = data();
-  TGDMLMatrix*        matrix = (TGDMLMatrix*)mtx;
-  const char*         cptr   = ::strstr(matrix->GetName(), GEANT4_TAG_IGNORE);
-  Geant4GeometryInfo::PropertyVector* g4 = info.g4OpticalProperties[matrix];
-
-  if ( nullptr != cptr )   {  // Check if the property should not be passed to Geant4
-    printout(INFO,"Geant4MaterialProperties","++ Ignore property %s [%s].",
-             matrix->GetName(), matrix->GetTitle());	     
-    return nullptr;
-  }
-  cptr = ::strstr(matrix->GetTitle(), GEANT4_TAG_IGNORE);
-  if ( nullptr != cptr )   {  // Check if the property should not be passed to Geant4
-    printout(INFO,"Geant4MaterialProperties","++ Ignore property %s [%s].",
-             matrix->GetName(), matrix->GetTitle());
-    return nullptr;
-  }
-  
-  if ( !g4 )  {
+void* Geant4Converter::handleMaterialProperties(TObject* matrix) const    {
+  TGDMLMatrix* gdmlMat = (TGDMLMatrix*)matrix;
+  Geant4GeometryInfo& info = data();
+  Geant4GeometryInfo::PropertyVector* g4 = info.g4OpticalProperties[gdmlMat];
+  if (!g4) {
     PrintLevel lvl = debugMaterials ? ALWAYS : outputLevel;
     g4 = new Geant4GeometryInfo::PropertyVector();
-    std::size_t rows = matrix->GetRows();
-    g4->name    = matrix->GetName();
-    g4->title   = matrix->GetTitle();
+    size_t rows = gdmlMat->GetRows();
+    g4->name    = gdmlMat->GetName();
+    g4->title   = gdmlMat->GetTitle();
     g4->bins.reserve(rows);
     g4->values.reserve(rows);
-    for( std::size_t i=0; i<rows; ++i )   {
-      g4->bins.emplace_back(matrix->Get(i,0)  /*   *CLHEP::eV/units::eV   */);
-      g4->values.emplace_back(matrix->Get(i,1));
+    for(size_t i=0; i<rows; ++i)  {
+      g4->bins.emplace_back(gdmlMat->Get(i,0)  /*   *CLHEP::eV/units::eV   */);
+      g4->values.emplace_back(gdmlMat->Get(i,1));
     }
-    printout(lvl, "Geant4Converter",
-             "++ Successfully converted material property:%s : %s [%ld rows]",
-             matrix->GetName(), matrix->GetTitle(), rows);
-    info.g4OpticalProperties[matrix] = g4;
+    printout(lvl, "Geant4Converter", "++ Successfully converted material property:%s : %s [%ld rows]",
+             gdmlMat->GetName(), gdmlMat->GetTitle(), rows);
+    info.g4OpticalProperties[gdmlMat] = g4;
   }
   return g4;
 }
@@ -1380,65 +1212,43 @@ void* Geant4Converter::handleOpticalSurface(TObject* surface) const    {
   TGeoOpticalSurface* optSurf    = (TGeoOpticalSurface*)surface;
   Geant4GeometryInfo& info = data();
   G4OpticalSurface*   g4   = info.g4OpticalSurfaces[optSurf];
-  if ( !g4 ) {
+  if (!g4) {
     G4SurfaceType          type   = geant4_surface_type(optSurf->GetType());
     G4OpticalSurfaceModel  model  = geant4_surface_model(optSurf->GetModel());
     G4OpticalSurfaceFinish finish = geant4_surface_finish(optSurf->GetFinish());
-    string name = make_NCName(optSurf->GetName());
-    g4 = new G4OpticalSurface(name, model, finish, type, optSurf->GetValue());
+    g4 = new G4OpticalSurface(optSurf->GetName(), model, finish, type, optSurf->GetValue());
     g4->SetSigmaAlpha(optSurf->GetSigmaAlpha());
-    g4->SetPolish(optSurf->GetPolish());
-
+    // not implemented: g4->SetPolish(s->GetPolish());
     printout(debugSurfaces ? ALWAYS : DEBUG, "Geant4Converter",
-             "++ Created OpticalSurface: %-18s type:%s model:%s finish:%s SigmaAlphs: %.3e Polish: %.3e",
+             "++ Created OpticalSurface: %-18s type:%s model:%s finish:%s",
              optSurf->GetName(),
              TGeoOpticalSurface::TypeToString(optSurf->GetType()),
              TGeoOpticalSurface::ModelToString(optSurf->GetModel()),
-             TGeoOpticalSurface::FinishToString(optSurf->GetFinish()),
-             optSurf->GetSigmaAlpha(), optSurf->GetPolish());
-
-    G4MaterialPropertiesTable* tab = nullptr;
+             TGeoOpticalSurface::FinishToString(optSurf->GetFinish()));
+    G4MaterialPropertiesTable* tab = 0;
     TListIter it(&optSurf->GetProperties());
     for(TObject* obj = it.Next(); obj; obj = it.Next())  {
-      string exc_str;
-      TNamed*      named  = (TNamed*)obj;
+      TNamed*      named = (TNamed*)obj;
       TGDMLMatrix* matrix = info.manager->GetGDMLMatrix(named->GetTitle());
-      const char*  cptr   = ::strstr(matrix->GetName(), GEANT4_TAG_IGNORE);
-      if ( nullptr != cptr )  // Check if the property should not be passed to Geant4
-        continue;
-
-      if ( nullptr == tab )  {
+      if ( 0 == tab )  {
         tab = new G4MaterialPropertiesTable();
         g4->SetMaterialPropertiesTable(tab);
       }
-
       Geant4GeometryInfo::PropertyVector* v =
         (Geant4GeometryInfo::PropertyVector*)handleMaterialProperties(matrix);
       if ( !v )  {  // Error!
         except("Geant4OpticalSurface","++ Failed to convert opt.surface %s. Property table %s is not defined!",
                optSurf->GetName(), named->GetTitle());
       }
-      int idx = -1;
-      try   {
-        idx = tab->GetPropertyIndex(named->GetName());
-      }
-      catch(const std::exception& e)   {
-        exc_str = e.what();
-        idx = -1;
-      }
-      catch(...)   {
-        idx = -1;
-      }
+      int idx = tab->GetPropertyIndex(named->GetName(), false);
       if ( idx < 0 )   {
-        printout(ERROR, "Geant4Converter",
-                 "++ UNKNOWN Geant4 Property: %-20s %s [IGNORED]",
-                 exc_str.c_str(), named->GetName());
+        printout(ERROR, "Geant4Converter", "++ UNKNOWN Geant4 Property: %-20s [IGNORED]", named->GetName());
         continue;
       }
       // We need to convert the property from TGeo units to Geant4 units
       auto conv = g4PropertyConversion(idx);
       vector<double> bins(v->bins), vals(v->values);
-      for(std::size_t i=0, count=v->bins.size(); i<count; ++i)
+      for(size_t i=0, count=v->bins.size(); i<count; ++i)
         bins[i] *= conv.first, vals[i] *= conv.second;
       G4MaterialPropertyVector* vec = new G4MaterialPropertyVector(&bins[0], &vals[0], bins.size());
       tab->AddProperty(named->GetName(), vec);
@@ -1446,7 +1256,7 @@ void* Geant4Converter::handleOpticalSurface(TObject* surface) const    {
       printout(debugSurfaces ? ALWAYS : DEBUG, "Geant4Converter",
                "++       Property: %-20s [%ld x %ld] -->  %s",
                named->GetName(), matrix->GetRows(), matrix->GetCols(), named->GetTitle());
-      for(std::size_t i=0, count=v->bins.size(); i<count; ++i)
+      for(size_t i=0, count=v->bins.size(); i<count; ++i)
         printout(debugSurfaces ? ALWAYS : DEBUG, named->GetName(),
                  "  Geant4: %8.3g [MeV]  TGeo: %8.3g [GeV] Conversion: %8.3g",
                  bins[i], v->bins[i], conv.first);
@@ -1461,11 +1271,10 @@ void* Geant4Converter::handleSkinSurface(TObject* surface) const   {
   TGeoSkinSurface*    surf = (TGeoSkinSurface*)surface;
   Geant4GeometryInfo& info = data();
   G4LogicalSkinSurface* g4 = info.g4SkinSurfaces[surf];
-  if ( !g4 ) {
+  if (!g4) {
     G4OpticalSurface* optSurf  = info.g4OpticalSurfaces[OpticalSurface(surf->GetSurface())];
     G4LogicalVolume*  v = info.g4Volumes[surf->GetVolume()];
-    string name = make_NCName(surf->GetName());
-    g4 = new G4LogicalSkinSurface(name, v, optSurf);
+    g4 = new G4LogicalSkinSurface(surf->GetName(), v, optSurf);
     printout(debugSurfaces ? ALWAYS : DEBUG, "Geant4Converter",
              "++ Created SkinSurface: %-18s  optical:%s",
              surf->GetName(), surf->GetSurface()->GetName());
@@ -1479,12 +1288,11 @@ void* Geant4Converter::handleBorderSurface(TObject* surface) const   {
   TGeoBorderSurface*    surf = (TGeoBorderSurface*)surface;
   Geant4GeometryInfo&   info = data();
   G4LogicalBorderSurface* g4 = info.g4BorderSurfaces[surf];
-  if ( !g4 ) {
+  if (!g4) {
     G4OpticalSurface*  optSurf = info.g4OpticalSurfaces[OpticalSurface(surf->GetSurface())];
     G4VPhysicalVolume* n1 = info.g4Placements[surf->GetNode1()];
     G4VPhysicalVolume* n2 = info.g4Placements[surf->GetNode2()];
-    string name = make_NCName(surf->GetName());
-    g4 = new G4LogicalBorderSurface(name, n1, n2, optSurf);
+    g4 = new G4LogicalBorderSurface(surf->GetName(), n1, n2, optSurf);
     printout(debugSurfaces ? ALWAYS : DEBUG, "Geant4Converter",
              "++ Created BorderSurface: %-18s  optical:%s",
              surf->GetName(), surf->GetSurface()->GetName());
@@ -1539,13 +1347,14 @@ string printSolid(G4VSolid* sol) {
 /// Print G4 placement
 void* Geant4Converter::printPlacement(const string& name, const TGeoNode* node) const {
   Geant4GeometryInfo& info = data();
-  G4VPhysicalVolume*  g4   = info.g4Placements[node];
-  G4LogicalVolume*    vol  = info.g4Volumes[node->GetVolume()];
-  G4LogicalVolume*    mot  = info.g4Volumes[node->GetMotherVolume()];
-  G4VSolid*           sol  = vol->GetSolid();
-  G4ThreeVector       tr   = g4->GetObjectTranslation();
+  G4VPhysicalVolume* g4 = info.g4Placements[node];
+  G4LogicalVolume* vol = info.g4Volumes[node->GetVolume()];
+  G4LogicalVolume* mot = info.g4Volumes[node->GetMotherVolume()];
+  G4VSolid* sol = vol->GetSolid();
+  G4ThreeVector tr = g4->GetObjectTranslation();
+
   G4VSensitiveDetector* sd = vol->GetSensitiveDetector();
-  if ( !sd )  {
+  if (!sd)  {
     return g4;
   }
   stringstream str;
@@ -1566,44 +1375,34 @@ void* Geant4Converter::printPlacement(const string& name, const TGeoNode* node) 
   return g4;
 }
 
-namespace  {
-  template <typename O, typename C, typename F> void handleRefs(const O* o, const C& c, F pmf) {
-    for (typename C::const_iterator i = c.begin(); i != c.end(); ++i) {
-      //(o->*pmf)((*i)->GetName(), *i);
-      (o->*pmf)("", *i);
-    }
+template <typename O, typename C, typename F> void handleRefs(const O* o, const C& c, F pmf) {
+  for (typename C::const_iterator i = c.begin(); i != c.end(); ++i) {
+    //(o->*pmf)((*i)->GetName(), *i);
+    (o->*pmf)("", *i);
   }
+}
 
-  template <typename O, typename C, typename F> void handle(const O* o, const C& c, F pmf) {
-    for (typename C::const_iterator i = c.begin(); i != c.end(); ++i) {
-      (o->*pmf)((*i)->GetName(), *i);
-    }
+template <typename O, typename C, typename F> void handle(const O* o, const C& c, F pmf) {
+  for (typename C::const_iterator i = c.begin(); i != c.end(); ++i) {
+    (o->*pmf)((*i)->GetName(), *i);
   }
+}
 
-  template <typename O, typename F> void handleArray(const O* o, const TObjArray* c, F pmf) {
-    TObjArrayIter arr(c);
-    for(TObject* i = arr.Next(); i; i=arr.Next())
-      (o->*pmf)(i);
-  }
+template <typename O, typename F> void handleArray(const O* o, const TObjArray* c, F pmf) {
+  TObjArrayIter arr(c);
+  for(TObject* i = arr.Next(); i; i=arr.Next())
+    (o->*pmf)(i);
+}
 
-  template <typename O, typename C, typename F> void handleMap(const O* o, const C& c, F pmf) {
-    for (typename C::const_iterator i = c.begin(); i != c.end(); ++i)
-      (o->*pmf)((*i).first, (*i).second);
-  }
+template <typename O, typename C, typename F> void handleMap(const O* o, const C& c, F pmf) {
+  for (typename C::const_iterator i = c.begin(); i != c.end(); ++i)
+    (o->*pmf)((*i).first, (*i).second);
+}
 
-  template <typename O, typename C, typename F> void handleRMap(const O* o, const C& c, F pmf) {
-    for (typename C::const_reverse_iterator i = c.rbegin(); i != c.rend(); ++i)  {
-      //cout << "Handle RMAP [ " << (*i).first << " ]" << endl;
-      handle(o, (*i).second, pmf);
-    }
-  }
-  template <typename O, typename C, typename F> void handleRMap_(const O* o, const C& c, F pmf) {
-    for (typename C::const_iterator i = c.begin(); i != c.end(); ++i)  {
-      const auto& cc = (*i).second;
-      for (const auto& j : cc)   {
-        (o->*pmf)(j);
-      }
-    }
+template <typename O, typename C, typename F> void handleRMap(const O* o, const C& c, F pmf) {
+  for (typename C::const_reverse_iterator i = c.rbegin(); i != c.rend(); ++i)  {
+    //cout << "Handle RMAP [ " << (*i).first << " ]" << endl;
+    handle(o, (*i).second, pmf);
   }
 }
 
@@ -1618,6 +1417,10 @@ Geant4Converter& Geant4Converter::create(DetElement top) {
   // We do not have to handle defines etc.
   // All positions and the like are not really named.
   // Hence, start creating the G4 objects for materials, solids and log volumes.
+
+  //outputLevel = WARNING;
+  //setPrintLevel(VERBOSE);
+
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,17,0)
   handleArray(this, geo.manager->GetListOfGDMLMatrices(), &Geant4Converter::handleMaterialProperties);
   handleArray(this, geo.manager->GetListOfOpticalSurfaces(), &Geant4Converter::handleOpticalSurface);

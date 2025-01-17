@@ -12,23 +12,20 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Printout.h>
-#include <DD4hep/Primitives.h>
-#include <DD4hep/InstanceCount.h>
-#include <DDG4/Geant4HitCollection.h>
-#include <DDG4/Geant4Output2ROOT.h>
-#include <DDG4/Geant4Particle.h>
-#include <DDG4/Geant4Data.h>
-
+#include "DD4hep/Printout.h"
+#include "DD4hep/Primitives.h"
+#include "DD4hep/InstanceCount.h"
+#include "DDG4/Geant4HitCollection.h"
+#include "DDG4/Geant4Output2ROOT.h"
+#include "DDG4/Geant4Particle.h"
+#include "DDG4/Geant4Data.h"
 // Geant4 include files
-#include <G4HCofThisEvent.hh>
-#include <G4ParticleTable.hh>
-#include <G4Run.hh>
+#include "G4HCofThisEvent.hh"
 
 // ROOT include files
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
+#include "TFile.h"
+#include "TTree.h"
+#include "TBranch.h"
 
 using namespace dd4hep::sim;
 using namespace dd4hep;
@@ -37,32 +34,21 @@ using namespace std;
 /// Standard constructor
 Geant4Output2ROOT::Geant4Output2ROOT(Geant4Context* ctxt, const string& nam)
   : Geant4OutputAction(ctxt, nam), m_file(0), m_tree(0) {
-  declareProperty("Section",              m_section = "EVENT");
-  declareProperty("HandleMCTruth",        m_handleMCTruth = true);
+  declareProperty("Section", m_section = "EVENT");
+  declareProperty("HandleMCTruth", m_handleMCTruth = true);
   declareProperty("DisabledCollections",  m_disabledCollections);
   declareProperty("DisableParticles",     m_disableParticles);
-  declareProperty("FilesByRun",           m_filesByRun = false);
   InstanceCount::increment(this);
 }
 
 /// Default destructor
 Geant4Output2ROOT::~Geant4Output2ROOT() {
-  closeOutput();
   InstanceCount::decrement(this);
-}
-
-/// Close current output file
-void Geant4Output2ROOT::closeOutput()   {
   if (m_file) {
     TDirectory::TContext ctxt(m_file);
-    Sections::iterator i = m_sections.find(m_section);
-    info("+++ Closing ROOT output file %s", m_file->GetName());
-    if ( i != m_sections.end() )
-      m_sections.erase(i);
-    m_branches.clear();
     m_tree->Write();
     m_file->Close();
-    m_tree = nullptr;
+    m_tree = 0;
     detail::deletePtr (m_file);
   }
 }
@@ -81,25 +67,14 @@ TTree* Geant4Output2ROOT::section(const string& nam) {
 
 /// Callback to store the Geant4 run information
 void Geant4Output2ROOT::beginRun(const G4Run* run) {
-  string fname = m_output;
-  if ( m_filesByRun )    {
-    size_t idx = m_output.rfind(".");
-    if ( m_file )  {
-      closeOutput();
-    }
-    fname  = m_output.substr(0, idx);
-    fname += _toString(run->GetRunID(), ".run%08d");
-    if ( idx != string::npos )
-      fname += m_output.substr(idx);
-  }
-  if ( !m_file && !fname.empty() ) {
+  if (!m_file && !m_output.empty()) {
     TDirectory::TContext ctxt(TDirectory::CurrentDirectory());
-    m_file = TFile::Open(fname.c_str(), "RECREATE", "dd4hep Simulation data");
+    m_file = TFile::Open(m_output.c_str(), "RECREATE", "dd4hep Simulation data");
     if (m_file->IsZombie()) {
       detail::deletePtr (m_file);
-      except("Failed to open ROOT output file:'%s'", fname.c_str());
+      throw runtime_error("Failed to open ROOT output file:'" + m_output + "'");
     }
-    m_tree = section(m_section);
+    m_tree = section("EVENT");
   }
   Geant4OutputAction::beginRun(run);
 }
@@ -110,15 +85,14 @@ int Geant4Output2ROOT::fill(const string& nam, const ComponentCast& type, void* 
     TBranch* b = 0;
     Branches::const_iterator i = m_branches.find(nam);
     if (i == m_branches.end()) {
-      const std::type_info& typ = type.type();
-      TClass* cl = TBuffer::GetClass(typ);
+      TClass* cl = TBuffer::GetClass(type.type);
       if (cl) {
         b = m_tree->Branch(nam.c_str(), cl->GetName(), (void*) 0);
         b->SetAutoDelete(false);
         m_branches.emplace(nam, b);
       }
       else {
-        throw runtime_error("No ROOT TClass object availible for object type:" + typeName(typ));
+        throw runtime_error("No ROOT TClass object availible for object type:" + typeName(type.type));
       }
     }
     else {
@@ -174,15 +148,11 @@ void Geant4Output2ROOT::saveEvent(OutputContext<G4Event>& /* ctxt */) {
       typedef Geant4HitWrapper::HitManipulator Manip;
       typedef Geant4ParticleMap::ParticleMap ParticleMap;
       Manip* manipulator = Geant4HitWrapper::manipulator<Geant4Particle>();
-      G4ParticleTable* table = G4ParticleTable::GetParticleTable();
       const ParticleMap& pm = parts->particles();
       vector<void*> particles;
       particles.reserve(pm.size());
       for ( const auto& i : pm )   {
-	auto* p = i.second;
-	G4ParticleDefinition* def = table->FindParticle(p->pdgID);
-	p->charge = int(3.0 * (def ? def->GetPDGCharge() : -1.0)); // Assume e-/pi-
-        particles.emplace_back((ParticleMap::mapped_type*)p);
+        particles.emplace_back((ParticleMap::mapped_type*)i.second);
       }
       fill("MCParticles",manipulator->vec_type,&particles);
     }

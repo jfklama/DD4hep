@@ -10,8 +10,8 @@
 // Author     : F.Gaede
 //
 //==========================================================================
-#ifndef DDREC_DETECTORSURFACES_H
-#define DDREC_DETECTORSURFACES_H
+#ifndef rec_DetectorSurfaces_H_
+#define rec_DetectorSurfaces_H_
 
 #include "DDRec/Surface.h"
 
@@ -50,4 +50,4 @@ namespace dd4hep {
 
 
 
-#endif // DDREC_DETECTORSURFACES_H
+#endif // rec_DetectorSurfaces_H_

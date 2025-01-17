@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_CALLBACK_H
-#define DD4HEP_CALLBACK_H
+#ifndef DD4HEP_DDCORE_CALLBACK_H
+#define DD4HEP_DDCORE_CALLBACK_H
 
 // C/C++ include files
 #include <algorithm>
@@ -56,11 +56,6 @@ namespace dd4hep {
     /// Constructor with object initialization
     Callback(void* p)
       : par(p), call(0) {
-      func.first = func.second = 0;
-    }
-    /// Constructor with object initialization
-    Callback(const void* p)
-      : par((void*)p), call(0) {
       func.first = func.second = 0;
     }
     /// Initializing constructor
@@ -370,10 +365,6 @@ namespace dd4hep {
       else
         callbacks.insert(callbacks.end(),cb);
     }
-    /// Generically Add a new callback to the sequence depending on the location arguments
-    void add(const Callback& cb) {
-      callbacks.insert(callbacks.end(),cb);
-    }
     /// Execution overload for callbacks with no arguments
     void operator()() const;
     /// Execution overload for callbacks with 1 argument
@@ -502,4 +493,4 @@ namespace dd4hep {
   }
 
 }       // End namespace dd4hep
-#endif // DD4HEP_CALLBACK_H
+#endif  // DD4HEP_DDCORE_CALLBACK_H

@@ -8,8 +8,8 @@
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
 //==========================================================================
-#ifndef PARSERS_SPIRIT_PARSERSFACTORY_H
-#define PARSERS_SPIRIT_PARSERSFACTORY_H 1
+#ifndef DD4HEPPROPERTYPARSERS_PARSERSGENERATOR_H
+#define DD4HEPPROPERTYPARSERS_PARSERSGENERATOR_H 1
 // ============================================================================
 // Include files
 // ============================================================================
@@ -29,19 +29,12 @@
 #include "Parsers/config.h"
 #include "Parsers/spirit/UsedParser.h"
 #include "Parsers/spirit/GrammarsV2.h"
-#include "Parsers/spirit/GrammarsV2.h"
-#include "Parsers/spirit/ToStream.h"
 // ============================================================================
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
   /// Namespace for the AIDA detector for utilities using boost::spirit parsers
   namespace Parsers {
-    template <typename TYPE>
-    int parse(TYPE& result, const std::string& input);
-    template <typename TYPE>
-    std::ostream& toStream(const TYPE& obj, std::ostream& s);
 
-    
     // ========================================================================
     typedef std::string::const_iterator IteratorT;
     //typedef boost::spirit::ascii::space_type Skipper;
@@ -74,22 +67,11 @@ namespace dd4hep {
 //=============================================================================
 
 // ============================================================================
-#define PARSERS_DEF_FOR_SINGLE(Type)                                    \
-  namespace dd4hep  {                                                   \
-    namespace Parsers  {						\
-      template <> int parse(Type& result, const std::string& input)	\
-	{  return parse_(result, input);  }				\
-      template <> std::ostream& toStream(const Type& obj, std::ostream& s) \
-	{  return toStream_(obj, s); }}}
-// ============================================================================
-#define PARSERS_DEF_FOR_PAIR(First,Second)				\
-  namespace dd4hep  {                                                   \
-    namespace Parsers  {						\
-      template <> int parse(std::pair<First,Second>& result, const std::string& input) \
-	{  return parse_(result, input);  }				\
-      template <> std::ostream& toStream(const std::pair<First,Second>& obj, std::ostream& s) \
-	{  return toStream_(obj, s); }}}
+#define PARSERS_DEF_FOR_SINGLE(Type)                                  \
+  PARSERS_DECL_FOR_SINGLE(Type)                                       \
+  int dd4hep::Parsers::parse(Type& result, const std::string& input)  \
+  {  return dd4hep::Parsers::parse_(result, input);  }
 // ============================================================================
 
-#endif // PARSERS_SPIRIT_PARSERSFACTORY_H
+#endif // DD4HEPPROPERTYPARSERS_PARSERSGENERATOR_H
 

@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_CONDITIONS_H
-#define DD4HEP_CONDITIONS_H
+#ifndef DD4HEP_DDCORE_CONDITIONS_H
+#define DD4HEP_DDCORE_CONDITIONS_H
 
 // Framework include files
 #include "DD4hep/IOV.h"
@@ -178,9 +178,10 @@ namespace dd4hep {
     itemkey_type item_key()  const;
 
     /** Direct data items in string form */
-#if defined(DD4HEP_CONDITIONS_DEBUG) || !defined(DD4HEP_MINIMAL_CONDITIONS)
     /// Access the type field of the condition
     const std::string& type()  const;
+
+#if !defined(DD4HEP_MINIMAL_CONDITIONS)
     /// Access the value field of the condition as a string
     const std::string& value()  const;
     /// Access the comment field of the condition
@@ -199,19 +200,13 @@ namespace dd4hep {
 
     /** Conditions meta-data and handling of the data binding  */
     /// Access the opaque data block
-    OpaqueDataBlock& data()  const;
+    OpaqueData& data()  const;
     /// Access to the type information
     const std::type_info& typeInfo() const;
     /// Access to the grammar type
     const BasicGrammar& descriptor() const;
     /// Check if object is already bound....
     bool is_bound()  const  {  return isValid() ? data().is_bound() : false;  }
-    /** Construct conditions object and bind the data
-     *
-     *  Note: The type definition is possible exactly once.
-     *  Any further rebindings MUST match the identical type.
-     */
-    template <typename T, typename... Args> T& construct(Args... args);
     /** Bind the data of the conditions object to a given format.
      *
      *  Note: The type definition is possible exactly once.
@@ -228,13 +223,8 @@ namespace dd4hep {
     template <typename T> T& get();
     /// Generic getter (const version). Specify the exact type, not a polymorph type
     template <typename T> const T& get() const;
-    /// Generic getter. Resolves polymorph types. It is mandatory that the datatype is polymorph!
-    template <typename T> T& as();
-    /// Generic getter (const version). Resolves polymorph types. It is mandatory that the datatype is polymorph!
-    template <typename T> const T& as() const;
-
-    /// Allow to trace condition names from keys for debugging
-    static int haveInventory(int value = -1);
+    /// Re-evaluate the conditions data according to the previous bound type definition
+    Condition& rebind();
   };
 
   /// Initializing constructor
@@ -245,34 +235,6 @@ namespace dd4hep {
   template <typename Q> inline Condition::Condition(const Handle<Q>& e)
     : Handle<Condition::Object>(e) {}
 
-  /// Construct conditions object and bind the data
-  template <typename T, typename... Args> T& Condition::construct(Args... args)   {
-    return data().construct<T,Args...>(args...);
-  }
-  /// Bind the data of the conditions object to a given format.
-  template <typename T> inline T& Condition::bind()   {
-    return data().bind<T>();
-  }
-  /// Bind the data of the conditions object to a given format and fill data from string representation.
-  template <typename T> inline T& Condition::bind(const std::string& val)   {
-    return data().bind<T>(val);
-  }
-  /// Generic getter. Specify the exact type, not a polymorph type
-  template <typename T> inline T& Condition::get() {
-    return data().get<T>();
-  }
-  /// Generic getter (const version). Specify the exact type, not a polymorph type
-  template <typename T> inline const T& Condition::get() const {
-    return data().get<T>();
-  }    
-  /// Generic getter. Specify the exact type, not a polymorph type
-  template <typename T> inline T& Condition::as() {
-    return data().as<T>();
-  }
-  /// Generic getter (const version). Specify the exact type, not a polymorph type
-  template <typename T> inline const T& Condition::as() const {
-    return data().as<T>();
-  }
     
   /// Key definition to optimize ans simplyfy the access to conditions entities
   /**
@@ -282,7 +244,7 @@ namespace dd4hep {
    */
   class ConditionKey  {
   public:
-#if defined(DD4HEP_CONDITIONS_HAVE_NAME)
+#ifdef DD4HEP_CONDITIONS_DEBUG
     /// Optional string identifier. Helps debugging a lot!
     std::string  name;
 #endif
@@ -492,52 +454,6 @@ namespace dd4hep {
 
   // Utility type definitions
   typedef std::vector<Condition>          RangeConditions;
-
-  /// Conditions internal namespace
-  namespace detail  {
-    /// Setup conditions item name inventory for debugging
-    /** Populate a conditions item name inventory to ease debugging
-     *  missing dependencies for derived conditions, which otherwise is
-     *  difficult in optimized mode where all string values are suppressed.
-     *
-     *  Note: the inventory gets populated while creating item dependencies etc.
-     *  Enabling afterwards has no effect.
-     *
-     *  value < 0  Return current value
-     *  value = 0  Disable inventory for performance issues
-     *  value > 0  Enable inventory population
-     *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_CONDITIONS
-     */
-    int have_condition_item_inventory(int value = -1);
-
-    
-    /// Resolve key from conditions item name inventory for debugging
-    /** The functionhave_condition_item_inventory must be called
-     *  before items get populated to fill the inventory.....
-     *
-     *  key: conditions item key
-     *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_CONDITIONS
-     */
-    std::string get_condition_item_name(Condition::itemkey_type key);
-
-    /// Resolve key from conditions item name inventory for debugging
-    /** The functionhave_condition_item_inventory must be called
-     *  before items get populated to fill the inventory.....
-     *
-     *  key: full condition item hash
-     *
-     *  \author  M.Frank
-     *  \version 1.0
-     *  \ingroup DD4HEP_CONDITIONS
-     */
-    std::string get_condition_item_name(Condition::key_type key);
-  }
   
 }          /* End namespace dd4hep                   */
-#endif // DD4HEP_CONDITIONS_H
+#endif     /* DD4HEP_DDCORE_CONDITIONS_H             */

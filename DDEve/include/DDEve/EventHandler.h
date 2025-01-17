@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_EVENTHANDLER_H
-#define DDEVE_EVENTHANDLER_H
+#ifndef DD4HEP_DDEVE_EVENTHANDLER_H
+#define DD4HEP_DDEVE_EVENTHANDLER_H
 
 // Framework include files
 #include "DDEve/DDEveEventData.h"
@@ -138,5 +138,5 @@ namespace dd4hep {
     ClassDef(EventConsumer,0);
   };
 }      /* End namespace dd4hep        */
-#endif // DDEVE_EVENTHANDLER_H
+#endif /* DD4HEP_DDEVE_EVENTHANDLER_H */
 

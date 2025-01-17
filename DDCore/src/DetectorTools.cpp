@@ -178,30 +178,30 @@ void detail::tools::elementPath(DetElement element, PlacementPath& det_nodes) {
 
 /// Assemble the path of the PlacedVolume selection
 string detail::tools::elementPath(const PlacementPath& nodes, bool reverse)   {
-  string path = "";
+  string s = "";
   if ( reverse )  {
     for(auto i=nodes.rbegin(); i != nodes.rend(); ++i)
-      path += "/" + string((*i).name());
+      s += "/" + string((*i).name());
   }
   else  {
     for(auto i=begin(nodes); i != end(nodes); ++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
-  return path;
+  return s;
 }
 
 /// Assemble the path of the PlacedVolume selection
 string detail::tools::elementPath(const ElementPath& nodes, bool reverse)  {
-  string path = "";
+  string s = "";
   if ( reverse )  {
     for(ElementPath::const_reverse_iterator i=nodes.rbegin();i!=nodes.rend();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
   else  {
     for(ElementPath::const_iterator i=nodes.begin();i!=nodes.end();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
-  return path;
+  return s;
 }
 
 /// Assemble the path of a particular detector element
@@ -211,12 +211,12 @@ string detail::tools::elementPath(DetElement element)  {
   return elementPath(nodes);
 }
 
-/// Find DetElement as child of the top level volume by its absolute path
+/// Find DetElement as child of the top level volume by it's absolute path
 DetElement detail::tools::findElement(const Detector& description, const string& path)   {
   return findDaughterElement(description.world(),path);
 }
 
-/// Find DetElement as child of a parent by its relative or absolute path
+/// Find DetElement as child of a parent by it's relative or absolute path
 DetElement detail::tools::findDaughterElement(DetElement parent, const string& subpath)  {
   if ( parent.isValid() )   {
     size_t idx = subpath.find('/',1);
@@ -282,30 +282,30 @@ string detail::tools::placementPath(DetElement element)  {
 
 /// Assemble the path of the PlacedVolume selection
 string detail::tools::placementPath(const PlacementPath& nodes, bool reverse)  {
-  string path = "";
+  string s="";
   if ( reverse )  {
     for(PlacementPath::const_reverse_iterator i=nodes.rbegin();i!=nodes.rend();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
   else  {
     for(PlacementPath::const_iterator i=nodes.begin();i!=nodes.end();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
-  return path;
+  return s;
 }
 
 /// Assemble the path of the PlacedVolume selection
 string detail::tools::placementPath(const vector<const TGeoNode*>& nodes, bool reverse)   {
-  string path = "";
+  string s="";
   if ( reverse )  {
     for(vector<const TGeoNode*>::const_reverse_iterator i=nodes.rbegin();i!=nodes.rend();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
   else  {
     for(vector<const TGeoNode*>::const_iterator i=nodes.begin();i!=nodes.end();++i)
-      path += "/" + string((*i)->GetName());
+      s += "/" + string((*i)->GetName());
   }
-  return path;
+  return s;
 }
 
 /// Update cached matrix to transform to positions to an upper level Placement
@@ -411,3 +411,5 @@ vector<string> detail::tools::pathElements(const string& path)   {
   }
   return result;
 }
+
+

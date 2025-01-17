@@ -12,23 +12,23 @@
 //==========================================================================
 
 // Framework include files
-#include <DD4hep/Detector.h>
-#include <DD4hep/Memory.h>
-#include <DD4hep/DD4hepUI.h>
-#include <DD4hep/Factories.h>
-#include <DD4hep/Printout.h>
-#include <DD4hep/DetectorTools.h>
-#include <DD4hep/DetFactoryHelper.h>
-#include <XML/DocumentHandler.h>
-#include <XML/Utilities.h>
+#include "DD4hep/Detector.h"
+#include "DD4hep/Memory.h"
+#include "DD4hep/DD4hepUI.h"
+#include "DD4hep/Factories.h"
+#include "DD4hep/Printout.h"
+#include "DD4hep/DetectorTools.h"
+#include "DD4hep/DetFactoryHelper.h"
+#include "XML/DocumentHandler.h"
+#include "XML/Utilities.h"
 
 // ROOT includes
-#include <TInterpreter.h>
-#include <TGeoElement.h>
-#include <TGeoManager.h>
-#include <TGDMLParse.h>
-#include <TGDMLWrite.h>
-#include <TUri.h>
+#include "TInterpreter.h"
+#include "TGeoElement.h"
+#include "TGeoManager.h"
+#include "TGDMLParse.h"
+#include "TGDMLWrite.h"
+#include "TUri.h"
 
 using namespace std;
 using namespace dd4hep;
@@ -76,7 +76,7 @@ static long gdml_parse(Detector& description, int argc, char** argv) {
         const auto& e = elements[i];
         if ( e == world.name() )
           continue;
-        child = parent.child(e, false);
+        child = parent.child(e);
         if ( child.isValid() )  {
           parent = child;
           continue;
@@ -145,11 +145,10 @@ static long gdml_extract(Detector& description, int argc, char** argv) {
   if ( argc > 0 )   {
     bool detector = true, volpath = false;
     string output, path;
-    int precision = 12;
     for(int i = 0; i < argc && argv[i]; ++i)  {
       if ( 0 == ::strncmp("-output",argv[i],2) )
         output = argv[++i];
-      else if ( 0 == ::strncmp("-path", argv[i],4) )
+      else if ( 0 == ::strncmp("-path", argv[i],2) )
         path  = argv[++i];
       else if ( 0 == ::strncmp("-volpath", argv[i],7) )
         volpath  = true,  detector = false;
@@ -157,8 +156,6 @@ static long gdml_extract(Detector& description, int argc, char** argv) {
         volpath  = false, detector = false;
       else if ( 0 == ::strncmp("-detector", argv[i],8) )
         volpath  = false, detector = true;
-      else if ( 0 == ::strncmp("-precision", argv[i],5) )
-        precision = ::atol(argv[++i]);
     }
     if ( output.empty() || path.empty() )   {
       cout <<
@@ -168,9 +165,8 @@ static long gdml_extract(Detector& description, int argc, char** argv) {
         "     -path   <string>         Path to parent detector element to extract     \n"
         "                              top volume to GDML file.                       \n"
         "     -detector                Indicate that the path is a DetElement path    \n"
-        "     -volpath                 Indicate that the path is a volume path        \n"
+        "     -volpath                  Indicate that the path is a volume path       \n"
         "     -volname                 Indicate that the path is a volume name prefix \n"
-        "     -precision <number>      GDML output floating point precision           \n"
         "\tArguments given: " << arguments(argc,argv) << endl << flush;
       ::exit(EINVAL);
     }
@@ -181,12 +177,7 @@ static long gdml_extract(Detector& description, int argc, char** argv) {
       if ( de.isValid() )   {
         TGDMLWrite extract;
         TUri uri(output.c_str());
-        description.manager().SetExportPrecision(precision);
-#if   ROOT_VERSION_CODE > ROOT_VERSION(6,27,1)
-        extract.SetIgnoreDummyMaterial(true);
-        extract.SetNamingSpeed(TGDMLWrite::kfastButUglySufix);
-        extract.WriteGDMLfile(&description.manager(), de.placement().ptr(), uri.GetRelativePart());
-#elif ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
         extract.WriteGDMLfile(&description.manager(), de.placement().ptr(), uri.GetRelativePart());
 #else
         extract.WriteGDMLfile(&description.manager(), de.volume().ptr(), uri.GetRelativePart());
@@ -234,12 +225,7 @@ static long gdml_extract(Detector& description, int argc, char** argv) {
       if ( a._node )    {
         TGDMLWrite extract;
         TUri uri(output.c_str());
-        description.manager().SetExportPrecision(precision);
-#if   ROOT_VERSION_CODE > ROOT_VERSION(6,27,1)
-        extract.SetIgnoreDummyMaterial(true);
-        extract.SetNamingSpeed(TGDMLWrite::kfastButUglySufix);
-        extract.WriteGDMLfile(&description.manager(), a._node, uri.GetRelativePart());
-#elif ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
         extract.WriteGDMLfile(&description.manager(), a._node, uri.GetRelativePart());
 #else
         extract.WriteGDMLfile(&description.manager(), a._node->GetVolume(), uri.GetRelativePart());
@@ -283,7 +269,6 @@ static Ref_t create_detector(Detector& description, xml_h e, Ref_t /* sens_det *
   string      name    = x_det.nameStr();
   string      par_nam = x_par.nameStr();
   string      gdml   = x_gdml.attr<string>(_U(ref));
-  string      gdml_physvol = dd4hep::getAttrOrDefault<string>(x_gdml, _Unicode(physvol), "");
   DetElement  det_parent = description.detector(par_nam);
   TGDMLParse parser;
   if ( !gdml.empty() && gdml[0] == '/' )  {
@@ -307,18 +292,6 @@ static Ref_t create_detector(Detector& description, xml_h e, Ref_t /* sens_det *
   printout(INFO,"ROOTGDMLParse","+++ Attach GDML volume %s", volume.name());
   Volume mother = det_parent.volume();
   PlacedVolume pv;
-
-  if ( !gdml_physvol.empty() ) {
-    PlacedVolume node = volume->FindNode(gdml_physvol.c_str());
-    if ( !node.isValid() ) {
-      printout(ERROR,"ROOTGDMLParse","+++ Invalid gdml placed volume %s", gdml_physvol.c_str());
-      printout(ERROR,"ROOTGDMLParse","+++ Valid top-level nodes are:");
-      volume->PrintNodes();
-      except("ROOTGDMLParse","+++ Failed to parse GDML file:%s for node:%s",
-        gdml.c_str(), gdml_physvol.c_str());
-    }
-    volume = node.volume();
-  }
 
   if ( x_pos && x_rot )   {
     Rotation3D rot(RotationZYX(x_rot.z(),x_rot.y(),x_rot.x()));

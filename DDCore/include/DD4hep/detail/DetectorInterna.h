@@ -18,8 +18,8 @@
 // sufficient for all practical purposes.
 //
 //==========================================================================
-#ifndef DD4HEP_DETAIL_DETECTORINTERNA_H
-#define DD4HEP_DETAIL_DETECTORINTERNA_H
+#ifndef DD4HEP_DDCORE_DETECTORINTERNA_H
+#define DD4HEP_DDCORE_DETECTORINTERNA_H
 
 // Framework include files
 #include "DD4hep/Callback.h"
@@ -142,6 +142,14 @@ namespace dd4hep {
     Ref_t               global_alignment;
     //@}
 
+#if 0      
+    // To be removed!
+    /// Alignment entries for lower level volumes, which are NOT attached to daughter DetElements
+    std::vector<Alignment> volume_alignments;
+    /// Alignment entries for lower level volumes, which are NOT attached to daughter DetElements
+    std::vector<Alignment> volume_surveys;
+#endif
+
   private:
     friend class VolumeManager_Populator;
 
@@ -204,4 +212,4 @@ namespace dd4hep {
   }
 
 }         /* End namespace dd4hep                   */
-#endif // DD4HEP_DETAIL_DETECTORINTERNA_H
+#endif    /* DD4HEP_DDCORE_DETECTORINTERNA_H      */

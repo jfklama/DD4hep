@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4USERLIMITS_H
-#define DDG4_GEANT4USERLIMITS_H
+#ifndef DD4HEP_DDG4_GEANT4USERLIMITS_H
+#define DD4HEP_DDG4_GEANT4USERLIMITS_H
 
 // Framework include files
 #include "DD4hep/Objects.h"
@@ -72,11 +72,9 @@ namespace dd4hep {
 
     public:
       /// Initializing Constructor
-      Geant4UserLimits(LimitSet limitset);
+      Geant4UserLimits(LimitSet ls);
       /// Standard destructor
       virtual ~Geant4UserLimits();
-      /// Update the object
-      virtual void update(LimitSet limitset);
       /// Access the user tracklength for a G4 track object
       virtual G4double GetMaxAllowedStep(const G4Track& track)
       {  return maxStepLength.value(track);    }
@@ -98,10 +96,8 @@ namespace dd4hep {
       virtual void SetUserMaxTime(G4double utimeMax);
       virtual void SetUserMinEkine(G4double uekinMin);
       virtual void SetUserMinRange(G4double urangMin);
-      /// Allow for debugging user limits (very verbose)
-      static bool enable_debug(bool value);
     };
   }
 }
 
-#endif // DDG4_GEANT4USERLIMITS_H
+#endif  // DD4HEP_DDG4_GEANT4USERLIMITS_H

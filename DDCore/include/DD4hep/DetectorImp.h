@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETECTORIMP_H
-#define DD4HEP_DETECTORIMP_H
+#ifndef DD4HEP_DetectorGEOIMP_H
+#define DD4HEP_DetectorGEOIMP_H
 
 //==========================================================================
 //
@@ -61,9 +61,6 @@ namespace dd4hep {
     /// Cached map with detector types:
     typedef std::map<std::string, std::vector<DetElement> > DetectorTypeMap;
 
-    /// Standard conditions
-    mutable STD_Conditions m_std_conditions;
-    
     /// Inventory of detector types
     DetectorTypeMap   m_detectorTypes;
 
@@ -71,7 +68,7 @@ namespace dd4hep {
     DetectorBuildType m_buildType;
 
     /// Optical surface manager
-    detail::OpticalSurfaceManagerObject* m_surfaceManager {nullptr};   //! not persistent
+    detail::OpticalSurfaceManagerObject* m_surfaceManager = 0;   //! not persistent
 
   private:
     /// Disable move constructor
@@ -92,7 +89,7 @@ namespace dd4hep {
 
     /// Local method (no interface): Load volume manager.
     void imp_loadVolumeManager();
-    
+
     /// Default constructor used by ROOT I/O
     DetectorImp();
 
@@ -210,14 +207,6 @@ namespace dd4hep {
     virtual OverlayedField field() const  override {
       return m_field;
     }
-
-    /// Access default conditions (temperature and pressure
-    virtual const STD_Conditions& stdConditions()  const  override;
-    /// Set the STD temperature and pressure
-    virtual void setStdConditions(double temp, double pressure) override;
-    /// Set the STD conditions according to defined types (STP or NTP)
-    virtual void setStdConditions(const std::string& type)  override;
-
     /// Accessor to the header entry
     virtual Header header() const  override {
       return m_header;
@@ -236,40 +225,40 @@ namespace dd4hep {
     /// Typed access to constants: double values
     virtual double constantAsDouble(const std::string& name) const  override;
 
-    /// Retrieve a constant by its name from the detector description
+    /// Retrieve a constant by it's name from the detector description
     virtual Constant constant(const std::string& name) const  override;
 
-    /// Retrieve a limitset by its name from the detector description
+    /// Retrieve a limitset by it's name from the detector description
     virtual LimitSet limitSet(const std::string& name) const  override {
       return getRefChild(m_limits, name);
     }
-    /// Retrieve a visualization attribute by its name from the detector description
+    /// Retrieve a visualization attribute by it's name from the detector description
     virtual VisAttr visAttributes(const std::string& name) const  override {
       return getRefChild(m_display, name, false);
     }
-    /// Retrieve a matrial by its name from the detector description
+    /// Retrieve a matrial by it's name from the detector description
     virtual Material material(const std::string& name) const  override;
 
-    /// Retrieve a region object by its name from the detector description
+    /// Retrieve a region object by it's name from the detector description
     virtual Region region(const std::string& name) const  override {
       return getRefChild(m_regions, name);
     }
-    /// Retrieve a id descriptor by its name from the detector description
+    /// Retrieve a id descriptor by it's name from the detector description
     virtual IDDescriptor idSpecification(const std::string& name) const  override {
       return getRefChild(m_idDict, name);
     }
-    /// Retrieve a readout object by its name from the detector description
+    /// Retrieve a readout object by it's name from the detector description
     virtual Readout readout(const std::string& name) const  override {
       return getRefChild(m_readouts, name);
     }
-    /// Retrieve a subdetector element by its name from the detector description
+    /// Retrieve a subdetector element by it's name from the detector description
     virtual DetElement detector(const std::string& name) const  override;
     //{      return getRefChild(m_detectors, name);    }
-    /// Retrieve a sensitive detector by its name from the detector description
+    /// Retrieve a sensitive detector by it's name from the detector description
     virtual SensitiveDetector sensitiveDetector(const std::string& name) const  override {
       return getRefChild(m_sensitive, name, false);
     }
-    /// Retrieve a subdetector element by its name from the detector description
+    /// Retrieve a subdetector element by it's name from the detector description
     virtual CartesianField field(const std::string& name) const  override {
       return getRefChild(m_fields, name, false);
     }
@@ -298,7 +287,7 @@ namespace dd4hep {
     virtual const HandleMap& detectors() const  override {
       return m_detectors;
     }
-    /// Retrieve a sensitive detector by its name from the detector description
+    /// Retrieve a sensitive detector by it's name from the detector description
     virtual const HandleMap& sensitiveDetectors() const  override {
       return m_sensitive;
     }
@@ -320,7 +309,7 @@ namespace dd4hep {
        - If throw_exc is set to true, an exception is thrown if the type
        is not present. Otherwise an empty detector container is returned.
     */
-    virtual const std::vector<DetElement>& detectors(const std::string& type, bool throw_exc) const override;
+    virtual const std::vector<DetElement>& detectors(const std::string& type, bool throw_exc)  override;
 
     /// Access a set of subdetectors according to several sensitive types.
     virtual std::vector<DetElement> detectors(const std::string& type1,
@@ -432,4 +421,4 @@ namespace dd4hep {
 #if defined(__CINT__) || defined(__MAKECINT__) || defined(__CLING__) || defined(__ROOTCLING__)
 #pragma link C++ class dd4hep::DetectorImp+;
 #endif
-#endif // DD4HEP_DETECTORIMP_H
+#endif    /* dd4hep_DetectorGEOIMP_H    */

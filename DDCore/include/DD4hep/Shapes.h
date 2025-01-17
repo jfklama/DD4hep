@@ -11,13 +11,12 @@
 //
 //==========================================================================
 
-#ifndef DD4HEP_SHAPES_H
-#define DD4HEP_SHAPES_H
+#ifndef DD4HEP_DDCORE_SOLIDS_H
+#define DD4HEP_DDCORE_SOLIDS_H
 
 // Framework include files
-#include <DD4hep/Handle.h>
-#include <DD4hep/Objects.h>
-#include <DD4hep/DD4hepUnits.h>
+#include "DD4hep/Handle.h"
+#include "DD4hep/Objects.h"
 
 // C/C++ include files
 #include <vector>
@@ -26,30 +25,23 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated" // Code that causes warning goes here
 #endif
-
 // ROOT include files
-#include <TGeoCone.h>
-#include <TGeoPgon.h>
-#include <TGeoPcon.h>
-#include <TGeoArb8.h>
-#include <TGeoTrd1.h>
-#include <TGeoTrd2.h>
-#include <TGeoTube.h>
-#include <TGeoEltu.h>
-#include <TGeoXtru.h>
-#include <TGeoHype.h>
-#include <TGeoTorus.h>
-#include <TGeoSphere.h>
-#include <TGeoHalfSpace.h>
-#include <TGeoParaboloid.h>
-#include <TGeoScaledShape.h>
-#include <TGeoCompositeShape.h>
-#include <TGeoShapeAssembly.h>
-#include <TGeoPara.h>
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-#include <TGeoTessellated.h>
-#endif
-
+#include "TGeoCone.h"
+#include "TGeoPgon.h"
+#include "TGeoPcon.h"
+#include "TGeoArb8.h"
+#include "TGeoTrd1.h"
+#include "TGeoTrd2.h"
+#include "TGeoTube.h"
+#include "TGeoEltu.h"
+#include "TGeoXtru.h"
+#include "TGeoHype.h"
+#include "TGeoTorus.h"
+#include "TGeoSphere.h"
+#include "TGeoHalfSpace.h"
+#include "TGeoParaboloid.h"
+#include "TGeoCompositeShape.h"
+#include "TGeoShapeAssembly.h"
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -66,9 +58,6 @@ namespace dd4hep {
   /// Output mesh vertices to string
   std::string toStringMesh(const TGeoShape* shape, int precision=2);
   
-  /// Retrieve tag name from shape type
-  std::string get_shape_tag(const TGeoShape* shape);
-  
   /// Access Shape dimension parameters (As in TGeo, but angles in radians rather than degrees)
   std::vector<double> get_shape_dimensions(TGeoShape* shape);
   
@@ -84,33 +73,7 @@ namespace dd4hep {
   /// Set the shape dimensions. As for the TGeo shape, but angles in rad rather than degrees.
   template <typename SOLID> void set_dimensions(SOLID solid, const std::vector<double>& params);
 
-  namespace detail   {
-    inline std::vector<double> _make_vector(const double* values, size_t length)   {
-      return {values, values+length};
-    }
-    template <typename SOLID> std::vector<double> _extract_vector(const SOLID* solid,
-                                                                  double (SOLID::*extract)(Int_t) const,
-                                                                  Int_t (SOLID::*len)() const)   {
-      std::vector<double> result;
-      Int_t count = (solid->*len)();
-      for(Int_t i=0; i<count; ++i) result.emplace_back((solid->*extract)(i));
-      return result;
-    }
-    template <typename SOLID> std::vector<double> zPlaneZ(const SOLID* solid)   {
-      const auto* shape = solid->access();
-      return _make_vector(shape->GetZ(), shape->GetNz());
-    }
-    template <typename SOLID> std::vector<double> zPlaneRmin(const SOLID* solid)   {
-      const auto* shape = solid->access();
-      return _make_vector(shape->GetRmin(), shape->GetNz());
-    }
-    template <typename SOLID> std::vector<double> zPlaneRmax(const SOLID* solid)   {
-      const auto* shape = solid->access();
-      return _make_vector(shape->GetRmax(), shape->GetNz());
-    }
 
-  }
-  
   ///  Base class for Solid (shape) objects
   /**
    *   Generic handle holding an object of base TGeoShape.
@@ -171,9 +134,6 @@ namespace dd4hep {
     /// Set new shape name
     Solid_type<T>& setName(const std::string& value);
 
-    /// Access to shape title (GetTitle accessor of the TGeoShape)
-    const char* title() const;
-
     /// Access to shape type (The TClass name of the ROOT implementation)
     const char* type() const;
     /// Auto conversion to underlying ROOT object
@@ -226,61 +186,6 @@ namespace dd4hep {
     ShapelessSolid& operator=(ShapelessSolid&& copy) = default;
     /// Copy Assignment operator
     ShapelessSolid& operator=(const ShapelessSolid& copy) = default;
-  };
-
-  /// Class describing a Scale shape
-  /**
-   *   For any further documentation please see the following ROOT documentation:
-   *   \see http://root.cern.ch/root/html/TGeoScaledShape.html
-   *
-   *
-   *   \author  M.Frank
-   *   \version 1.0
-   *   \ingroup DD4HEP_CORE
-   */
-  class Scale : public Solid_type<TGeoScaledShape> {
-  protected:
-    /// Internal helper method to support object construction
-    void make(const std::string& name, Solid base_solid, double x_scale, double y_scale, double z_scale);
-
-  public:
-    /// Default constructor
-    Scale() = default;
-    /// Move constructor
-    Scale(Scale&& e) = default;
-    /// Copy constructor
-    Scale(const Scale& e) = default;
-    /// Constructor to be used with an existing object
-    template <typename Q> Scale(const Q* p) : Solid_type<TGeoScaledShape>(p) { }
-    /// Copy Constructor to be used with an existing object handle
-    template <typename Q> Scale(const Handle<Q>& e) : Solid_type<TGeoScaledShape>(e) { }
-
-    /// Constructor to create an anonymous new Scale object (retrieves name from volume)
-    Scale(Solid base_solid, double x_scale, double y_scale, double z_scale)
-    { make("", base_solid, x_scale, y_scale, z_scale);    }
-    /// Constructor to create a named new Scale object (retrieves name from volume)
-    Scale(const std::string& nam, Solid base_solid, double x_scale, double y_scale, double z_scale)
-    { make(nam.c_str(), base_solid, x_scale, y_scale, z_scale);    }
-
-    /// Constructor to create an anonymous new Scale object (retrieves name from volume)
-    template <typename X, typename Y, typename Z>
-    Scale(Solid base_solid, const X& x_scale, const Y& y_scale, const Z& z_scale)
-    { make("", base_solid, _toDouble(x_scale), _toDouble(y_scale), _toDouble(z_scale));    }
-    /// Constructor to create a named new Scale object (retrieves name from volume)
-    template <typename X, typename Y, typename Z>
-    Scale(const std::string& nam, Solid base_solid, const X& x_scale, const Y& y_scale, const Z& z_scale)
-    { make(nam.c_str(), base_solid, _toDouble(x_scale), _toDouble(y_scale), _toDouble(z_scale));  }
-
-    /// Move Assignment operator
-    Scale& operator=(Scale&& copy) = default;
-    /// Copy Assignment operator
-    Scale& operator=(const Scale& copy) = default;
-    /// Access x-scale factor
-    double scale_x() const;
-    /// Access y-scale factor
-    double scale_y() const;
-    /// Access z-scale factor
-    double scale_z() const;
   };
 
   /// Class describing a box shape
@@ -379,18 +284,7 @@ namespace dd4hep {
     HalfSpace& operator=(HalfSpace&& copy) = default;
     /// Copy Assignment operator
     HalfSpace& operator=(const HalfSpace& copy) = default;
-
-    /// Accessor: positioning point
-    Position position()  const   {
-      const double* pos = access()->GetPoint();
-      return {pos[0], pos[1], pos[2]};
-    }
-    /// Accessor: normal vector spanning plane at positioning point
-    Direction normal()  const   {
-      const double* n = access()->GetNorm();
-      return {n[0], n[1], n[2]};
-    }
-  };
+ };
 
   /// Class describing a cone shape
   /**
@@ -439,17 +333,6 @@ namespace dd4hep {
     Cone& operator=(const Cone& copy) = default;
     /// Set the box dimensions
     Cone& setDimensions(double z, double rmin1, double rmax1, double rmin2, double rmax2);
-
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min-1 value
-    double rMin1() const                   { return access()->GetRmin1();            }
-    /// Accessor: r-min-2 value
-    double rMin2() const                   { return access()->GetRmin2();            }
-    /// Accessor: r-max-1 value
-    double rMax1() const                   { return access()->GetRmax1();            }
-    /// Accessor: r-max-2 value
-    double rMax2() const                   { return access()->GetRmax2();            }
   };
 
   /// Class describing a Polycone shape
@@ -508,25 +391,6 @@ namespace dd4hep {
 
     /// Add Z-planes to the Polycone
     void addZPlanes(const std::vector<double>& rmin, const std::vector<double>& rmax, const std::vector<double>& z);
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: delta-phi value
-    double deltaPhi() const                { return access()->GetDphi()*dd4hep::deg; }
-
-    /// Accessor: z value
-    double z(int which) const              { return access()->GetZ(which);           }
-    /// Accessor: r-min value  
-    double rMin(int which) const           { return access()->GetRmin(which);        }
-    /// Accessor: r-max value
-    double rMax(int which) const           { return access()->GetRmax(which);        }
-
-    /// Accessor: vector of z-values for Z-planes value
-    std::vector<double> zPlaneZ() const    { return detail::zPlaneZ(this);           }
-    /// Accessor: vector of rMin-values for Z-planes value
-    std::vector<double> zPlaneRmin() const { return detail::zPlaneRmin(this);        }
-    /// Accessor: vector of rMax-values for Z-planes value
-    std::vector<double> zPlaneRmax() const { return detail::zPlaneRmax(this);        }
   };
 
   /// Class describing a cone segment shape
@@ -542,11 +406,6 @@ namespace dd4hep {
    *   \ingroup DD4HEP_CORE
    */
   class ConeSegment : public Solid_type<TGeoConeSeg> {
-    void make(const std::string& name,
-              double dz, 
-              double rmin1,     double rmax1,
-              double rmin2,     double rmax2,
-              double startPhi,  double endPhi);
   public:
     /// Default constructor
     ConeSegment() = default;
@@ -561,34 +420,11 @@ namespace dd4hep {
 
     /// Constructor to create a new ConeSegment object
     ConeSegment(double dz, double rmin1, double rmax1,
-                double rmin2, double rmax2, double startPhi = 0.0, double endPhi = 2.0 * M_PI)
-    {  make("", dz, rmin1, rmax1, rmin2, rmax2, startPhi, endPhi);   }
-    /// Constructor to create a new ConeSegment object
-    template <typename DZ,
-              typename RMIN1, typename RMAX1,
-              typename RMIN2, typename RMAX2,
-              typename STARTPHI, typename ENDPHI>
-    ConeSegment(DZ dz, RMIN1 rmin1, RMAX1 rmax1, RMIN2 rmin2, RMAX2 rmax2,
-                STARTPHI startPhi = 0.0, ENDPHI endPhi = 2.0 * M_PI)
-    {  make("", _toDouble(dz),
-            _toDouble(rmin1), _toDouble(rmax1),
-            _toDouble(rmin2), _toDouble(rmax2),
-            _toDouble(startPhi), _toDouble(endPhi));   }
+                double rmin2, double rmax2, double startPhi = 0.0, double endPhi = 2.0 * M_PI);
+
     /// Constructor to create a new named ConeSegment object
-    ConeSegment(const std::string& nam, double dz, double rmin1, double rmax1,
-                double rmin2, double rmax2, double startPhi = 0.0, double endPhi = 2.0 * M_PI)
-    {  make(nam, dz, rmin1, rmax1, rmin2, rmax2, startPhi, endPhi);  }
-    /// Constructor to create a new named ConeSegment object
-    template <typename DZ,
-              typename RMIN1, typename RMAX1,
-              typename RMIN2, typename RMAX2,
-              typename STARTPHI, typename ENDPHI>
-    ConeSegment(const std::string& nam, DZ dz, RMIN1 rmin1, RMAX1 rmax1, RMIN2 rmin2, RMAX2 rmax2,
-                STARTPHI startPhi = 0.0, ENDPHI endPhi = 2.0 * M_PI)
-    {  make(nam, _toDouble(dz),
-            _toDouble(rmin1), _toDouble(rmax1),
-            _toDouble(rmin2), _toDouble(rmax2),
-            _toDouble(startPhi), _toDouble(endPhi));   }
+    ConeSegment(const std::string& name, double dz, double rmin1, double rmax1,
+                double rmin2, double rmax2, double startPhi = 0.0, double endPhi = 2.0 * M_PI);
 
     /// Move Assignment operator
     ConeSegment& operator=(ConeSegment&& copy) = default;
@@ -598,21 +434,6 @@ namespace dd4hep {
     ConeSegment& setDimensions(double dz, double rmin1, double rmax1,
                                double rmin2, double rmax2,
                                double startPhi = 0.0, double endPhi = 2.0 * M_PI);
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: end-phi value
-    double endPhi() const                  { return access()->GetPhi2()*dd4hep::deg; }
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min-1 value
-    double rMin1() const                   { return access()->GetRmin1();            }
-    /// Accessor: r-min-2 value
-    double rMin2() const                   { return access()->GetRmin2();            }
-    /// Accessor: r-max-1 value
-    double rMax1() const                   { return access()->GetRmax1();            }
-    /// Accessor: r-max-2 value
-    double rMax2() const                   { return access()->GetRmax2();            }
   };
 
   /// Class describing a tube shape of a section of a tube
@@ -648,44 +469,25 @@ namespace dd4hep {
     Tube(double rmin, double rmax, double dz)
     {  this->make("", rmin, rmax, dz, 0, 2*M_PI);                   }
     /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ> Tube(RMIN rmin, RMAX rmax, DZ dz)
-    {  this->make("", _toDouble(rmin), _toDouble(rmax), _toDouble(dz), 0, 2*M_PI);            }
-    /// Constructor to create a new anonymous tube object with attribute initialization
     Tube(double rmin, double rmax, double dz, double endPhi)
     {  this->make("", rmin, rmax, dz, 0, endPhi);                   }
     /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ, typename ENDPHI>
-    Tube(RMIN rmin, RMAX rmax, DZ dz, ENDPHI endPhi)
-    {  this->make("", _toDouble(rmin), _toDouble(rmax), _toDouble(dz), 0, _toDouble(endPhi)); }
-    /// Constructor to create a new anonymous tube object with attribute initialization
     Tube(double rmin, double rmax, double dz, double startPhi, double endPhi)
     {  this->make("", rmin, rmax, dz, startPhi, endPhi);            }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ, typename STARTPHI, typename ENDPHI>
-    Tube(RMIN rmin, RMAX rmax, DZ dz, STARTPHI startPhi, ENDPHI endPhi)
-    {  this->make("", _toDouble(rmin), _toDouble(rmax), _toDouble(dz), _toDouble(startPhi), _toDouble(endPhi)); }
 
     /// Legacy: Constructor to create a new identifiable tube object with attribute initialization
     Tube(const std::string& nam, double rmin, double rmax, double dz)
     {  this->make(nam, rmin, rmax, dz, 0, 2*M_PI);                  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ>
-    Tube(const std::string& nam, RMIN rmin, RMAX rmax, DZ dz)
-    {  this->make(nam, _toDouble(rmin), _toDouble(rmax), _toDouble(dz), 0, 2*M_PI);          }
     /// Legacy: Constructor to create a new identifiable tube object with attribute initialization
     Tube(const std::string& nam, double rmin, double rmax, double dz, double endPhi)
     {  this->make(nam, rmin, rmax, dz, 0, endPhi);                   }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ, typename ENDPHI>
-    Tube(const std::string& nam, RMIN rmin, RMAX rmax, DZ dz, ENDPHI endPhi)
-    {  this->make(nam, _toDouble(rmin), _toDouble(rmax), _toDouble(dz), 0, _toDouble(endPhi)); }
     /// Legacy: Constructor to create a new identifiable tube object with attribute initialization
     Tube(const std::string& nam, double rmin, double rmax, double dz, double startPhi, double endPhi)
     {  this->make(nam, rmin, rmax, dz, startPhi, endPhi);            }
     /// Constructor to create a new anonymous tube object with attribute initialization
-    template <typename RMIN, typename RMAX, typename DZ, typename STARTPHI, typename ENDPHI>
-    Tube(const std::string& nam, RMIN rmin, RMAX rmax, DZ dz, STARTPHI startPhi, ENDPHI endPhi)
-    {  this->make(nam, _toDouble(rmin), _toDouble(rmax), _toDouble(dz), _toDouble(startPhi), _toDouble(endPhi)); }
+    template <typename RMIN, typename RMAX, typename Z, typename ENDPHI=double>
+    Tube(const RMIN& rmin, const RMAX& rmax, const Z& dz, const ENDPHI& endPhi = 2.0*M_PI)
+    {  this->make("", _toDouble(rmin), _toDouble(rmax), _toDouble(dz), 0, _toDouble(endPhi));   }
 
     /// Move Assignment operator
     Tube& operator=(Tube&& copy) = default;
@@ -693,17 +495,6 @@ namespace dd4hep {
     Tube& operator=(const Tube& copy) = default;
     /// Set the tube dimensions
     Tube& setDimensions(double rmin, double rmax, double dz, double startPhi=0.0, double endPhi=2*M_PI);
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: end-phi value
-    double endPhi() const                  { return access()->GetPhi2()*dd4hep::deg; }
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min value
-    double rMin() const                    { return access()->GetRmin();             }
-    /// Accessor: r-max value
-    double rMax() const                    { return access()->GetRmax();             }
   };
 
   /// Class describing a tube shape of a section of a cut tube segment
@@ -747,21 +538,6 @@ namespace dd4hep {
     CutTube& operator=(CutTube&& copy) = default;
     /// Copy Assignment operator
     CutTube& operator=(const CutTube& copy) = default;
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: end-phi value
-    double endPhi() const                  { return access()->GetPhi2()*dd4hep::deg; }
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min value
-    double rMin() const                    { return access()->GetRmin();             }
-    /// Accessor: r-max value
-    double rMax() const                    { return access()->GetRmax();             }
-    /// Accessor: lower normal vector of cut plane
-    std::vector<double> lowNormal()  const { return detail::_make_vector(access()->GetNlow(), 3);  }
-    /// Accessor: upper normal vector of cut plane
-    std::vector<double> highNormal() const { return detail::_make_vector(access()->GetNhigh(), 3); }
   };
 
   
@@ -772,7 +548,7 @@ namespace dd4hep {
    *
    *   The Solid::dimension() and Solid::setDimension() calls for the TruncatedTube
    *   deliver/expect the parameters in the same order as the constructor:
-   *   (dz, rmin, rmax, startPhi, deltaPhi, cutAtStart, cutAtDelta, cutInside)
+   *   (zhalf, rmin, rmax, startPhi, deltaPhi, cutAtStart, cutAtDelta, cutInside)
    *
    *   \author  M.Frank
    *   \version 1.0
@@ -782,7 +558,7 @@ namespace dd4hep {
   protected:
     /// Internal helper method to support object construction
     void make(const std::string& name,
-              double dz, double rmin, double rmax, double startPhi, double deltaPhi,
+              double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
               double cutAtStart, double cutAtDelta, bool cutInside);
 
   public:
@@ -798,37 +574,21 @@ namespace dd4hep {
     template <typename Q> TruncatedTube(const Handle<Q>& e) : Solid_type<Object>(e) {  }
 
     /// Constructor to create a truncated tube object with attribute initialization
-    TruncatedTube(double dz, double rmin, double rmax, double startPhi, double deltaPhi,
+    TruncatedTube(double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
                   double cutAtStart, double cutAtDelta, bool cutInside);
 
     /// Constructor to create a truncated tube object with attribute initialization
     TruncatedTube(const std::string& name,
-                  double dz, double rmin, double rmax, double startPhi, double deltaPhi,
+                  double zhalf, double rmin, double rmax, double startPhi, double deltaPhi,
                   double cutAtStart, double cutAtDelta, bool cutInside);
 
     /// Move Assignment operator
     TruncatedTube& operator=(TruncatedTube&& copy) = default;
     /// Copy Assignment operator
     TruncatedTube& operator=(const TruncatedTube& copy) = default;
-    /// Accessor: z-half value
-    double dZ() const;
-    /// Accessor: r-min value
-    double rMin() const;
-    /// Accessor: r-max value
-    double rMax() const;
-    /// Accessor: start-phi value
-    double startPhi() const;
-    /// Accessor: delta-phi value
-    double deltaPhi() const;
-    /// Accessor: cut at start value
-    double cutAtStart() const;
-    /// Accessor: cut at delta value
-    double cutAtDelta() const;
-    /// Accessor: cut-inside value
-    bool cutInside() const;
   };
   
-  /// Class describing a twisted tube shape
+  /// Class describing a elliptical tube shape
   /**
    *   TGeoEltu - cylindrical tube class. It takes 3 parameters :
    *            Semi axis of ellipsis in x and y and half-length dz.
@@ -878,90 +638,6 @@ namespace dd4hep {
     EllipticalTube& operator=(const EllipticalTube& copy) = default;
     /// Set the tube dimensions
     EllipticalTube& setDimensions(double a, double b, double dz);
-
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: a value (semi axis along x)
-    double a() const                       { return access()->GetA();                }
-    /// Accessor: b value (semi axis along y)
-    double b() const                       { return access()->GetB();                }
-  };
-
-  /// Class describing a twisted tube shape
-  /**
-   *   This is actually no TGeo shape. This implementation is a placeholder
-   *   for the Geant4 implementation G4TwistedTube.
-   *   In root it is implemented by a simple tube segment.
-   *   When converted to geant4 it will become a G4TwistedTube.
-   *
-   *
-   *   \author  M.Frank
-   *   \version 1.0
-   *   \ingroup DD4HEP_CORE
-   */
-  class TwistedTube : public Solid_type<TGeoTubeSeg> {
-  protected:
-    /// Internal helper method to support TwistedTube object construction
-    void make(const std::string& nam, double twist_angle, double rmin, double rmax,
-              double zneg, double zpos, int nsegments, double totphi);
-
-  public:
-    /// Default constructor
-    TwistedTube() = default;
-    /// Move Constructor
-    TwistedTube(TwistedTube&& e) = default;
-    /// Copy Constructor
-    TwistedTube(const TwistedTube& e) = default;
-    /// Constructor to be used with an existing object
-    template <typename Q> TwistedTube(const Q* p) : Solid_type<Object>(p) {   }
-    /// Constructor to assign an object
-    template <typename Q> TwistedTube(const Handle<Q>& e) : Solid_type<Object>(e) {   }
-
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(double twist_angle, double rmin, double rmax,
-                double dz, double dphi)
-    {  this->make("", twist_angle, rmin, rmax, -dz, dz, 1, dphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(double twist_angle, double rmin, double rmax,
-                double dz, int nsegments, double totphi)
-    {  this->make("", twist_angle, rmin, rmax, -dz, dz, nsegments, totphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(double twist_angle, double rmin, double rmax,
-                double zneg, double zpos, double totphi)
-    {  this->make("", twist_angle, rmin, rmax, zneg, zpos, 1, totphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(double twist_angle, double rmin, double rmax,
-                double zneg, double zpos, int nsegments, double totphi)
-    {  this->make("", twist_angle, rmin, rmax, zneg, zpos, nsegments, totphi);  }
-
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(const std::string& nam, double twist_angle, double rmin, double rmax,
-                double dz, double dphi)
-    {  this->make(nam, twist_angle, rmin, rmax, -dz, dz, 1, dphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(const std::string& nam, double twist_angle, double rmin, double rmax,
-                double dz, int nsegments, double totphi)
-    {  this->make(nam, twist_angle, rmin, rmax, -dz, dz, nsegments, totphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(const std::string& nam, double twist_angle, double rmin, double rmax,
-                double zneg, double zpos, double totphi)
-    {  this->make(nam, twist_angle, rmin, rmax, zneg, zpos, 1, totphi);  }
-    /// Constructor to create a new anonymous tube object with attribute initialization
-    TwistedTube(const std::string& nam, double twist_angle, double rmin, double rmax,
-                double zneg, double zpos, int nsegments, double totphi)
-    {  this->make(nam, twist_angle, rmin, rmax, zneg, zpos, nsegments, totphi);  }
-
-    /// Constructor to create a new identified tube object with attribute initialization
-    template <typename A, typename B, typename DZ>
-    TwistedTube(const std::string& nam, const A& a, const B& b, const DZ& dz)
-    {  this->make(nam, _toDouble(a), _toDouble(b), _toDouble(dz));   }
-
-    /// Move Assignment operator
-    TwistedTube& operator=(TwistedTube&& copy) = default;
-    /// Copy Assignment operator
-    TwistedTube& operator=(const TwistedTube& copy) = default;
-    /// Set the tube dimensions
-    TwistedTube& setDimensions(double a, double b, double dz);
   };
 
   /// Class describing a trap shape
@@ -1021,29 +697,6 @@ namespace dd4hep {
     Trap& setDimensions(double z, double theta, double phi,
                         double h1, double bl1, double tl1, double alpha1,
                         double h2, double bl2, double tl2, double alpha2);
-
-    /// Accessor: phi value
-    double phi() const                     { return access()->GetPhi()*dd4hep::deg;    }
-    /// Accessor: theta value
-    double theta() const                   { return access()->GetTheta()*dd4hep::deg;  }
-    /// Angle between centers of x edges and y axis at low z
-    double alpha1()  const                 { return access()->GetAlpha1()*dd4hep::deg; }
-    /// Angle between centers of x edges and y axis at low z
-    double alpha2()  const                 { return access()->GetAlpha2()*dd4hep::deg; }
-    /// Half length in x at low z and y low edge
-    double bottomLow1()  const             { return access()->GetBl1();                }
-    /// Half length in x at high z and y low edge
-    double bottomLow2()  const             { return access()->GetBl2();                }
-    /// Half length in x at low z and y high edge
-    double topLow1()  const                { return access()->GetTl1();                }
-    /// Half length in x at high z and y high edge
-    double topLow2()  const                { return access()->GetTl2();                }
-    /// Half length in y at low z
-    double high1()  const                  { return access()->GetH1();                 }
-    /// Half length in y at high z
-    double high2()  const                  { return access()->GetH2();                 }
-    /// Half length in dZ
-    double dZ()  const                     { return access()->GetDz();                 }
   };
 
   /// Class describing a pseudo trap shape (CMS'ism)
@@ -1141,15 +794,6 @@ namespace dd4hep {
     Trd1& operator=(const Trd1& copy) = default;
     /// Set the Trd1 dimensions
     Trd1& setDimensions(double x1, double x2, double y, double z);
-
-    /// Accessor: delta-x1 value
-    double dX1() const                     { return access()->GetDx1();              }
-    /// Accessor: delta-x2 value
-    double dX2() const                     { return access()->GetDx2();              }
-    /// Accessor: delta-y value
-    double dY() const                      { return access()->GetDy();               }
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
   };
   
   /// Class describing a Trd2 shape
@@ -1201,17 +845,6 @@ namespace dd4hep {
     Trd2& operator=(const Trd2& copy) = default;
     /// Set the Trd2 dimensions
     Trd2& setDimensions(double x1, double x2, double y1, double y2, double z);
-
-    /// Accessor: delta-x1 value
-    double dX1() const                     { return access()->GetDx1();              }
-    /// Accessor: delta-x2 value
-    double dX2() const                     { return access()->GetDx2();              }
-    /// Accessor: delta-y1 value
-    double dY1() const                     { return access()->GetDy1();              }
-    /// Accessor: delta-y2 value
-    double dY2() const                     { return access()->GetDy2();              }
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
   };
   /// Shortcut name definition
   typedef Trd2 Trapezoid;
@@ -1263,18 +896,6 @@ namespace dd4hep {
     Torus& operator=(const Torus& copy) = default;
     /// Set the Torus dimensions
     Torus& setDimensions(double r, double rmin, double rmax, double startPhi, double deltaPhi);
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: delta-phi value
-    double deltaPhi() const                { return access()->GetDphi()*dd4hep::deg; }
-
-    /// Accessor: r value (torus axial radius)
-    double r() const                       { return access()->GetR();                }
-    /// Accessor: r-min value (inner radius)
-    double rMin() const                    { return access()->GetRmin();             }
-    /// Accessor: r-max value (outer radius)
-    double rMax() const                    { return access()->GetRmax();             }
   };
 
   /// Class describing a sphere shape
@@ -1315,11 +936,11 @@ namespace dd4hep {
     template<typename RMIN,              typename RMAX,
              typename STARTTHETA=double, typename ENDTHETA=double,
              typename STARTPHI=double,   typename ENDPHI=double>
-    Sphere(RMIN       rmin,              RMAX     rmax,
+    Sphere(RMIN  rmin,                   RMAX     rmax,
            STARTTHETA startTheta = 0.0,  ENDTHETA endTheta = M_PI,
            STARTPHI   startPhi   = 0.0,  ENDPHI   endPhi   = 2. * M_PI)  {
       this->make("",
-                 _toDouble(rmin),       _toDouble(rmax),
+                 _toDOuble(rmin),       _toDouble(rmax),
                  _toDouble(startTheta), _toDouble(endTheta),
                  _toDouble(startPhi),   _toDouble(endPhi));
     }
@@ -1335,11 +956,11 @@ namespace dd4hep {
              typename STARTTHETA=double, typename ENDTHETA=double,
              typename STARTPHI=double,   typename ENDPHI=double>
     Sphere(const std::string& nam,
-           RMIN       rmin,              RMAX     rmax,
+           RMIN  rmin,                   RMAX     rmax,
            STARTTHETA startTheta = 0.0,  ENDTHETA endTheta = M_PI,
            STARTPHI   startPhi   = 0.0,  ENDPHI   endPhi   = 2. * M_PI)  {
       this->make(nam,
-                 _toDouble(rmin),       _toDouble(rmax),
+                 _toDOuble(rmin),       _toDouble(rmax),
                  _toDouble(startTheta), _toDouble(endTheta),
                  _toDouble(startPhi),   _toDouble(endPhi));
     }
@@ -1352,19 +973,6 @@ namespace dd4hep {
     Sphere& setDimensions(double rmin,       double rmax,
                           double startTheta, double endTheta,
                           double startPhi,   double endPhi);
-
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg;   }
-    /// Accessor: end-phi value 
-    double endPhi() const                  { return access()->GetPhi2()*dd4hep::deg;   }
-    /// Accessor: start-theta value
-    double startTheta() const              { return access()->GetTheta1()*dd4hep::deg; }
-    /// Accessor: end-theta value
-    double endTheta() const                { return access()->GetTheta2()*dd4hep::deg; }
-    /// Accessor: r-min value
-    double rMin() const                    { return access()->GetRmin();               }
-    /// Accessor: r-max value
-    double rMax() const                    { return access()->GetRmax();               }
   };
 
   /// Class describing a Paraboloid shape
@@ -1414,13 +1022,6 @@ namespace dd4hep {
     Paraboloid& operator=(const Paraboloid& copy) = default;
     /// Set the Paraboloid dimensions
     Paraboloid& setDimensions(double r_low, double r_high, double delta_z);
-
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min value
-    double rLow() const                    { return access()->GetRlo();              }
-    /// Accessor: r-max value
-    double rHigh() const                   { return access()->GetRhi();              }
   };
 
   /// Class describing a Hyperboloid shape
@@ -1470,17 +1071,6 @@ namespace dd4hep {
     Hyperboloid& operator=(const Hyperboloid& copy) = default;
     /// Set the Hyperboloid dimensions
     Hyperboloid& setDimensions(double rin, double stin, double rout, double stout, double dz);
-
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: r-min value
-    double rMin() const                    { return access()->GetRmin();             }
-    /// Accessor: r-max value
-    double rMax() const                    { return access()->GetRmax();             }
-    /// Stereo angle for inner surface
-    double stereoInner()  const            { return access()->GetStIn();             }
-    /// Stereo angle for outer surface
-    double stereoOuter()  const            { return access()->GetStOut();            }
   };
 
   /// Class describing a regular polyhedron shape
@@ -1511,27 +1101,9 @@ namespace dd4hep {
     /// Constructor to create a new object. Phi(start)=0, deltaPhi=2PI, Z-planes at -zlen/2 and +zlen/2
     PolyhedraRegular(int nsides, double rmin, double rmax, double zlen)
     { this->make("", nsides, rmin, rmax, zlen / 2, -zlen / 2, 0, 2.0*M_PI);           }
-    /// Constructor to create a new object. Phi(start)=0, deltaPhi=2PI, Z-planes at -zlen/2 and +zlen/2
-    template <typename NSIDES, typename RMIN, typename RMAX, typename ZLEN>
-    PolyhedraRegular(NSIDES nsides, RMIN rmin, RMAX rmax, ZLEN zlen)
-    {
-      this->make("", _toDouble(nsides),
-                 _toDouble(rmin), _toDouble(rmax),
-                 _toDouble(zlen) / 2, -_toDouble(zlen) / 2,
-                 0, 2.0*M_PI);
-    }
     /// Constructor to create a new object with phi_start, deltaPhi=2PI, Z-planes at -zlen/2 and +zlen/2
     PolyhedraRegular(int nsides, double phi_start, double rmin, double rmax, double zlen)
     { this->make("", nsides, rmin, rmax, zlen / 2, -zlen / 2, phi_start, 2.0*M_PI);   }
-    /// Constructor to create a new object with phi_start, deltaPhi=2PI, Z-planes at -zlen/2 and +zlen/2
-    template <typename NSIDES, typename PHI_START, typename RMIN, typename RMAX, typename ZLEN>
-    PolyhedraRegular(NSIDES nsides, PHI_START phi_start, RMIN rmin, RMAX rmax, ZLEN zlen)
-    {
-      this->make("", _toDouble(nsides),
-                 _toDouble(rmin), _toDouble(rmax),
-                 _toDouble(zlen) / 2, -_toDouble(zlen) / 2,
-                 _toDouble(phi_start), 2.0*M_PI);
-    }
     /// Constructor to create a new object. Phi(start)=0, deltaPhi=2PI, Z-planes a zplanes[0] and zplanes[1]
     PolyhedraRegular(int nsides, double rmin, double rmax, double zplanes[2])
     { this->make("", nsides, rmin, rmax, zplanes[0], zplanes[1], 0, 2.0*M_PI);        }
@@ -1549,27 +1121,6 @@ namespace dd4hep {
     PolyhedraRegular& operator=(PolyhedraRegular&& copy) = default;
     /// Copy Assignment operator
     PolyhedraRegular& operator=(const PolyhedraRegular& copy) = default;
-
-    /// Accessor: Number of edges
-    int numEdges()  const                  { return access()->GetNedges();           }
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: delta-phi value
-    double deltaPhi() const                { return access()->GetDphi()*dd4hep::deg; }
-
-    /// Accessor: r-min value
-    double z(int which) const              { return access()->GetZ(which);           }
-    /// Accessor: r-min value
-    double rMin(int which) const           { return access()->GetRmin(which);        }
-    /// Accessor: r-max value
-    double rMax(int which) const           { return access()->GetRmax(which);        }
-
-    /// Accessor: vector of z-values for Z-planes value
-    std::vector<double> zPlaneZ() const    { return detail::zPlaneZ(this);           }
-    /// Accessor: vector of rMin-values for Z-planes value
-    std::vector<double> zPlaneRmin() const { return detail::zPlaneRmin(this);        }
-    /// Accessor: vector of rMax-values for Z-planes value
-    std::vector<double> zPlaneRmax() const { return detail::zPlaneRmax(this);        }
   };
 
   /// Class describing a regular polyhedron shape
@@ -1625,27 +1176,6 @@ namespace dd4hep {
     Polyhedra& operator=(Polyhedra&& copy) = default;
     /// Copy Assignment operator
     Polyhedra& operator=(const Polyhedra& copy) = default;
-
-    /// Accessor: Number of edges
-    int numEdges()  const                  { return access()->GetNedges();           }
-    /// Accessor: start-phi value
-    double startPhi() const                { return access()->GetPhi1()*dd4hep::deg; }
-    /// Accessor: delta-phi value
-    double deltaPhi() const                { return access()->GetDphi()*dd4hep::deg; }
-
-    /// Accessor: z value
-    double z(int which) const              { return access()->GetZ(which);           }
-    /// Accessor: r-min value
-    double rMin(int which) const           { return access()->GetRmin(which);        }
-    /// Accessor: r-max value
-    double rMax(int which) const           { return access()->GetRmax(which);        }
-
-    /// Accessor: vector of z-values for Z-planes value
-    std::vector<double> zPlaneZ() const    { return detail::zPlaneZ(this);           }
-    /// Accessor: vector of rMin-values for Z-planes value
-    std::vector<double> zPlaneRmin() const { return detail::zPlaneRmin(this);        }
-    /// Accessor: vector of rMax-values for Z-planes value
-    std::vector<double> zPlaneRmax() const { return detail::zPlaneRmax(this);        }
   };
 
   /// Class describing a extruded polygon shape
@@ -1701,13 +1231,6 @@ namespace dd4hep {
     ExtrudedPolygon& operator=(ExtrudedPolygon&& copy) = default;
     /// Copy Assignment operator
     ExtrudedPolygon& operator=(const ExtrudedPolygon& copy) = default;
-
-    std::vector<double> x() const   {  return detail::_extract_vector(this->access(), &TGeoXtru::GetX, &TGeoXtru::GetNvert); }
-    std::vector<double> y() const   {  return detail::_extract_vector(this->access(), &TGeoXtru::GetY, &TGeoXtru::GetNvert); }
-    std::vector<double> z() const   {  return detail::zPlaneZ(this); }
-    std::vector<double> zx() const  {  return detail::_extract_vector(this->access(), &TGeoXtru::GetXOffset, &TGeoXtru::GetNz); }
-    std::vector<double> zy() const  {  return detail::_extract_vector(this->access(), &TGeoXtru::GetYOffset, &TGeoXtru::GetNz); }
-    std::vector<double> zscale() const { return detail::_extract_vector(this->access(), &TGeoXtru::GetScale, &TGeoXtru::GetNz); }
   };
 
   /// Class describing an arbitray solid defined by 8 vertices.
@@ -1747,94 +1270,8 @@ namespace dd4hep {
     EightPointSolid& operator=(EightPointSolid&& copy) = default;
     /// Copy Assignment operator
     EightPointSolid& operator=(const EightPointSolid& copy) = default;
-
-    /// Accessor: delta-z value
-    double dZ() const                      { return access()->GetDz();               }
-    /// Accessor: all vertices as STL vector
-    std::vector<double> vertices() const   {
-      const double* values = access()->GetVertices();
-      return detail::_make_vector(values, 8*2);
-    }
-    /// Accessor: single vertex
-    std::pair<double, double> vertex(int which) const   {
-      const double* values = access()->GetVertices();
-      return std::make_pair(values[2*which], values[2*which+1]);
-    }
   };
 
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,21,0)
-  /// Class describing a tessellated shape
-  /**
-   *   For any further documentation please see the following ROOT documentation:
-   *   \see http://root.cern.ch/root/html/TGeoTessellated.html
-   *
-   *   \author  M.Frank
-   *   \version 1.0
-   *   \ingroup DD4HEP_CORE
-   */
-  class TessellatedSolid : public Solid_type<TGeoTessellated> {
-  private:
-    /// Internal helper method to support object construction
-    void make(const std::string& nam, int num_facets);
-    /// Internal helper method to support object construction
-    void make(const std::string& nam, const std::vector<Object::Vertex_t>& vertices);
-
-  public:
-    typedef Object::Vertex_t  Vertex;
-    typedef TGeoFacet         Facet;
-
-  public:
-    /// Default constructor
-    TessellatedSolid() = default;
-    /// Move Constructor
-    TessellatedSolid(TessellatedSolid&& e) = default;
-    /// Copy Constructor
-    TessellatedSolid(const TessellatedSolid& e) = default;
-    /// Constructor to be used with an existing object
-    template <typename Q> TessellatedSolid(const Q* p) : Solid_type<Object>(p) { }
-    /// Constructor to be used when passing an already created object
-    template <typename Q> TessellatedSolid(const Handle<Q>& e) : Solid_type<Object>(e) { }
-
-    /// Constructor to create a new anonymous object with attribute initialization
-    TessellatedSolid(int num_facets)
-    { this->make("", num_facets);    }
-
-    /// Constructor to create a new identified object with attribute initialization
-    TessellatedSolid(const std::vector<Vertex>& vertices)
-    { this->make("", vertices);   }
-
-    /// Constructor to create a new anonymous object with attribute initialization
-    TessellatedSolid(const std::string& nam, int num_facets)
-    { this->make(nam, num_facets);    }
-
-    /// Constructor to create a new identified object with attribute initialization
-    TessellatedSolid(const std::string& nam, const std::vector<Vertex>& vertices)
-    { this->make(nam, vertices);   }
-
-    /// Move Assignment operator
-    TessellatedSolid& operator=(TessellatedSolid&& copy) = default;
-    /// Copy Assignment operator
-    TessellatedSolid& operator=(const TessellatedSolid& copy) = default;
-    /// Add new facet to the shape
-    bool addFacet(const Vertex& pt0, const Vertex& pt1, const Vertex& pt2)  const;
-    /// Add new facet to the shape
-    bool addFacet(const Vertex& pt0, const Vertex& pt1, const Vertex& pt2, const Vertex& pt3)  const;
-    /// Add new facet to the shape. Call only if the tessellated shape was constructed with vertices
-    bool addFacet(const int pt0, const int pt1, const int pt2)  const;
-    /// Add new facet to the shape. Call only if the tessellated shape was constructed with vertices
-    bool addFacet(const int pt0, const int pt1, const int pt2, const int pt3)  const;
-
-    /// Access the number of facets in the shape
-    int num_facet()   const;
-    /// Access a facet from the built shape
-    const Facet& facet(int index)    const;
-    /// Access the number of vertices in the shape
-    int num_vertex()   const;
-    /// Access a single vertex from the shape
-    const Vertex& vertex(int index)    const;
-  };
-#endif
-  
   /// Base class describing boolean (=union,intersection,subtraction) solids
   /**
    *   For any further documentation please see the following ROOT documentation:
@@ -1859,14 +1296,6 @@ namespace dd4hep {
     BooleanSolid& operator=(BooleanSolid&& copy) = default;
     /// Copy Assignment operator
     BooleanSolid& operator=(const BooleanSolid& copy) = default;
-    /// Access right solid of the boolean
-    Solid rightShape()  const;
-    /// Access left solid of the boolean
-    Solid leftShape()  const;
-    /// Access right positioning matrix of the boolean
-    const TGeoMatrix* rightMatrix()  const;
-    /// Access left positioning matrix of the boolean
-    const TGeoMatrix* leftMatrix()  const;
   };
 
   /// Class describing boolean subtraction solid
@@ -2014,4 +1443,4 @@ namespace dd4hep {
   };
 
 }         /* End namespace dd4hep             */
-#endif // DD4HEP_SHAPES_H
+#endif    /* DD4HEP_DDCORE_SOLIDS_H         */

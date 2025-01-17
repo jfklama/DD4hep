@@ -11,14 +11,14 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4HANDLE_H
-#define DDG4_GEANT4HANDLE_H
+#ifndef DD4HEP_DDG4_GEANT4SETUP_H
+#define DD4HEP_DDG4_GEANT4SETUP_H
 
-/// Framework include files
+// Framework include files
 #include "DD4hep/ComponentProperties.h"
 #include "DD4hep/Detector.h"
 
-/// C/C++ include files
+// C/C++ include files
 #include <string>
 #include <memory>
 
@@ -41,10 +41,10 @@ namespace dd4hep {
     template <typename TYPE> class Geant4Handle {
     protected:
       void checked_assign(TYPE* p);
-      TYPE* null()  { return nullptr; }
+      TYPE* null()  { return 0; }
     public:
       /// Pointer to referenced object
-      mutable TYPE* value  {nullptr};
+      mutable TYPE* value = 0;
       /// Default constructor
       explicit Geant4Handle() = default;
       /// Construction initialized with object pointer
@@ -96,7 +96,7 @@ namespace dd4hep {
     class KernelHandle {
     public:
       /// Pointer to referenced object
-      mutable Geant4Kernel* value {nullptr};
+      mutable Geant4Kernel* value;
       /// Default constructor
       explicit KernelHandle();
       /// Construction initialized with object pointer
@@ -120,4 +120,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4HANDLE_H
+#endif // DD4HEP_DDG4_GEANT4SETUP_H

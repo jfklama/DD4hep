@@ -17,7 +17,6 @@
 #include "DDG4/Geant4Context.h"
 #include "DDG4/Geant4Primary.h"
 #include "DDG4/Geant4ParticleGenerator.h"
-#include "DDG4/Geant4Random.h"
 #include "CLHEP/Units/SystemOfUnits.h"
 
 // Geant4 include files
@@ -28,6 +27,8 @@
 #include <stdexcept>
 #include <cmath>
 
+using CLHEP::MeV;
+using CLHEP::GeV;
 using namespace std;
 using namespace dd4hep::sim;
 
@@ -38,14 +39,11 @@ Geant4ParticleGenerator::Geant4ParticleGenerator(Geant4Context* ctxt, const stri
   InstanceCount::increment(this);
   m_needsControl = true;
   declareProperty("Particle",      m_particleName = "e-");
-  declareProperty("Energy",        m_energy = -1);
-  declareProperty("energy",        m_energy = -1);
-  declareProperty("MomentumMin",   m_momentumMin = 0.0);
-  declareProperty("MomentumMax",   m_momentumMax = 50 * CLHEP::MeV);
+  declareProperty("Energy",        m_energy = 50 * CLHEP::MeV);
   declareProperty("Multiplicity",  m_multiplicity = 1);
   declareProperty("Mask",          m_mask = 0);
-  declareProperty("Position",      m_position = ROOT::Math::XYZVector(0.,0.,0.));
-  declareProperty("Direction",     m_direction = ROOT::Math::XYZVector(1.,1.,1.));
+  declareProperty("Position",      m_position);
+  declareProperty("Direction",     m_direction);
 }
 
 /// Default destructor
@@ -53,24 +51,8 @@ Geant4ParticleGenerator::~Geant4ParticleGenerator() {
   InstanceCount::decrement(this);
 }
 
-/// Particle modification. Caller presets defaults to: ( direction = m_direction, momentum = [mMin, mMax])
-void Geant4ParticleGenerator::getParticleDirection(int , ROOT::Math::XYZVector& , double& momentum) const {
-  getParticleMomentumUniform(momentum);
-}
-
-/// Uniform momentum distribution
-void Geant4ParticleGenerator::getParticleMomentumUniform(double& momentum) const {
-  if (m_energy != -1) {
-    momentum = m_energy;
-    return;
-  }
-  Geant4Event&  evt = context()->event();
-  Geant4Random& rnd = evt.random();
-  if (m_momentumMax < m_momentumMin)
-    // We no longer set m_momentumMax to -1 so, not entirely sure a) this will still happen, b) actually work
-    momentum = m_momentumMin+(momentum-m_momentumMin)*rnd.rndm();
-  else
-    momentum = m_momentumMin+(m_momentumMax-m_momentumMin)*rnd.rndm();
+/// Particle modification. Caller presets defaults to: ( direction = m_direction, momentum = m_energy)
+void Geant4ParticleGenerator::getParticleDirection(int , ROOT::Math::XYZVector& , double& ) const   {
 }
 
 /// Particle modification. Caller presets defaults to: (multiplicity=m_multiplicity)
@@ -81,7 +63,7 @@ void Geant4ParticleGenerator::getParticleMultiplicity(int& ) const   {
 void Geant4ParticleGenerator::getVertexPosition(ROOT::Math::XYZVector& ) const   {
 }
 
-/// Print single particle interaction identified by its mask
+/// Print single particle interaction identified by it's mask
 void Geant4ParticleGenerator::printInteraction(int mask)  const  {
   Geant4PrimaryEvent* prim = context()->event().extension<Geant4PrimaryEvent>();
   if ( !prim )   {
@@ -96,7 +78,7 @@ void Geant4ParticleGenerator::printInteraction(int mask)  const  {
   printInteraction(inter);
 }
 
-/// Print single particle interaction identified by its reference
+/// Print single particle interaction identified by it's reference
 void Geant4ParticleGenerator::printInteraction(Geant4PrimaryInteraction* inter)  const  {
   int count = 0;
   if ( !inter )   {
@@ -105,8 +87,8 @@ void Geant4ParticleGenerator::printInteraction(Geant4PrimaryInteraction* inter) 
   }
   for(const auto& iv : inter->vertices )   {
     for( Geant4Vertex* v : iv.second ){
-      print("+-> Interaction [%d] [%.3f , %.3f] GeV %s pos:(%.3f %.3f %.3f)[mm]",
-            count, m_momentumMin/CLHEP::GeV, m_momentumMax/CLHEP::GeV, m_particleName.c_str(),
+      print("+-> Interaction [%d] %.3f GeV %s pos:(%.3f %.3f %.3f)[mm]",
+            count, m_energy/CLHEP::GeV, m_particleName.c_str(),
             v->x/CLHEP::mm, v->y/CLHEP::mm, v->z/CLHEP::mm);
       ++count;
       for ( int i : v->out )  {
@@ -135,7 +117,7 @@ void Geant4ParticleGenerator::operator()(G4Event*) {
 
   Geant4Vertex* vtx = new Geant4Vertex();
   int multiplicity = m_multiplicity;
-  ROOT::Math::XYZVector unit_direction, position = m_position;
+  ROOT::Math::XYZVector unit_direction, direction, position = m_position;
   getVertexPosition(position);
   getParticleMultiplicity(multiplicity);
   vtx->mask = m_mask;
@@ -144,21 +126,21 @@ void Geant4ParticleGenerator::operator()(G4Event*) {
   vtx->z = position.Z();
   inter->vertices[m_mask].emplace_back( vtx );
   for(int i=0; i<m_multiplicity; ++i)   {
-    double momentum = 0.0;
-    ROOT::Math::XYZVector direction = m_direction;
+    double momentum = m_energy;
     Particle* p = new Particle();
+    direction = m_direction;
     getParticleDirection(i, direction, momentum);
-    unit_direction  = direction.unit();
-    p->id           = inter->nextPID();
-    p->status      |= G4PARTICLE_GEN_STABLE;
-    p->mask         = m_mask;
-    p->pdgID        = m_particle->GetPDGEncoding();
+    unit_direction = direction.unit();
+    p->id         = inter->nextPID();
+    p->status    |= G4PARTICLE_GEN_STABLE;
+    p->mask       = m_mask;
+    p->pdgID      = m_particle->GetPDGEncoding();
 
-    p->psx          = unit_direction.X()*momentum;
-    p->psy          = unit_direction.Y()*momentum;
-    p->psz          = unit_direction.Z()*momentum;
-    p->mass         = m_particle->GetPDGMass();
-    p->charge       = 3 * m_particle->GetPDGCharge();
+    p->psx        = unit_direction.X()*momentum;
+    p->psy        = unit_direction.Y()*momentum;
+    p->psz        = unit_direction.Z()*momentum;
+    p->mass       = m_particle->GetPDGMass();
+    p->charge       = m_particle->GetPDGCharge();
     p->spin[0]      = 0;
     p->spin[1]      = 0;
     p->spin[2]      = 0;
@@ -173,9 +155,8 @@ void Geant4ParticleGenerator::operator()(G4Event*) {
     // p->vez        = vtx->z;
     inter->particles.emplace(p->id,p);
     vtx->out.insert(p->id);
-    printout(INFO,name(),"Particle [%d] %-12s Mom:%.3f GeV vertex:(%6.3f %6.3f %6.3f)[mm] direction:(%6.3f %6.3f %6.3f)",
-             p->id, m_particleName.c_str(), momentum/CLHEP::GeV,
-	     vtx->x/CLHEP::mm, vtx->y/CLHEP::mm, vtx->z/CLHEP::mm,
+    printout(INFO,name(),"Particle [%d] %s %.3f GeV direction:(%6.3f %6.3f %6.3f)",
+             p->id, m_particleName.c_str(), momentum/CLHEP::GeV, 
 	     direction.X(), direction.Y(), direction.Z());
 
   }

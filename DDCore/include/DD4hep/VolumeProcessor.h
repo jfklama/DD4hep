@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_VOLUMEPROCESSOR_H
-#define DD4HEP_VOLUMEPROCESSOR_H
+#ifndef DD4HEP_DDCORE_VOLUMEPROCESSOR_H
+#define DD4HEP_DDCORE_VOLUMEPROCESSOR_H
 
 // Framework includes
 #include "DD4hep/DetElement.h"
@@ -43,7 +43,7 @@ namespace dd4hep {
     /// Default copy constructor
     PlacedVolumeProcessor(const PlacedVolumeProcessor& copy) = default;
     /// Default destructor
-    virtual ~PlacedVolumeProcessor() noexcept(false);
+    virtual ~PlacedVolumeProcessor();
     /// Default assignment
     PlacedVolumeProcessor& operator=(const PlacedVolumeProcessor& copy) = default;
     /// Callback to output PlacedVolume information of an single Placement
@@ -179,4 +179,4 @@ namespace dd4hep {
     }
   };
 }      /* End namespace dd4hep               */
-#endif // DD4HEP_VOLUMEPROCESSOR_H
+#endif /* DD4HEP_DDCORE_VOLUMEPROCESSOR_H    */

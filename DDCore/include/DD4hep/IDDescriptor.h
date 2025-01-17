@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_IDDESCRIPTOR_H
-#define DD4HEP_IDDESCRIPTOR_H
+#ifndef DD4HEP_DDCORE_IDDESCRIPTOR_H
+#define DD4HEP_DDCORE_IDDESCRIPTOR_H
 
 // Framework include files
 #include "DD4hep/Handle.h"
@@ -36,9 +36,8 @@ namespace dd4hep {
    */
   class IDDescriptor: public Handle<IDDescriptorObject> {
   public:
-    typedef BitFieldElement                                    Field;
-    typedef std::vector<std::pair<std::string, const Field*> > FieldMap;
-    typedef std::vector<std::pair<size_t, std::string> >       FieldIDs;
+    typedef std::vector<std::pair<std::string, const BitFieldElement*> >  FieldMap;
+    typedef std::vector<std::pair<size_t, std::string> >          FieldIDs;
 
   public:
     /// Default constructor
@@ -62,14 +61,8 @@ namespace dd4hep {
     /// Get the field descriptor of one field by its identifier
     const BitFieldElement* field(size_t identifier) const;
 #ifndef __MAKECINT__
-    /// Encode partial volume identifiers to a volumeID.
-    static VolumeID encode(const Field* fld, VolumeID value);
     /// Encode a set of volume identifiers (corresponding to this description of course!) to a volumeID.
     VolumeID encode(const std::vector<std::pair<std::string, int> >& ids) const;
-    /// Encode a set of volume identifiers to a volumeID with the system ID on the top bits
-    VolumeID encode_reverse(const std::vector<std::pair<std::string, int> >& id_vector) const;
-    /// Compute the submask for a given set of volume IDs
-    VolumeID get_mask(const std::vector<std::pair<std::string, int> >& id_vector) const;
 #endif
     /// Decode volume IDs and return filled descriptor with all fields
     void decodeFields(VolumeID vid, std::vector<std::pair<const BitFieldElement*, VolumeID> >& fields)  const;
@@ -80,9 +73,9 @@ namespace dd4hep {
     /// Access string representation
     std::string toString() const;
     /// Access the BitFieldCoder object
-    BitFieldCoder* decoder()  const;
+    BitFieldCoder* decoder();
     /// Re-build object in place
     void rebuild(const std::string& description);
   };
 }         /* End namespace dd4hep          */
-#endif // DD4HEP_IDDESCRIPTOR_H
+#endif    /* DD4HEP_DDCORE_IDDESCRIPTOR_H  */

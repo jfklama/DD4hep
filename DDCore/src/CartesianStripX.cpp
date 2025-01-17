@@ -13,6 +13,7 @@
 
 // Framework include files
 #include "DD4hep/CartesianStripX.h"
+#include "DD4hep/detail/SegmentationsInterna.h"
 #include "DDSegmentation/CartesianStripX.h"
 
 using namespace std;

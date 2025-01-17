@@ -101,12 +101,7 @@ namespace {
     return 1;
   }
   
-#if defined(DD4HEP_MINIMAL_CONDITIONS)
-  int createText(const string& output, const AllConditions&, char)
-#else
-  int createText(const string& output, const AllConditions& all, char sep)
-#endif
-  {
+  int createText(const string& output, const AllConditions& all, char sep)   {
     ofstream out(output);
 #if !defined(DD4HEP_MINIMAL_CONDITIONS)
     size_t siz_nam=0, siz_add=0, siz_tot=0;

@@ -26,7 +26,6 @@
 #include "DD4hep/detail/VolumeManagerInterna.h"
 #include "DD4hep/detail/OpticalSurfaceManagerInterna.h"
 #include "DD4hep/DetectorImp.h"
-#include "DD4hep/DD4hepUnits.h"
 
 // C/C++ include files
 #include <iostream>
@@ -64,7 +63,6 @@ ClassImp(DetectorImp)
 
 namespace {
   recursive_mutex  s_detector_apply_lock;
-
   struct TypePreserve {
     DetectorBuildType& m_t;
     TypePreserve(DetectorBuildType& t)
@@ -74,13 +72,11 @@ namespace {
       m_t = BUILD_NONE;
     }
   };
-
   struct Instances  {
     recursive_mutex  lock;
     map<string, Detector*> detectors;
     Instances() = default;
-    ~Instances()  {
-    }
+    ~Instances() = default;
     Detector* get(const string& name)   {
       auto i = detectors.find(name);
       return i == detectors.end() ? 0 : (*i).second;
@@ -103,38 +99,27 @@ namespace {
       return 0;
     }
   };
-  
-  class DetectorGuard  final  {
-  protected:
-    static pair<recursive_mutex, map<DetectorImp*, TGeoManager*> >& detector_lock()   {
-      static pair<recursive_mutex, map<DetectorImp*, TGeoManager*> > s_inst;
-      return s_inst;
-    }
-    DetectorImp* detector {nullptr};
-  public:
-    DetectorGuard(DetectorImp* imp) : detector(imp) {}
-    ~DetectorGuard() = default;
-    void lock(TGeoManager* mgr)   const  {
-      auto& lock = detector_lock();
-      lock.first.lock();
-      lock.second[detector] = mgr;
-    }
-    TGeoManager* unlock()  const  {
-      TGeoManager* mgr = nullptr;
-      auto& lock = detector_lock();
-      auto i = lock.second.find(detector);
-      if ( i != lock.second.end() )   {
-	mgr = (*i).second;
-	lock.second.erase(i);
-      }
-      lock.first.unlock();
-      return mgr;
-    }
-  };
-  
-  Instances& detector_instances()    {
+  static Instances& detector_instances()    {
     static Instances s_inst;
     return s_inst;
+  }
+
+  void description_unexpected()    {
+    try  {
+      throw;
+    }  catch( exception& e )  {
+      cout << "\n"
+           << "**************************************************** \n"
+           << "*  A runtime error has occured :                     \n"
+           << "*    " << e.what()   << endl
+           << "*  the program will have to be terminated - sorry.   \n"
+           << "**************************************************** \n"
+           << endl ;
+
+      set_terminate(std::terminate);
+      // this provokes ROOT seg fault and stack trace (comment out to avoid it)
+      exit(1) ;
+    }
   }
 }
 
@@ -172,60 +157,30 @@ void Detector::destroyInstance(const std::string& name) {
 DetectorImp::DetectorImp()
   : TNamed(), DetectorData(), DetectorLoad(this), m_buildType(BUILD_NONE)
 {
-  m_surfaceManager = new detail::OpticalSurfaceManagerObject(*this);
-  m_std_conditions.convention  = STD_Conditions::NTP;
-  m_std_conditions.pressure    = Pressure_NTP;
-  m_std_conditions.temperature = Temperature_NTP;
 }
 
 /// Initializing constructor
 DetectorImp::DetectorImp(const string& name)
   : TNamed(), DetectorData(), DetectorLoad(this), m_buildType(BUILD_NONE)
 {
-#if defined(DD4HEP_USE_GEANT4_UNITS) && ROOT_VERSION_CODE >= ROOT_VERSION(6,22,7)
-    printout(INFO,"DD4hep","++ Using globally Geant4 unit system (mm,ns,MeV)");
-    if ( TGeoManager::GetDefaultUnits() != TGeoManager::kG4Units )  {
-      TGeoManager::LockDefaultUnits(kFALSE);
-      TGeoManager::SetDefaultUnits(TGeoManager::kG4Units);
-      TGeoManager::LockDefaultUnits(kTRUE);
-    }
-#elif ROOT_VERSION_CODE >= ROOT_VERSION(6,22,7)
-    if ( TGeoManager::GetDefaultUnits() != TGeoManager::kRootUnits )  {
-      TGeoManager::LockDefaultUnits(kFALSE);
-      TGeoManager::SetDefaultUnits(TGeoManager::kRootUnits);
-      TGeoManager::LockDefaultUnits(kTRUE);
-    }
-#else
-  static bool first = true;
-  if ( first )    {
-    first = false;
-#if defined(DD4HEP_USE_GEANT4_UNITS) && ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
-    printout(INFO,"DD4hep","++ Using globally Geant4 unit system (mm,ns,MeV)");
-    TGeoManager::SetDefaultG4Units();
-    TGeoUnit::setUnitType(TGeoUnit::kTGeant4Units);
-#elif ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
-    TGeoManager::SetDefaultRootUnits();
-    TGeoUnit::setUnitType(TGeoUnit::kTGeoUnits);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,20,0)
+  //TGeoUnit::setUnitType(TGeoUnit::kTGeant4Units);
 #endif
-  }
-#endif
-
   SetName(name.c_str());
   SetTitle("DD4hep detector description object");
-  //DetectorGuard(this).lock(gGeoManager);
-  gGeoManager = nullptr;
+  set_terminate( description_unexpected );
   InstanceCount::increment(this);
+  //if ( gGeoManager ) delete gGeoManager;
   m_manager = new TGeoManager(name.c_str(), "Detector Geometry");
   {
-    m_manager->AddNavigator();
-    m_manager->SetCurrentNavigator(0);
     gGeoManager = m_manager;
-#if 1 //FIXME: eventually this should be set to 1 - needs fixes in examples ...
-    TGeoElementTable* table = m_manager->GetElementTable();
+#if 0 //FIXME: eventually this should be set to 1 - needs fixes in examples ...
+    TGeoElementTable*	table = m_manager->GetElementTable();
     table->TGeoElementTable::~TGeoElementTable();
     new(table) TGeoElementTable();
     // This will initialize the table without filling:
-    table->AddElement("VACUUM","VACUUM", 1, 1, 1e-15);
+    table->AddElement("VACUUM","VACUUM", 0, 0, 0.0);
+    table->Print();
 #endif
   }
   if ( 0 == gGeoIdentity )
@@ -233,12 +188,10 @@ DetectorImp::DetectorImp(const string& name)
     gGeoIdentity = new TGeoIdentity();
   }
   m_surfaceManager = new detail::OpticalSurfaceManagerObject(*this);
-  m_std_conditions.convention  = STD_Conditions::NTP;
-  m_std_conditions.pressure    = Pressure_NTP;
-  m_std_conditions.temperature = Temperature_NTP;
-  
+
   VisAttr attr("invisible");
-  attr.setColor(1.0, 0.5, 0.5, 0.5);
+  attr.setColor(0.5, 0.5, 0.5);
+  attr.setAlpha(1);
   attr.setLineStyle(VisAttr::SOLID);
   attr.setDrawingStyle(VisAttr::SOLID);
   attr.setVisible(false);
@@ -249,7 +202,6 @@ DetectorImp::DetectorImp(const string& name)
 
 /// Standard destructor
 DetectorImp::~DetectorImp() {
-  DetectorGuard(this).lock(gGeoManager);
   if ( m_manager )  {
     lock_guard<recursive_mutex> lock(detector_instances().lock);
     if ( m_manager == gGeoManager ) gGeoManager = 0;
@@ -258,15 +210,10 @@ DetectorImp::~DetectorImp() {
       detector_instances().remove(m_manager->GetName());
     }
   }
-  if ( m_surfaceManager )   {
-    delete m_surfaceManager;
-    m_surfaceManager = nullptr;
-  }
+  deletePtr(m_surfaceManager);
   destroyData(false);
   m_extensions.clear();
-  m_detectorTypes.clear();
   InstanceCount::decrement(this);
-  DetectorGuard(this).unlock();
 }
 
 /// ROOT I/O call
@@ -369,49 +316,7 @@ Volume DetectorImp::pickMotherVolume(const DetElement& de) const {
   return 0;
 }
 
-/// Access default conditions (temperature and pressure
-const STD_Conditions& DetectorImp::stdConditions()   const   {
-  if ( (m_std_conditions.convention&STD_Conditions::USER_SET) == 0 &&
-       (m_std_conditions.convention&STD_Conditions::USER_NOTIFIED) == 0 )
-  {
-    printout(WARNING,"DD4hep","++ STD conditions NOT defined by client. NTP defaults taken.");
-    m_std_conditions.convention |= STD_Conditions::USER_NOTIFIED;
-  }
-  return m_std_conditions;
-}
-/// Set the STD temperature and pressure
-void DetectorImp::setStdConditions(double temp, double pressure)  {
-  m_std_conditions.temperature = temp;
-  m_std_conditions.pressure = pressure;
-  m_std_conditions.convention = STD_Conditions::USER_SET;
-  if      ( std::abs(temp-Temperature_NTP) < 1e-10 && std::abs(pressure-Pressure_NTP) < 1e-10 )
-    m_std_conditions.convention |= STD_Conditions::NTP;
-  else if ( std::abs(temp-Temperature_STP) < 1e-10 && std::abs(pressure-Pressure_STP) < 1e-10 )
-    m_std_conditions.convention |= STD_Conditions::STP;
-  else
-    m_std_conditions.convention |= STD_Conditions::USER;
-}
-
-/// Set the STD conditions according to defined types (STP or NTP)
-void DetectorImp::setStdConditions(const std::string& type)   {
-  if ( type == "STP" )   {
-    m_std_conditions.temperature = Temperature_STP;
-    m_std_conditions.pressure    = Pressure_STP;
-    m_std_conditions.convention  = STD_Conditions::STP|STD_Conditions::USER_SET;
-  }
-  else if ( type == "NTP" )   {
-    m_std_conditions.temperature = Temperature_NTP;
-    m_std_conditions.pressure    = Pressure_NTP;
-    m_std_conditions.convention  = STD_Conditions::NTP|STD_Conditions::USER_SET;
-  }
-  else   {
-    except("DD4hep",
-           "++ Attempt to set standard conditions to "
-           "unknown conventions (Only STP and NTP allowed).");
-  }
-}
-
-/// Retrieve a subdetector element by its name from the detector description
+/// Retrieve a subdetector element by it's name from the detector description
 DetElement DetectorImp::detector(const std::string& name) const  {
   HandleMap::const_iterator i = m_detectors.find(name);
   if (i != m_detectors.end()) {
@@ -437,14 +342,7 @@ Detector& DetectorImp::addDetector(const Handle<NamedObject>& ref_det) {
   }
   m_detectors.append(ref_det);
   det_element->flag |= DetElement::Object::IS_TOP_LEVEL_DETECTOR;
-  PlacedVolume pv = det_element.placement();
-  if ( !pv.isValid() )   {
-    stringstream str;
-    str << "Detector: Adding subdetectors with no valid placement is not allowed: "
-	<< det_element.name() << " ID:" << det_element.id() << ".";
-    except("DD4hep",str.str());
-  }
-  Volume volume = pv->GetMotherVolume();
+  Volume volume = det_element.placement()->GetMotherVolume();
   if ( volume == m_worldVol )  {
     printout(DEBUG,"DD4hep","+++ Detector: Added detector %s to the world instance.",
              det_element.name());
@@ -487,7 +385,7 @@ Detector& DetectorImp::addConstant(const Handle<NamedObject>& x) {
   return *this;
 }
 
-/// Retrieve a constant by its name from the detector description
+/// Retrieve a constant by it's name from the detector description
 Constant DetectorImp::constant(const string& name) const {
   if ( !m_inhibitConstants )   {
     return getRefChild(m_define, name);
@@ -529,7 +427,7 @@ Detector& DetectorImp::addField(const Handle<NamedObject>& x) {
   return *this;
 }
 
-/// Retrieve a matrial by its name from the detector description
+/// Retrieve a matrial by it's name from the detector description
 Material DetectorImp::material(const string& name) const {
   TGeoMedium* mat = m_manager->GetMedium(name.c_str());
   if (mat) {
@@ -540,7 +438,6 @@ Material DetectorImp::material(const string& name) const {
 
 /// Internal helper to map detector types once the geometry is closed
 void DetectorImp::mapDetectorTypes()  {
-  m_detectorTypes[""] = {};
   for( const auto& i : m_detectors )   {
     DetElement det(i.second);
     if ( det.parent().isValid() )  { // Exclude 'world'
@@ -572,15 +469,15 @@ vector<string> DetectorImp::detectorTypes() const  {
 }
 
 /// Access a set of subdetectors according to the sensitive type.
-const vector<DetElement>& DetectorImp::detectors(const string& type, bool throw_exc) const {
+const vector<DetElement>& DetectorImp::detectors(const string& type, bool throw_exc)  {
   if ( m_manager->IsClosed() ) {
-    DetectorTypeMap::const_iterator i=m_detectorTypes.find(type);
-    if ( i != m_detectorTypes.end() ) return (*i).second;
     if ( throw_exc )  {
+      DetectorTypeMap::const_iterator i=m_detectorTypes.find(type);
+      if ( i != m_detectorTypes.end() ) return (*i).second;
       throw runtime_error("detectors("+type+"): Detectors of this type do not exist in the current setup!");
     }
     // return empty vector instead of exception
-    return m_detectorTypes.at("") ;
+    return m_detectorTypes[ type ] ;
   }
   throw runtime_error("detectors("+type+"): Detectors can only selected by type once the geometry is closed!");
 }
@@ -632,33 +529,17 @@ vector<DetElement> DetectorImp::detectors(const string& type1,
 }
 
 Handle<NamedObject> DetectorImp::getRefChild(const HandleMap& e, const string& name, bool do_throw) const {
-  HandleMap::const_iterator it = e.find(name);
-  if (it != e.end()) {
-    return it->second;
+  HandleMap::const_iterator i = e.find(name);
+  if (i != e.end()) {
+    return (*i).second;
   }
   if (do_throw) {
-    union ptr {
-      const ObjectHandleMap* omap;
-      const char* c;
-      const void* other;
-      ptr(const void* p) { other = p; }
-    };
-    std::string nam = "";
-    ptr mptr(&e), ref(this);
-    if ( ref.c > mptr.c && mptr.c < ref.c+sizeof(*this) )  {
-      nam = mptr.omap->name;
-    }
-    std::stringstream err;
-    err << "getRefChild: Failed to find child with name: " << name
-        << " Map " << nam << " contains " << e.size() << " elements: {";
-    for (it = e.begin(); it != e.end(); ++it) {
-      if (it != e.begin()) {
-        err << ", ";
-      }
-      err << it->first;
-    }
-    err << "}";
-    throw runtime_error(err.str());
+    int cnt = 0;
+    cout << "GetRefChild: Failed to find child with name: " << name
+         << " Map contains " << e.size() << " elements." << endl;
+    for(i=e.begin(); i!=e.end(); ++i)
+      cout << "   " << cnt << "  " << (*i).first << endl;
+    throw runtime_error("Cannot find a child with the reference name:" + name);
   }
   return 0;
 }
@@ -721,6 +602,7 @@ namespace {
       }
     }
   };
+
 }
 
 /// Finalize/close the geometry
@@ -740,18 +622,14 @@ void DetectorImp::endDocument(bool close_geometry)    {
     m_trackingVol.setVisAttributes(trackingVis);
     add(trackingVis);
 #endif
-    m_worldVol.solid()->ComputeBBox();
-    // Propagating reflections: This is useless now and unused!!!!
-    // Since we allow now for anonymous shapes,
-    // we will rename them to use the name of the volume they are assigned to
+    /// Since we allow now for anonymous shapes,
+    /// we will rename them to use the name of the volume they are assigned to
     mgr->CloseGeometry();
   }
-  // Patching shape names of anaonymous shapes
   ShapePatcher patcher(m_volManager, m_world);
   patcher.patchShapes();
   mapDetectorTypes();
   m_state = READY;
-  //DetectorGuard(this).unlock();
 }
 
 /// Initialize the geometry and set the bounding box of the world volume
@@ -789,9 +667,10 @@ void DetectorImp::init() {
     VisAttr worldVis = visAttributes("WorldVis");
     if ( !worldVis.isValid() )  {
       worldVis = VisAttr("WorldVis");
+      worldVis.setAlpha(1.0);
       worldVis.setVisible(false);
       worldVis.setShowDaughters(true);
-      worldVis.setColor(1., 1., 1., 1.);
+      worldVis.setColor(1.0, 1.0, 1.0);
       worldVis.setLineStyle(VisAttr::SOLID);
       worldVis.setDrawingStyle(VisAttr::WIREFRAME);
       //m_worldVol.setVisAttributes(worldVis);

@@ -11,18 +11,18 @@
 //
 //==========================================================================
 
-#ifndef DD4HEP_VOLUMEMANAGER_H
-#define DD4HEP_VOLUMEMANAGER_H
+#ifndef DD4HEP_DDCORE_VOLUMEMANAGER_H
+#define DD4HEP_DDCORE_VOLUMEMANAGER_H
 
 // Framework include files
-#include <DD4hep/Volumes.h>
-#include <DD4hep/DetElement.h>
-#include <DD4hep/NamedObject.h>
-#include <DD4hep/IDDescriptor.h>
-#include <DD4hep/ConditionsMap.h>
+#include "DD4hep/Volumes.h"
+#include "DD4hep/DetElement.h"
+#include "DD4hep/NamedObject.h"
+#include "DD4hep/IDDescriptor.h"
+#include "DD4hep/ConditionsMap.h"
 
 // ROOT include files
-#include <TGeoMatrix.h>
+#include "TGeoMatrix.h"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -76,28 +76,6 @@ namespace dd4hep {
     PlacedVolume elementPlacement()  const;
     /// Access the transformation to the closest detector element
     const TGeoHMatrix& toElement()  const;
-    /// Transform local coordinates to the DetElement coordinates
-    Position localToElement(const double local[3])  const;
-    /// Transform local coordinates to the DetElement coordinates
-    Position localToElement(const Position& local)  const;
-    /// Transform local coordinates to the world coordinates
-    Position localToWorld(const double local[3])  const;
-    /// Transform local coordinates to the world coordinates
-    Position localToWorld(const Position& local)  const;
-
-    /// Transform world coordinates to the DetElement coordinates
-    Position worldToElement(const Position& world)  const;
-    /// Transform world coordinates to the DetElement coordinates
-    Position worldToElement(const double world[3])  const;
-    /// Transform world coordinates to the DetElement coordinates
-    void worldToElement(const double world[3], double element[3])  const;
-
-    /// Transform world coordinates to the local coordinates
-    Position worldToLocal(const Position& world)  const;
-    /// Transform world coordinates to the local coordinates
-    Position worldToLocal(const double world[3])  const;
-    /// Transform world coordinates to the local coordinates
-    void worldToLocal(const double world[3], double local[3])  const;
   };
 
   /// Class to support the retrieval of detector elements and volumes given a valid identifier
@@ -218,4 +196,4 @@ namespace dd4hep {
   /// Enable printouts for debugging
   std::ostream& operator<<(std::ostream& os, const VolumeManager& m);
 }         /* End namespace dd4hep                */
-#endif // DD4HEP_VOLUMEMANAGER_H
+#endif    /* DD4HEP_DDCORE_READOUT_H           */

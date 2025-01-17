@@ -1,6 +1,3 @@
-#ifndef PARSERS_DETAIL_DETECTOR_H
-#define PARSERS_DETAIL_DETECTOR_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -60,9 +57,6 @@ namespace dd4hep {
       
       /// Create a shape using the plugin mechanism from an XML element
       TObject* createShape() const;
-
-      /// Run a TObject constructor
-      TObject* runConstructor(const std::string& ctor_typ) const;
     };
 
     /// XML Handle_t class extending the XML handle Dimension
@@ -106,5 +100,3 @@ namespace dd4hep {
 
   }       /* End namespace DD4HEP_DIMENSION_NS       */
 }         /* End namespace dd4hep                    */
-
-#endif

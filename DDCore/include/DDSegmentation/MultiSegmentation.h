@@ -11,8 +11,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDSEGMENTATION_MULTISEGMENTATION_H
-#define DDSEGMENTATION_MULTISEGMENTATION_H
+#ifndef DDSegmentation_MULITSEGMENTATION_H_
+#define DDSegmentation_MULITSEGMENTATION_H_
 
 #include "DDSegmentation/Segmentation.h"
 
@@ -29,7 +29,7 @@ namespace dd4hep {
      */
     class MultiSegmentation : public Segmentation {
     public:
-      /// Helper structure to describe a sub-segmentation entry
+      /// Heler structure to describe a sub-segmentation entry
       struct Entry {
         long key_min, key_max;
         Segmentation* segmentation;
@@ -96,4 +96,4 @@ namespace dd4hep {
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
 
-#endif // DDSEGMENTATION_MULTISEGMENTATION_H
+#endif /* DDSegmentation_MULITSEGMENTATION_H_ */

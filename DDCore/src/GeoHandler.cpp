@@ -30,16 +30,12 @@ using namespace dd4hep;
 using namespace std;
 
 namespace {
-  void collectSolid(GeoHandler::GeometryInfo& geo,
-		    const string& name,
-		    const string& node,
-		    TGeoShape* shape,
-                    TGeoMatrix* matrix)
-  {
-    if ( 0 == ::strncmp(shape->GetName(), "TGeo", 4) )  {
+  void collectSolid(GeoHandler::GeometryInfo& geo, const string& name, const string& node, TGeoShape* shape,
+                    TGeoMatrix* matrix) {
+    if (0 == ::strncmp(shape->GetName(), "TGeo", 4)) {
       shape->SetName(name.c_str());
     }
-    if ( shape->IsA() == TGeoCompositeShape::Class() )  {
+    if (shape->IsA() == TGeoCompositeShape::Class()) {
       const TGeoCompositeShape* s = (const TGeoCompositeShape*) shape;
       const TGeoBoolNode* boolean = s->GetBoolNode();
       collectSolid(geo, name + "_left", name + "_left", boolean->GetLeftShape(), boolean->GetLeftMatrix());
@@ -64,12 +60,12 @@ GeoHandler::GeoHandler(map<int,set<const TGeoNode*> >* ptr)
 GeoHandler::~GeoHandler() {
   if (m_data)
     delete m_data;
-  m_data = nullptr;
+  m_data = 0;
 }
 
 map<int,set<const TGeoNode*> >* GeoHandler::release() {
   map<int,set<const TGeoNode*> >* d = m_data;
-  m_data = nullptr;
+  m_data = 0;
   return d;
 }
 
@@ -81,31 +77,27 @@ bool GeoHandler::setPropagateRegions(bool value)   {
 }
 
 GeoHandler& GeoHandler::collect(DetElement element) {
-  DetElement par = element.parent();
-  TGeoNode* par_node = par.isValid() ? par.placement().ptr() : nullptr;
   m_data->clear();
-  return i_collect(par_node, element.placement().ptr(), 0, Region(), LimitSet());
+  return i_collect(element.placement().ptr(), 0, Region(), LimitSet());
 }
 
 GeoHandler& GeoHandler::collect(DetElement element, GeometryInfo& info) {
-  DetElement par = element.parent();
-  TGeoNode* par_node = par.isValid() ? par.placement().ptr() : nullptr;
   m_data->clear();
-  i_collect(par_node, element.placement().ptr(), 0, Region(), LimitSet());
+  i_collect(element.placement().ptr(), 0, Region(), LimitSet());
   for (auto i = m_data->rbegin(); i != m_data->rend(); ++i) {
     const auto& mapped = (*i).second;
     for (const TGeoNode* n : mapped )  {
       TGeoVolume* v = n->GetVolume();
       if (v) {
-        Material mat(v->GetMedium());
+        Material m(v->GetMedium());
         Volume   vol(v);
         // Note : assemblies and the world do not have a real volume nor a material
         if (info.volumeSet.find(vol) == info.volumeSet.end()) {
           info.volumeSet.emplace(vol);
           info.volumes.emplace_back(vol);
         }
-        if ( mat.isValid() )
-          info.materials.emplace(mat);
+        if (m.isValid())
+          info.materials.emplace(m);
         if (dynamic_cast<Volume::Object*>(v)) {
           VisAttr vis = vol.visAttributes();
           //Region      reg = vol.region();
@@ -125,10 +117,7 @@ GeoHandler& GeoHandler::collect(DetElement element, GeometryInfo& info) {
   return *this;
 }
 
-GeoHandler& GeoHandler::i_collect(const TGeoNode* /* parent */,
-				  const TGeoNode*    current,
-				  int level, Region rg, LimitSet ls)
-{
+GeoHandler& GeoHandler::i_collect(const TGeoNode* current, int level, Region rg, LimitSet ls) {
   TGeoVolume* volume = current->GetVolume();
   TObjArray* nodes = volume->GetNodes();
   int num_children = nodes ? nodes->GetEntriesFast() : 0;
@@ -147,10 +136,11 @@ GeoHandler& GeoHandler::i_collect(const TGeoNode* /* parent */,
     }
   }
   (*m_data)[level].emplace(current);
+  //printf("GeoHandler: collect level:%d %s\n",level,current->GetName());
   if (num_children > 0) {
     for (int i = 0; i < num_children; ++i) {
       TGeoNode* node = (TGeoNode*) nodes->At(i);
-      i_collect(current, node, level + 1, region, limits);
+      i_collect(node, level + 1, region, limits);
     }
   }
   return *this;

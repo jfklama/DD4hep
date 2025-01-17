@@ -55,7 +55,7 @@ void Delta::clear()   {
   rotation    = RotationZYX();
 }
 
-/// Compute the alignment delta for one detector element and its alignment condition
+/// Compute the alignment delta for one detector element and it's alignment condition
 void Delta::computeMatrix(TGeoHMatrix& tr_delta)  const   {
   const Delta&       delta = *this;
   const Position&      pos = delta.translation;
@@ -84,14 +84,14 @@ void Delta::computeMatrix(TGeoHMatrix& tr_delta)  const   {
 }
 
 /// print alignment delta object
-ostream& operator << (ostream& ostr, const Delta& data)   {
+ostream& operator << (ostream& s, const Delta& data)   {
   string res;
   stringstream str;
   str << "[" << data.translation << "," << data.rotation << "," << data.pivot << "]";
   res = str.str();
   for(size_t i=0; i<res.length(); ++i)
     if ( res[i]=='\n' ) res[i] = ' ';
-  return ostr << res;
+  return s << res;
 }
 
 /// Standard constructor
@@ -131,10 +131,10 @@ AlignmentData& AlignmentData::operator=(const AlignmentData& copy)  {
 }
 
 /// print Conditions object
-ostream& operator << (ostream& ostr, const AlignmentData& data)   {
+ostream& operator << (ostream& s, const AlignmentData& data)   {
   stringstream str;
   str << data.delta;
-  return ostr << str.str();
+  return s << str.str();
 }
 
 /// Transform a point from local coordinates of a given level to global coordinates
@@ -229,7 +229,24 @@ Alignment AlignmentData::nominal() const   {
   return detector.nominal();
 }
 
-#include "DD4hep/GrammarUnparsed.h"
-static auto s_registry = GrammarRegistry::pre_note<Delta>(1)
-              .pre_note<AlignmentData>(1)
-              .pre_note<std::map<DetElement, Delta> >(1);
+// The map is used by the Alignments calculator
+typedef std::map<DetElement, Delta> DeltaMap;
+
+// Have only a weak reference here!
+inline ostream& operator << (ostream& s, const DetElement& )   { return s; }
+
+#include "Parsers/Parsers.h"
+DD4HEP_DEFINE_PARSER_DUMMY(Delta)
+DD4HEP_DEFINE_PARSER_DUMMY(DeltaMap)
+DD4HEP_DEFINE_PARSER_DUMMY(AlignmentData)
+
+#include "DD4hep/detail/BasicGrammar_inl.h"
+#include "DD4hep/detail/ConditionsInterna.h"
+DD4HEP_DEFINE_PARSER_GRAMMAR(Delta,eval_none<Delta>)
+DD4HEP_DEFINE_PARSER_GRAMMAR(DeltaMap,eval_none<DeltaMap>)
+DD4HEP_DEFINE_PARSER_GRAMMAR(AlignmentData,eval_none<AlignmentData>)
+
+DD4HEP_DEFINE_CONDITIONS_TYPE(Delta)
+DD4HEP_DEFINE_CONDITIONS_TYPE(DeltaMap)
+DD4HEP_DEFINE_CONDITIONS_TYPE(AlignmentData)
+

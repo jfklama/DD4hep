@@ -1,23 +1,6 @@
-<!-- ====================================================================== -->
-<!--                                                                        -->
-<!--    XML description of the complete SiD tracker detector                -->
-<!--    of the SiD linear collider detector design.                         -->
-<!--                                                                        -->
-<!--    Contained are the required                                          -->
-<!--      ++ global constants used uniquely by this module                  -->
-<!--      ++ visualization attributes                                       -->
-<!--      ++ the definition of the readout structure and the                -->
-<!--         readout segmentation (if necessary)                            -->
-<!--      ++ the include statements for the sensitive detectors and         -->
-<!--         the corresponding support structure(s)                         -->
-<!--                                                                        -->
-<!--                                                                        -->
-<!--   @author  M.Frank                                                     -->
-<!--   @date    14/11/2014                                                  -->
-<!--                                                                        -->
-<!-- ====================================================================== -->
-
-<lccdd>
+<lccdd xmlns:compact="http://www.lcsim.org/schemas/compact/1.0" 
+       xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+       xs:noNamespaceSchemaLocation="http://www.lcsim.org/schemas/compact/1.0/compact.xsd">
 
   <info name="clic_sid_cdr"
         title="CLIC Silicon Detector CDR"
@@ -39,9 +22,17 @@
 
 
   <limits>
-    <include ref="SiD_Limits.xml"/>
+    <limitset name="cal_limits">
+      <limit name="step_length_max" particles="*" value="5.0" unit="mm" />
+    </limitset>
+    <limitset name="SiTrackerBarrelRegionLimitSet">
+      <limit name="step_length_max" particles="*" value="5.0" unit="mm" />
+      <limit name="track_length_max" particles="*" value="5.0" unit="mm" />
+      <limit name="time_max" particles="*" value="5.0" unit="ns" />
+      <limit name="ekin_min" particles="*" value="0.01" unit="MeV" />
+      <limit name="range_min" particles="*" value="5.0" unit="mm" />
+    </limitset>
   </limits>
-
   <regions>
     <region name="SiTrackerBarrelRegion" eunit="MeV" lunit="mm" cut="0.001" threshold="0.001">
       <limitsetref name="SiTrackerBarrelRegionLimitSet"/>
@@ -80,7 +71,12 @@
   <include ref="SiD/SiD_Shields.xml"/>
   <include ref="SiD/SiD_Solenoid.xml"/>
 
-  <comment>Magnetic field</comment>
-  <include ref="SiD/SiD_Field.xml"/>
-
+  <fields>
+    <field name="GlobalSolenoid" type="solenoid" 
+	   inner_field="5.0*tesla"
+	   outer_field="-1.5*tesla" 
+	   zmax="SolenoidCoilOuterZ"
+	   outer_radius="SolenoidalFieldRadius">
+    </field>
+  </fields>
 </lccdd>

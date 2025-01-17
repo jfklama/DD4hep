@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDCOND_CONDITIONSTAGS_H
-#define DDCOND_CONDITIONSTAGS_H
+#ifndef DD4HEP_CONDITIONS_CONDITIONSTAGS_H
+#define DD4HEP_CONDITIONS_CONDITIONSTAGS_H
 
 // Framework include files
 #include "XML/XMLElements.h"
@@ -50,7 +50,6 @@ namespace dd4hep {
       UNICODE(mapping);
       UNICODE(sequence);
       UNICODE(alignment);
-      UNICODE(alignment_delta);
       UNICODE(repository);
     }
     // User must ensure there are no clashes. If yes, then the clashing entry is unnecessary.
@@ -62,4 +61,4 @@ namespace dd4hep {
 #include "XML/XMLTags.h"
 #define _UC(x) ::dd4hep::xml::cond::Unicode_##x
 
-#endif // DDCOND_CONDITIONSTAGS_H
+#endif /* DD4HEP_CONDITIONS_CONDITIONSTAGS_H  */

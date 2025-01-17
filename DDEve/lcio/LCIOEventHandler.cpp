@@ -36,21 +36,21 @@ using namespace dd4hep;
 using namespace EVENT;
 using namespace IMPL;
 
-const void* _fill(const SimTrackerHit* hit, DDEveHit* target)   {
-  const double* p = hit->getPosition();
+const void* _fill(const SimTrackerHit* s, DDEveHit* target)   {
+  const double* p = s->getPosition();
   target->x = p[0];
   target->y = p[1];
   target->z = p[2];
-  target->deposit = hit->getEDep();
-  return hit;
+  target->deposit = s->getEDep();
+  return s;
 }
-const void* _fill(const SimCalorimeterHit* hit, DDEveHit* target)   {
-  const float* p = hit->getPosition();
+const void* _fill(const SimCalorimeterHit* s, DDEveHit* target)   {
+  const float* p = s->getPosition();
   target->x = p[0];
   target->y = p[1];
   target->z = p[2];
-  target->deposit = hit->getEnergy();
-  return hit;
+  target->deposit = s->getEnergy();
+  return s;
 }
 
 static const void* _convertHitFunc(const LCObject* source, DDEveHit* target)  {
@@ -66,11 +66,11 @@ static const void* _convertParticleFunc(const LCObject* source, DDEveParticle* t
 }
 
 static void* _create(const char*)  {
-  EventHandler* eh = new LCIOEventHandler();
-  return eh;
+  EventHandler* h = new LCIOEventHandler();
+  return h;
 }
 using namespace dd4hep::detail;
-DECLARE_CONSTRUCTOR(DD4hep_DDEve_LCIOEventHandler,_create)
+DECLARE_CONSTRUCTOR(DDEve_LCIOEventHandler,_create)
 
 /// Standard constructor
 LCIOEventHandler::LCIOEventHandler() : EventHandler(), m_lcReader(0), m_event(0) {

@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_ELEMENTLIST_H
-#define DDEVE_ELEMENTLIST_H
+#ifndef DD4HEP_DDEVE_ELEMENTLIST_H
+#define DD4HEP_DDEVE_ELEMENTLIST_H
 
 // Framework include files
 #include "DDEve/View.h"
@@ -68,4 +68,4 @@ namespace dd4hep {
   };
 
 }      /* End namespace dd4hep       */
-#endif // DDEVE_ELEMENTLIST_H
+#endif /* DD4HEP_DDEVE_ELEMENTLIST_H */

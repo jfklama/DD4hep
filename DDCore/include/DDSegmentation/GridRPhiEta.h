@@ -9,8 +9,8 @@
 //
 //==========================================================================
 
-#ifndef DDSEGMENTATION_GRIDRPHIETA_H
-#define DDSEGMENTATION_GRIDRPHIETA_H
+#ifndef DETSEGMENTATION_GRIDRPHIETA_H
+#define DETSEGMENTATION_GRIDRPHIETA_H
 
 // Framework includes
 #include "DDSegmentation/GridPhiEta.h"
@@ -105,4 +105,4 @@ namespace dd4hep {
     };
   }
 }
-#endif // DDSEGMENTATION_GRIDRPHIETA_H
+#endif /* DETSEGMENTATION_GRIDRPHIETA_H */

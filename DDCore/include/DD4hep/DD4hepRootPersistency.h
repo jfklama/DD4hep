@@ -14,8 +14,7 @@
 #define DD4HEP_DD4HEPROOTPERSISTENCY_H
 
 // Framework include files
-#include <DD4hep/DetectorData.h>
-
+#include "DD4hep/DetectorData.h"
 
 /// Helper class to support ROOT persistency of Detector objects
 /**
@@ -35,10 +34,9 @@ public:
   std::map<dd4hep::DetElement,dd4hep::AlignmentCondition> nominals;
 
   /// Default constructor
-  DD4hepRootPersistency();
-
+  DD4hepRootPersistency() : TNamed() {}
   /// Default destructor
-  virtual ~DD4hepRootPersistency();
+  virtual ~DD4hepRootPersistency() {}
 
   /// Save an existing detector description in memory to a ROOT file
   static int save(dd4hep::Detector& description, const char* fname, const char* instance = "Geometry");
@@ -79,7 +77,7 @@ public:
   const HandleMap& readouts() const           {    return m_data->m_readouts;         }
   /// Accessor to the map of sub-detectors
   const HandleMap& detectors() const          {    return m_data->m_detectors;        }
-  /// Retrieve a sensitive detector by its name from the detector description
+  /// Retrieve a sensitive detector by it's name from the detector description
   const HandleMap& sensitiveDetectors() const {    return m_data->m_sensitive;        }
   /// Accessor to the map of field entries, which together form the global field
   const HandleMap& fields() const             {    return m_data->m_fields;           }
@@ -89,7 +87,6 @@ public:
   /// ROOT implementation macro
   ClassDef(DD4hepRootPersistency,1);
 };
-
 
 /// Helper class to check various ingredients of the Detector object after loaded from ROOT
 /**
@@ -120,25 +117,25 @@ public:
   /// Call to theck the DD4hep fields
   size_t checkFields()   const;
   /// Call to check a Region object
-  std::pair<std::size_t, std::size_t> checkRegions()   const;
+  size_t checkRegions()   const;
   /// Call to check a Readout object
-  std::pair<std::size_t, std::size_t> checkReadouts()   const;
+  size_t checkReadouts()   const;
   /// Call to check an ID specification
-  std::pair<std::size_t, std::size_t> checkIdSpecs()   const;
+  size_t checkIdSpecs()   const;
   /// Call to check a sensitive detector
-  std::pair<std::size_t, std::size_t> checkSensitives()   const;
+  size_t checkSensitives()   const;
   /// Call to check a limit-set object
-  std::pair<std::size_t, std::size_t> checkLimitSets()   const;
+  size_t checkLimitSets()   const;
   /// Call to check the volume manager hierarchy
-  std::pair<std::size_t, std::size_t> checkVolManager()   const;
+  size_t checkVolManager()   const;
   /// Call to check the nominal alignments in the DetElement hierarchy
-  std::pair<std::size_t, std::size_t> checkNominals()   const;
+  size_t checkNominals()   const;
   /// Call to check a top level Detector element (subdetector)
-  std::pair<std::size_t, std::size_t> checkDetectors()  const;
+  size_t checkDetectors()  const;
   /// Call to check segmentations starting from the top level Detector element
-  std::pair<std::size_t, std::size_t> checkSegmentations()  const;
+  size_t checkSegmentations()  const;
   /// Check all of the above
   size_t checkAll()   const;
 };
 
-#endif // DD4HEP_DD4HEPROOTPERSISTENCY_H
+#endif    /* DD4HEP_DD4HEPROOTPERSISTENCY_H         */

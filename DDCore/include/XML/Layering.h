@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef XML_LAYERING_H
-#define XML_LAYERING_H
+#ifndef DD4HEP_DDCORE_LAYERING_H
+#define DD4HEP_DDCORE_LAYERING_H
 
 // Framework include files
 #include "XML/XMLElements.h"
@@ -160,4 +160,4 @@ namespace dd4hep {
     }
   }
 }         /* End namespace dd4hep          */
-#endif // XML_LAYERING_H
+#endif    /* DD4HEP_DDCORE_LAYERING_H      */

@@ -1,18 +1,7 @@
-# ==========================================================================
-#  AIDA Detector description implementation
-# --------------------------------------------------------------------------
-# Copyright (C) Organisation europeenne pour la Recherche nucleaire (CERN)
-# All rights reserved.
-#
-# For the licensing terms see $DD4hepINSTALL/LICENSE.
-# For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
-#
-# ==========================================================================
 #
 #
 from __future__ import absolute_import, unicode_literals
 import os
-import sys
 import time
 import logging
 import DDG4
@@ -22,7 +11,6 @@ from g4units import keV, GeV, mm, ns, MeV
 #
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 """
 
    dd4hep simulation example setup using the python configuration
@@ -33,22 +21,7 @@ logger = logging.getLogger(__name__)
 """
 
 
-def show_help():
-  logging.info("SiDSim.py -option [-option]                           ")
-  logging.info("       -vis   <file>            Enable visualization  ")
-  logging.info("                                Macro file is optional")
-  logging.info("       -macro <file>            Start G4 macro        ")
-  logging.info("       -batch                   Batch execution       ")
-  logging.info("       -events <number>         If batch: number of events to be executed")
-
-
 def run():
-  args = DDG4.CommandLine()
-  #
-  if args.help or args.h:
-    show_help()
-    sys.exit(1)
-
   kernel = DDG4.Kernel()
   description = kernel.detectorDescription()
   install_dir = os.environ['DD4hepINSTALL']
@@ -58,10 +31,7 @@ def run():
   geant4 = DDG4.Geant4(kernel, tracker='Geant4TrackerCombineAction')
   geant4.printDetectors()
   logger.info("#  Configure UI")
-  ui = geant4.setupCshUI(macro=args.macro, vis=args.vis)
-  kernel.UI = 'UI'
-  if args.batch:
-    ui.Commands = ['/run/beamOn ' + str(args.events), '/ddg4/UI/terminate']
+  geant4.setupCshUI()
 
   logger.info("#  Configure G4 magnetic field tracking")
   geant4.setupTrackingField()
@@ -69,8 +39,6 @@ def run():
   logger.info("#  Setup random generator")
   rndm = DDG4.Action(kernel, 'Geant4Random/Random')
   rndm.Seed = 987654321
-  if args.seed_time:
-    rndm.Seed = int(time.time())
   rndm.initialize()
   # rndm.showStatus()
 
@@ -123,9 +91,9 @@ def run():
   logger.info("#  Second particle generator: e-")
   gen = DDG4.GeneratorAction(kernel, "Geant4IsotropeGenerator/IsotropE-")
   gen.Mask = 2
-  gen.Particle = 'e+'
+  gen.Particle = 'e-'
   gen.Energy = 25 * GeV
-  gen.Multiplicity = 2
+  gen.Multiplicity = 3
   gen.Distribution = 'uniform'
   kernel.generatorAction().adopt(gen)
   logger.info("  Install vertex smearing for this interaction")
@@ -134,15 +102,6 @@ def run():
   gen.Offset = (-20 * mm, -10 * mm, -10 * mm, 0 * ns)
   gen.Sigma = (12 * mm, 8 * mm, 8 * mm, 0 * ns)
   kernel.generatorAction().adopt(gen)
-
-  logger.info("#  Second particle generator: mu+")
-  gen = DDG4.GeneratorAction(kernel, "Geant4IsotropeGenerator/IsotropMu+")
-  gen.Mask = 3
-  gen.Particle = 'mu+'
-  gen.Energy = 100 * GeV
-  gen.Multiplicity = 3
-  gen.Distribution = 'uniform'
-  kernel.generatorAction().adopt(gen)
   # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   logger.info("#  Merge all existing interaction records")
@@ -150,13 +109,13 @@ def run():
   gen.OutputLevel = 4  # generator_output_level
   gen.enableUI()
   kernel.generatorAction().adopt(gen)
-  #
+
   logger.info("#  Finally generate Geant4 primaries")
   gen = DDG4.GeneratorAction(kernel, "Geant4PrimaryHandler/PrimaryHandler")
   gen.OutputLevel = 4  # generator_output_level
   gen.enableUI()
   kernel.generatorAction().adopt(gen)
-  #
+
   logger.info("#  ....and handle the simulation particles.")
   part = DDG4.GeneratorAction(kernel, "Geant4ParticleHandler/ParticleHandler")
   kernel.generatorAction().adopt(part)
@@ -170,7 +129,7 @@ def run():
   user.TrackingVolume_Rmax = DDG4.EcalBarrel_rmin
   user.enableUI()
   part.adopt(user)
-  #
+
   logger.info("#  Setup global filters fur use in sensitive detectors")
   f1 = DDG4.Filter(kernel, 'GeantinoRejectFilter/GeantinoRejector')
   f2 = DDG4.Filter(kernel, 'ParticleRejectFilter/OpticalPhotonRejector')
@@ -184,15 +143,17 @@ def run():
   kernel.registerGlobalFilter(f2)
   kernel.registerGlobalFilter(f3)
   kernel.registerGlobalFilter(f4)
-  #
+
   logger.info("#  First the tracking detectors")
   seq, act = geant4.setupTracker('SiVertexBarrel')
   seq.adopt(f1)
+  # seq.adopt(f4)
   act.adopt(f1)
-  #
+
   seq, act = geant4.setupTracker('SiVertexEndcap')
   seq.adopt(f1)
-  #
+  # seq.adopt(f4)
+
   seq, act = geant4.setupTracker('SiTrackerBarrel')
   seq, act = geant4.setupTracker('SiTrackerEndcap')
   seq, act = geant4.setupTracker('SiTrackerForward')
@@ -206,33 +167,20 @@ def run():
   seq, act = geant4.setupCalorimeter('MuonEndcap')
   seq, act = geant4.setupCalorimeter('LumiCal')
   seq, act = geant4.setupCalorimeter('BeamCal')
-  #
+
   logger.info("#  Now build the physics list:")
   phys = geant4.setupPhysics('QGSP_BERT')
-  ph = geant4.addPhysics(str('Geant4PhysicsList/Myphysics'))
-  ph.addPhysicsConstructor(str('G4StepLimiterPhysics'))
-  #
+  geant4.addPhysics(str('Geant4PhysicsList/Myphysics'))
+
   # Add special particle types from specialized physics constructor
-  part = geant4.addPhysics(str('Geant4ExtraParticles/ExtraParticles'))
-  part.pdgfile = os.path.join(install_dir, 'examples/DDG4/examples/particle.tbl')
-  #
+  part = geant4.addPhysics('Geant4ExtraParticles/ExtraParticles')
+  part.pdgfile = 'checkout/DDG4/examples/particle.tbl'
+
   # Add global range cut
-  rg = geant4.addPhysics(str('Geant4DefaultRangeCut/GlobalRangeCut'))
+  rg = geant4.addPhysics('Geant4DefaultRangeCut/GlobalRangeCut')
   rg.RangeCut = 0.7 * mm
-  #
+
   phys.dump()
-  #
-  #
-  if ui and args.vis:
-    cmds = []
-    cmds.append('/control/verbose 2')
-    cmds.append('/run/initialize')
-    cmds.append('/vis/open OGL')
-    cmds.append('/vis/verbose errors')
-    cmds.append('/vis/drawVolume')
-    cmds.append('/vis/viewer/set/viewpointThetaPhi 55. 45.')
-    cmds.append('/vis/scene/add/axes 0 0 0 10 m')
-    ui.Commands = cmds
 
   kernel.configure()
   kernel.initialize()

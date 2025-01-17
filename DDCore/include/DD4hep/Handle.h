@@ -39,12 +39,8 @@ namespace dd4hep {
   // Forward declarations
   class NamedObject;
 
-  /// Steer redefinition of variable re-definition during expression evaluation. returns old value
-  bool set_allow_variable_redefine(bool value);
-
   long num_object_validations();
   void increment_object_validations();
-
   /// Function tp print warning about deprecated factory usage. Used by Plugin mechanism.
   void warning_deprecated_xml_factory(const char* name);
 
@@ -90,7 +86,7 @@ namespace dd4hep {
     typedef Handle<T> Base;
     
     /// Single and only data member: Reference to the actual element.
-    T* m_element  {nullptr};
+    T* m_element = 0;
 
     /// Default constructor
     Handle() = default;
@@ -258,18 +254,12 @@ namespace dd4hep {
   
   /// String conversions: string to boolean value  \ingroup DD4HEP_CORE
   bool   _toBool(const std::string& value);
-  /// String conversions: string to short value  \ingroup DD4HEP_CORE
+  /// String conversions: string to integer value  \ingroup DD4HEP_CORE
   short  _toShort(const std::string& value);
   /// String conversions: string to integer value  \ingroup DD4HEP_CORE
   int    _toInt(const std::string& value);
   /// String conversions: string to long integer value  \ingroup DD4HEP_CORE
   long   _toLong(const std::string& value);
-  /// String conversions: string to unsigned short value  \ingroup DD4HEP_CORE
-  unsigned short _toUShort(const std::string& value);
-  /// String conversions: string to unsigned integer value  \ingroup DD4HEP_CORE
-  unsigned int   _toUInt(const std::string& value);
-  /// String conversions: string to long integer value  \ingroup DD4HEP_CORE
-  unsigned long  _toULong(const std::string& value);
   /// String conversions: string to float value  \ingroup DD4HEP_CORE
   float  _toFloat(const std::string& value);
   /// String conversions: string to double value  \ingroup DD4HEP_CORE
@@ -452,5 +442,5 @@ namespace dd4hep {
   // Forward declarations
   class Detector;
 }         /* End namespace dd4hep    */
-#endif // DD4HEP_HANDLE_H
+#endif    /* DD4HEP_HANDLE_H         */
 

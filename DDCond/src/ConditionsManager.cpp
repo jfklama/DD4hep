@@ -98,7 +98,7 @@ const vector<const IOVType*> ConditionsManagerObject::iovTypesUsed() const   {
   vector<const IOVType*> result;
   const auto& types = this->iovTypes();
   for ( const auto& i : types )  {
-    if ( i.type != IOVType::UNKNOWN_IOV ) result.emplace_back(&i);
+    if ( int(i.type) != IOVType::UNKNOWN_IOV ) result.emplace_back(&i);
   }
   return result;
 }
@@ -113,16 +113,11 @@ void ConditionsManagerObject::fromString(const std::string& data, IOV& iov)   {
   string iov_name = data.substr(id2+1);
   IOV::Key key;
   int nents = 0;
-  /// Need assignment from long (k1,k2) for compatibility with Apple MAC
-  long k1 = 0, k2 = 0;
-  if ( id1 != string::npos )   {
-    nents = ::sscanf(data.c_str(),"%ld,%ld#",&k1,&k2) == 2 ? 2 : 0;
-    key.second = k2;
-    key.first = k1;
-  }
+  if ( id1 != string::npos )
+    nents = ::sscanf(data.c_str(),"%ld,%ld#",&key.first,&key.second) == 2 ? 2 : 0;
   else  {
-    nents = ::sscanf(data.c_str(),"%ld#",&k1) == 1 ? 1 : 0;
-    key.second = key.first = k1;
+    nents = ::sscanf(data.c_str(),"%ld#",&key.first) == 1 ? 1 : 0;
+    key.second = key.first;
   }
   if ( nents == 0 )   {
     except("ConditionsManager",
@@ -215,7 +210,7 @@ const vector<const IOVType*> ConditionsManager::iovTypesUsed() const  {
   const auto& types = obj->iovTypes();
   result.reserve(types.size());
   for(const auto& i : types )
-    if ( i.type != IOVType::UNKNOWN_IOV ) result.emplace_back(&i);
+    if ( int(i.type) != IOVType::UNKNOWN_IOV ) result.emplace_back(&i);
   return result;
 }
 

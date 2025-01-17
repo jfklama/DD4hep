@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4UIMANAGER_H
-#define DDG4_GEANT4UIMANAGER_H
+#ifndef DD4HEP_DDG4_GEANT4UIMANAGER_H
+#define DD4HEP_DDG4_GEANT4UIMANAGER_H
 
 // Framework include files
 #include "DDG4/Geant4Call.h"
@@ -58,15 +58,9 @@ namespace dd4hep {
       std::string m_uiSetup;
       /// Property: Name of the visualization macro file
       std::string m_visSetup;
-      /// Property: List of commands to be executed when the Geant4Kernel gets configured
-      std::vector<std::string> m_configureCommands;
-      /// Property: List of commands to be executed when the Geant4Kernel gets initialized
-      std::vector<std::string> m_initializeCommands;
-      /// Property: List of commands to be executed when the Geant4Kernel gets terminated
-      std::vector<std::string> m_terminateCommands;
-      /// Property: List of commands to be executed BEFORE running
-      std::vector<std::string> m_preRunCommands;
-      /// Property: List of commands to be executed AFTER running
+      /// Property: Array of macro files to be chained
+      std::vector<std::string> m_commands;
+      /// Property: Array of macro files to be chained and executed AFTER running
       std::vector<std::string> m_postRunCommands;
       /// Property: Array of commands to be chained
       std::vector<std::string> m_macros;
@@ -80,22 +74,11 @@ namespace dd4hep {
       G4VisManager* m_vis;
       /// Reference to Geant4 UI manager
       G4UIExecutive*  m_ui;
-
     public:
       /// Initializing constructor
       Geant4UIManager(Geant4Context* context, const std::string& name);
       /// Default destructor
       virtual ~Geant4UIManager();
-
-      /// Configure the object. Callback registered to the Geant4Kernel.
-      void configure();
-      /// Initialize the object. Callback registered to the Geant4Kernel.
-      void initialize();
-      /// Callback on terminate. Callback registered to the Geant4Kernel.
-      void terminate();
-
-      /// Install command control messenger to write GDML file from command prompt.
-      void installCommandMessenger();
       /// Start visualization
       G4VisManager* startVis();
       /// Start UI
@@ -104,16 +87,10 @@ namespace dd4hep {
       void start();
       /// Stop and release resources
       void stop();
-      /// Force exiting this process without calling atexit handlers
-      void forceExit();
-      /// Regularly exiting this process without calling atexit handlers
-      void regularExit();
-      /// Apply single command
-      void applyCommand(const std::string& command);
       /// Run UI
       virtual void operator()(void* param);
     };
 
   }    // End namespace sim
 }      // End namespace dd4hep
-#endif // DDG4_GEANT4UIMANAGER_H
+#endif // DD4HEP_DDG4_GEANT4UIMANAGER_H

@@ -1,6 +1,3 @@
-#ifndef PARSERS_DETAIL_CONVERSIONS_H
-#define PARSERS_DETAIL_CONVERSIONS_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -18,7 +15,7 @@
  *  Note: Do NEVER include this file directly!
  *
  *  Use the specific include files in the XML or JSON directory!
- *
+ *  Also NO header guards!
  */
 
 
@@ -75,5 +72,3 @@ namespace dd4hep {
     template <typename TYPE> TYPE* _option() const {    return (TYPE*) optional;  }
   };
 } /* End namespace dd4hep           */
-
-#endif

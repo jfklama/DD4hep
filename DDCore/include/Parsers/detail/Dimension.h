@@ -1,6 +1,3 @@
-#ifndef PARSERS_DETAIL_DIMENSION_H
-#define PARSERS_DETAIL_DIMENSION_H
-
 //==========================================================================
 //  AIDA Detector description implementation 
 //--------------------------------------------------------------------------
@@ -34,7 +31,7 @@ namespace dd4hep {
      *  very easy way.
      *  - You may assign any xml handle to a dimension object
      *  - Any attribute of this xml element may then be accessed
-     *    by its natural way. All possible attribute names are
+     *    by it's natural way. All possible attribute names are
      *    reflected by the Dimension object's member functions.
      *  - If an attribute is requested and not present, a exception
      *    is thrown.
@@ -102,13 +99,13 @@ namespace dd4hep {
       double gamma() const;
       /// Access rotation constants: angle
       double gamma(double default_value) const;
-      /// Access rotation constants: delta
+      /// Access rotation constants: angle
       double delta() const;
-      /// Access rotation constants: delta
+      /// Access rotation constants: angle
       double delta(double default_value) const;
-      /// Access rotation constants: epsilon
+      /// Access rotation constants: angle
       double epsilon() const;
-      /// Access rotation constants: epsilon
+      /// Access rotation constants: angle
       double epsilon(double default_value) const;
       /// Access rotation constants: theta
       double theta() const;
@@ -118,14 +115,6 @@ namespace dd4hep {
       double deltatheta() const;
       /// Access rotation constants: deltatheta
       double deltatheta(double default_value) const;
-      /// Access rotation constants: starttheta
-      double starttheta() const;
-      /// Access rotation constants: starttheta
-      double starttheta(double default_value) const;
-      /// Access rotation constants: endtheta
-      double endtheta() const;
-      /// Access rotation constants: endtheta
-      double endtheta(double default_value) const;
       /// Access rotation constants: thetaBins
       int thetaBins() const;
 
@@ -166,14 +155,6 @@ namespace dd4hep {
       double startphi() const;
       /// Access rotation constants: startphi
       double startphi(double default_value) const;
-      /// Access rotation constants: endphi
-      double endphi() const;
-      /// Access rotation constants: endphi
-      double endphi(double default_value) const;
-      /// Access rotation constants: twist
-      double twist() const;
-      /// Access rotation constants: twist
-      double twist(double default_value) const;
 
       /// Access parameters: a
       double a() const;
@@ -191,13 +172,9 @@ namespace dd4hep {
       double c() const;
       /// Access parameters: c
       double c(double default_value) const;
-      /// Access rotation constants: dist
-      double dist() const;
-      /// Access rotation constants: dist
-      double dist(double default_value) const;
-      /// Access parameters: distance
+      ///Access parameters: distance
       double distance() const;
-      /// Access parameters: distance
+      ///Access parameters: distance
       double distance(double default_value) const;
       /// Access parameters: fraction
       double fraction()  const;
@@ -272,55 +249,6 @@ namespace dd4hep {
       double inner_radius() const;
       /// Access attribute values: inner_r
       double inner_r() const;
-
-      /// Access parameters: v
-      double v() const;
-      /// Access parameters: v, if not present returns default
-      double v(double default_val) const;
-      /// Access parameters: V
-      double V() const;
-      /// Access parameters: V, if not present returns default
-      double V(double default_val) const;
-      /// Access parameters: dv
-      double dv() const;
-      /// Access parameters: dv, if not present returns default
-      double dv(double default_val) const;
-      /// Access parameters: v0
-      double v0() const;
-      /// Access parameters: v0, if not present returns default
-      double v0(double default_val) const;
-      /// Access parameters: v1
-      double v1() const;
-      /// Access parameters: v1, if not present returns default
-      double v1(double default_val) const;
-      /// Access parameters: v2
-      double v2() const;
-      /// Access parameters: v2, if not present returns default
-      double v2(double default_val) const;
-      /// Access parameters: v3
-      double v3() const;
-      /// Access parameters: v3, if not present returns default
-      double v3(double default_val) const;
-      /// Access parameters: v4
-      double v4() const;
-      /// Access parameters: v4, if not present returns default
-      double v4(double default_val) const;
-      /// Access parameters: vmin
-      double vmin() const;
-      /// Access parameters: vmin, if not present returns default
-      double vmin(double default_val) const;
-      /// Access parameters: vmax
-      double vmax() const;
-      /// Access parameters: vmax, if not present returns default
-      double vmax(double default_val) const;
-      /// Access parameters: v_offset
-      double v_offset() const;
-      /// Access parameters: v_offset, if not present returns default
-      double v_offset(double default_val) const;
-      /// Access parameters: dim_v
-      double dim_v() const;
-      /// Access parameters: dim_v, if not present returns default
-      double dim_v(double default_val) const;
 
       /// Access parameters: x
       double x() const;
@@ -436,17 +364,9 @@ namespace dd4hep {
       double dz() const;
       /// Access parameters: dz, if not present returns default
       double dz(double default_value) const;
-      /// Access pos/neg parameters: zpos
-      double zpos() const;
-      /// Access pos/neg parameters: zpos
-      double zpos(double default_value) const;
-      /// Access pos/neg parameters: zneg
-      double zneg() const;
-      /// Access pos/neg parameters: zneg
-      double zneg(double default_value) const;
-      /// Access min/max parameters: zmin
+      /// Access min/max parameters: zmax
       double zmin() const;
-      /// Access min/max parameters: zmin
+      /// Access min/max parameters: zmax
       double zmin(double default_value) const;
       /// Access min/max parameters: zmax
       double zmax() const;
@@ -471,10 +391,6 @@ namespace dd4hep {
 
       /// Access attribute values: length
       double length() const;
-      /// Access attribute values: level
-      int    level() const;
-      /// Access attribute values: level
-      int    level(int default_value) const;
       /// Access attribute values: width
       double width() const;
       /// Access attribute values: height
@@ -528,19 +444,11 @@ namespace dd4hep {
       double offset() const;
       /// Access attribute values: offset
       double offset(double default_value) const;
-
-      /// Access attribute values: count
-      int count() const;
-      /// Access attribute values: item
-      int item() const;
-      /// Access attribute values: items
-      int items() const;
       /// Access attribute values: number
       int number() const;
+
       /// Access attribute values: nmodules
       int nmodules() const;
-      /// Access attribute values: nsegments
-      int nsegments() const;
       /// Access attribute values: nModules
       int nModules() const;
       /// Access attribute values: RowID
@@ -581,8 +489,6 @@ namespace dd4hep {
       double phi_tilt() const;
       /// Access attribute values: nphi
       int    nphi() const;
-      /// Access attribute values: replicate
-      int    replicate() const;
       /// Access attribute values: rc
       double rc() const;
 
@@ -670,17 +576,17 @@ namespace dd4hep {
       /// Access min/max parameters: lunit
       double lunit(double default_value) const;
 
-      /// Access constants: temperature
+      /// Access rotation constants: temperature
       double temperature() const;
-      /// Access constants: temperature
+      /// Access rotation constants: temperature
       double temperature(double default_value) const;
-      /// Access constants: pressure
+      /// Access rotation constants: pressure
       double pressure() const;
-      /// Access constants: pressure
+      /// Access rotation constants: pressure
       double pressure(double default_value) const;
-      /// Access constants: density
+      /// Access rotation constants: density
       double density() const;
-      /// Access constants: density
+      /// Access rotation constants: density
       double density(double default_value) const;
 
       /// Access child element with tag "dimensions" as Dimension object
@@ -693,10 +599,6 @@ namespace dd4hep {
       Dimension position(bool throw_if_not_present = true) const;
       /// Access child element with tag "rotation" as Dimension object
       Dimension rotation(bool throw_if_not_present = true) const;
-      /// Access child element with tag "transformation" as Dimension object
-      Dimension transformation(bool throw_if_not_present = true) const;
-      /// Access child element with tag "transform" as Dimension object
-      Dimension transform(bool throw_if_not_present = true) const;
       /// Access child element with tag "cone" as Dimension object
       Dimension cone(bool throw_if_not_present = true) const;
       /// Access child element with tag "sphere" as Dimension object
@@ -715,35 +617,21 @@ namespace dd4hep {
       Dimension staves(bool throw_if_not_present = true) const;
       /// Access child element with tag "beampipe" as Dimension object
       Dimension beampipe(bool throw_if_not_present = true) const;
-      /// Access child element with tag "envelope" as Dimension object
+      /// Access child element with tag "beampipe" as Dimension object
       Dimension envelope(bool throw_if_not_present = true) const;
-      /// Access child element with tag "shape" as Dimension object
-      Dimension shape(bool throw_if_not_present = true) const;
-      /// Access child element with tag "solid" as Dimension object
-      Dimension solid(bool throw_if_not_present = true) const;
 
       /// Access "name" attribute as STL string
       std::string nameStr() const;
-      /// Access "name" attribute as STL string. Return default value if not present
-      std::string nameStr(const std::string& default_value) const;
-      /// Access "type" attribute as STL string
-      std::string typeStr() const;
-      /// Access "type" attribute as STL string. Return default value if not present
-      std::string typeStr(const std::string& default_value) const;
-      /// Access "value" attribute as STL string
-      std::string valueStr() const;
-      /// Access "value" attribute as STL string. Return default value if not present
-      std::string valueStr(const std::string& default_value) const;
-      /// Access "label" attribute as STL string
-      std::string labelStr() const;
-      /// Access "label" attribute as STL string. Return default value if not present
-      std::string labelStr(const std::string& default_value) const;
-      /// Access "symbol" attribute as STL string
-      std::string symbolStr() const;
-      /// Access "symbol" attribute as STL string. Return default value if not present
-      std::string symbolStr(const std::string& default_value) const;
       /// Access "ref" attribute as a string
       std::string refStr() const;
+      /// Access "type" attribute as STL string
+      std::string typeStr() const;
+      /// Access "value" attribute as STL string
+      std::string valueStr() const;
+      /// Access "label" attribute as STL string
+      std::string labelStr() const;
+      /// Access "symbol" attribute as STL string
+      std::string symbolStr() const;
       /// Access "module" attribute as STL string
       std::string moduleStr() const;
       /// Access "readout" attribute as STL string
@@ -758,5 +646,3 @@ namespace dd4hep {
 
   }       /* End namespace DD4HEP_DIMENSION_NS        */
 }         /* End namespace dd4hep                     */
-
-#endif

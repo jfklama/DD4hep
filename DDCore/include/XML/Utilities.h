@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef XML_UTILITIES_H
-#define XML_UTILITIES_H
+#ifndef DD4HEP_XML_XMLUTILITIES_H
+#define DD4HEP_XML_XMLUTILITIES_H
 
 // Framework include files
 #include "XML/Conversions.h"
@@ -84,60 +84,6 @@ namespace dd4hep {
      *  @author F.Gaede, DESY
      */
     void setDetectorTypeFlag( dd4hep::xml::Handle_t e, dd4hep::DetElement sdet ) ; 
-
-    /// Configure volume properties from XML element
-    /**
-     *   Example:
-     *      <volume>
-     *         <regionref   name="world_region"/>
-     *         <limitsetref name="world_limits"/>
-     *         <visref      name="world_vis"/>
-     *      </volume>
-     *    
-     *      with
-     *      dd4hep::Detector&          detector:  Handle to dd4hep Detector instance
-     *      dd4hep::xml::Handle_t      element:   XML element <volume>
-     *      dd4hep::Volume             volume:    the volume to be configured.
-     *      bool                       propagate: apply setting also to all children
-     *      bool                       ignore_unknown_attr: Ignore unknown attrs
-     *
-     *   \return Number of properties changed
-     *
-     *   \author  M.Frank
-     *   \version 1.0
-     *   \date    03.03.23
-     */
-    std::size_t configVolume( dd4hep::Detector& detector,
-			      dd4hep::xml::Handle_t element,
-			      dd4hep::Volume volume,
-			      bool propagate,
-			      bool ignore_unknown_attr = false);
-
-    /// Configure sensitive detector from XML element
-    /**
-     *   Example:
-     *   <some-xml-tag debug="true">
-     *      <combine_hits    value="true"/>
-     *      <verbose         value="true"/>
-     *      <type            value="tracker"/>
-     *      <ecut            value="5*keV"/>
-     *      <hits_collection value="hits_collection_5"/>
-     *    </some-xml-tag>
-     *    
-     *    - The debug flag is optional.
-     *    - Not all child nodes are mandatory.
-     *      If not present, the attribute stays unchanged.
-     *
-     *   \return Number of properties changed
-     *
-     *   \author  M.Frank
-     *   \version 1.0
-     *   \date    03.03.23
-     */
-    std::size_t configSensitiveDetector( dd4hep::Detector& detector,
-					 dd4hep::SensitiveDetector sensitive,
-					 dd4hep::xml::Handle_t element);
-
   }       /* End namespace xml              */
 }         /* End namespace dd4hep           */
-#endif // XML_UTILITIES_H
+#endif    /* dd4hep_XML_XMLUTILITIES_H */

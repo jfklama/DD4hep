@@ -10,15 +10,14 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef JSON_CONFIG_H
-#define JSON_CONFIG_H
+#ifndef DD4HEP_DDCORE_JSON_CONFIG_H
+#define DD4HEP_DDCORE_JSON_CONFIG_H
 
 #include "Parsers/config.h"
 
 #define DD4HEP_USE_BOOST_JSON 1
 
-#include <boost/bind/bind.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include "boost/property_tree/ptree.hpp"
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -34,4 +33,4 @@ namespace dd4hep {
 
   }       /* End namespace json              */
 }         /* End namespace dd4hep            */
-#endif // JSON_CONFIG_H
+#endif    /* DD4HEP_DDCORE_JSON_CONFIG_H  */

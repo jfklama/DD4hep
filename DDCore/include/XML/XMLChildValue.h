@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef XML_XMLCHILDVALUE_H
-#define XML_XMLCHILDVALUE_H
+#ifndef DD4HEP_XML_XMLCHILDVALUE_H
+#define DD4HEP_XML_XMLCHILDVALUE_H
 
 // Framework include files
 #include "XML/XMLTags.h"
@@ -21,4 +21,4 @@
 #include "Parsers/detail/ChildValue.h"
 #undef  DD4HEP_DIMENSION_NS
 
-#endif // XML_XMLCHILDVALUE_H
+#endif    /* DD4HEP_XML_XMLCHILDVALUE_H   */

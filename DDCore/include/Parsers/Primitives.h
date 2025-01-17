@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef PARSERS_PRIMITIVES_H
-#define PARSERS_PRIMITIVES_H
+#ifndef DD4HEP_PARSERS_PRIMITIVES_H
+#define DD4HEP_PARSERS_PRIMITIVES_H
 
 // Framework include files
 #include "Parsers/config.h"
@@ -25,7 +25,6 @@
 #include <string_view>
 #endif
 #include <limits>
-#include <cstdint>
 
 #include <typeinfo>
 #include <algorithm>
@@ -41,9 +40,8 @@ namespace dd4hep {
     class BitFieldCoder;
     class BitFieldElement;
     /// Useful typedefs to differentiate cell IDs and volume IDs
-    typedef uint64_t CellID;
-    typedef uint64_t VolumeID;
-    typedef int64_t  FieldID;
+    typedef long long int CellID;
+    typedef long long int VolumeID;
   }
 
 
@@ -55,7 +53,6 @@ namespace dd4hep {
   typedef DDSegmentation::BitFieldElement BitFieldElement;
 #else
   using DDSegmentation::CellID;
-  using DDSegmentation::FieldID;
   using DDSegmentation::VolumeID;
   using DDSegmentation::BitFieldCoder;
   using DDSegmentation::BitFieldElement;
@@ -102,40 +99,73 @@ namespace dd4hep {
   /// Throw exception when handles are check for validity
   void notImplemented(const std::string& msg);
 
+  /// Class to perform dynamic casts using unknown pointers.
+  /** @class ComponentCast Primitives.h dd4hep/Primitives.h
+   *
+   *  It is mandatory that the pointers referred do actually
+   *  support the asked functionalty.
+   *  Miracles also I cannot do.....
+   *
+   *   @author  M.Frank
+   *   @date    13.08.2013
+   */
+  class ComponentCast {
+  public:
+    typedef void  (*destroy_t)(void*);
+    typedef void* (*cast_t)(const void*);
+#ifdef __CINT__
+    const std::type_info* type;
+#else
+    const std::type_info& type;
+#endif
+    const void* abi_class;
+    destroy_t   destroy;
+    cast_t      cast;
+
+  private:
+    /// Initializing Constructor
+    ComponentCast(const std::type_info& t, destroy_t d, cast_t c);
+    /// Defautl destructor
+    virtual ~ComponentCast();
+
+  public:
+    template <typename TYPE> static void _destroy(void* arg)  {
+      TYPE* ptr = (TYPE*)arg;
+      if (ptr)    delete ptr;
+    }
+    template <typename TYPE> static void* _cast(const void* arg)  {
+      TYPE* ptr = (TYPE*)arg;
+      ptr = dynamic_cast<TYPE*>(ptr);
+      return (void*)ptr;
+    }
+    template <typename TYPE> static ComponentCast& instance() {
+      static ComponentCast c(typeid(TYPE),_destroy<TYPE>,_cast<TYPE>);
+      return c;
+    }
+
+    /// Apply cast using typeinfo instead of dynamic_cast
+    void* apply_dynCast(const ComponentCast& to, const void* ptr) const;
+    /// Apply cast using typeinfo instead of dynamic_cast
+    void* apply_upCast(const ComponentCast& to, const void* ptr) const;
+    /// Apply cast using typeinfo instead of dynamic_cast
+    void* apply_downCast(const ComponentCast& to, const void* ptr) const;
+  };
+
   /// Convert volumeID to string format (016X)
   std::string volumeID(VolumeID vid);
 
   /// DD4hep internal namespace declaration for utilities and implementation details
   namespace detail  {
     
-    /// 64 bit hash function
-    unsigned long long int hash64(const void* key, std::size_t len);
-    /// 64 bit hash function
+    /// We need it so often: one-at-time 64 bit hash function
     unsigned long long int hash64(const char* key);
-    /// 64 bit hash function
     unsigned long long int hash64(const std::string& key);
-    /// 64 bit hash update function
-    unsigned long long int update_hash64(unsigned long long int hash, const void* key, std::size_t len);
-    /// 64 bit hash update function
-    unsigned long long int update_hash64(unsigned long long int hash, const std::string& key);
-    /// 64 bit hash update function
-    unsigned long long int update_hash64(unsigned long long int hash, const char* key);
-  
-    /// 32 bit hash function
-    inline unsigned int hash32(const void* key, std::size_t len) {
-      unsigned int hash = 0;
-      const unsigned char* k = (const unsigned char*)key;
-      for (; --len; k++) {
-        hash += *k;
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-      }
-      hash += (hash << 3);
-      hash ^= (hash >> 11);
-      hash += (hash << 15);
-      return hash;
+    template <typename T> unsigned long long int typeHash64()   {
+      static unsigned long long int code = hash64(typeid(T).name());
+      return code;
     }
-    /// 32 bit hash function
+  
+    /// We need it so often: one-at-time 32 bit hash function
     inline unsigned int hash32(const char* key) {
       unsigned int hash = 0;
       const char* k = key;
@@ -145,59 +175,12 @@ namespace dd4hep {
         hash ^= (hash >> 6);
       }
       hash += (hash << 3);
-      hash ^= (hash >> 11);
-      hash += (hash << 15);
+      hash ^= (hash >> 11); hash += (hash << 15);
       return hash;
     }
-    /// 32 bit hash function
     inline unsigned int hash32(const std::string& key) {
       return hash32(key.c_str());
     }
-
-    /// 16 bit hash function
-    unsigned short hash16(const void* key, std::size_t len);
-    /// 16 bit hash function
-    inline unsigned short hash16(const std::string& key) {
-      return hash16(key.c_str(), key.length());
-    }
-
-    /// 8 bit hash function
-    unsigned char hash8(const char* key);
-    /// 8 bit hash function
-    unsigned char hash8(const void* key, std::size_t len);
-    /// 8 bit hash function
-    inline unsigned short hash8(const std::string& key) {
-      return hash8(key.c_str(), key.length());
-    }
-
-    /// 64 bit type hash function
-    template <typename T> unsigned long long int typeHash64()   {
-      static unsigned long long int code = hash64(typeid(T).name());
-      return code;
-    }
-
-    template <typename T> T reverseBits(T num)     {
-      static constexpr size_t NO_OF_BITS = sizeof(num) * 8 - 1; 
-      static constexpr T _zero = 0;
-      static constexpr T _one = 1;
-      T reverse_num = _zero; 
-      for (size_t i = 0; i <= NO_OF_BITS; i++)     { 
-        if( (num & (_one << i)) )
-          reverse_num |= (_one << (NO_OF_BITS - i));
-      }
-      return reverse_num; 
-    }
-
-    /// C++ version to convert a string to lower case
-    std::string str_lower(const std::string& str);
-    /// C++ version to convert a string to upper case
-    std::string str_upper(const std::string& str);
-    /// Replace all occurrencies of a string
-    std::string str_replace(const std::string& source, const std::string& pattern, const std::string& replacement);
-    /// Replace all occurrencies of a string
-    std::string str_replace(const std::string& source, char pattern, const std::string& replacement);
-    /// Replace all occurrencies of a string
-    std::string str_replace(const std::string& source, char pattern, char replacement);
 
     /// Convert date into epoch time (seconds since 1970)
     long int makeTime(int year, int month, int day,
@@ -221,12 +204,6 @@ namespace dd4hep {
       /// Definition of the vector type
       typedef std::vector<value_t>              vector_t;
 
-      /// Definition of the bool mapped type
-      typedef std::pair<bool,value_t>           bool_pair_t;
-      /// Definition of the char mapped type
-      typedef std::pair<char,value_t>           char_pair_t;
-      /// Definition of the unsigned char mapped type
-      typedef std::pair<unsigned char,value_t>  uchar_pair_t;
       /// Definition of the short integer mapped type
       typedef std::pair<short,value_t>          short_pair_t;
       /// Definition of the unsigned short integer mapped type
@@ -239,10 +216,6 @@ namespace dd4hep {
       typedef std::pair<long,value_t>           long_pair_t;
       /// Definition of the unsigned long integer mapped type
       typedef std::pair<unsigned long,value_t>  ulong_pair_t;
-      /// Definition of the size_t mapped type
-      typedef std::pair<float,value_t>          float_pair_t;
-      /// Definition of the size_t mapped type
-      typedef std::pair<double,value_t>         double_pair_t;
       /// Definition of the size_t mapped type
       typedef std::pair<size_t,value_t>         size_pair_t;
       /// Definition of the string mapped type
@@ -324,10 +297,6 @@ namespace dd4hep {
     template <typename T> inline void copyObject(void* target,const void* source)  {
       const T* src = (const T*)source;
       ::new(target) T(*src);
-    }
-    /// Helper to copy objects.
-    template <typename T> inline void constructObject(void* target)  {
-      ::new(target) T();
     }
     /// Helper to destruct objects. Note: The memory is NOT released!
     template <typename T> inline void destructObject(T* ptr) {
@@ -649,6 +618,7 @@ namespace dd4hep {
       { return v.second; }
     };
 
+
     /// Data structure to manipulate a bitmask held by reference and represented by an integer
     /**
      * @author  M.Frank
@@ -690,114 +660,5 @@ namespace dd4hep {
     template <typename T>  ReferenceBitMask<T>::ReferenceBitMask(T& arg) : mask(arg) {}
 
   }    // End namespace detail
-
-  /// Class to perform dynamic casts using unknown pointers.
-  /** @class Cast Primitives.h dd4hep/Primitives.h
-   *
-   *  It is mandatory that the pointers referred do actually
-   *  support the asked functionalty.
-   *  Miracles also I cannot do.....
-   *
-   *   @author  M.Frank
-   *   @date    13.08.2013
-   */
-  class Cast {
-  public:
-#ifdef __CINT__
-    const std::type_info* type;
-#else
-    const std::type_info& type;
-#endif
-#ifdef __APPLE__
-    typedef void* (*cast_t)(const void*);
-    cast_t      cast;
-  protected:
-    /// Initializing Constructor
-    Cast(const std::type_info& t, cast_t c);
-  public:
-    template <typename TYPE> static void* _cast(const void* arg)  {
-      TYPE* ptr = (TYPE*)arg;
-      ptr = dynamic_cast<TYPE*>(ptr);
-      return (void*)ptr;
-    }
-    /// Instantiation method    
-    template <typename TYPE> static const Cast& instance() {
-      static Cast c(typeid(TYPE),_cast<TYPE>);
-      return c;
-    }
-#else
-    const void* abi_class;
-  protected:
-    /// Initializing Constructor
-    Cast(const std::type_info& t);
-  public:
-    /// Instantiation method
-    template <typename TYPE> static const Cast& instance() {
-      static Cast c(typeid(TYPE));
-      return c;
-    }
-#endif
-  protected:
-    /// Defautl destructor
-    virtual ~Cast();
-
-  public:
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_dynCast(const Cast& to, const void* ptr) const;
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_upCast(const Cast& to, const void* ptr) const;
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_downCast(const Cast& to, const void* ptr) const;
-  };
-
-  /// Class to perform dynamic casts using unknown pointers.
-  /** @class ComponentCast Primitives.h dd4hep/Primitives.h
-   *
-   *  It is mandatory that the pointers referred do actually
-   *  support the asked functionalty.
-   *  Miracles also I cannot do.....
-   *
-   *   @author  M.Frank
-   *   @date    13.08.2013
-   */
-  class ComponentCast {
-  public:
-
-    typedef void  (*destroy_t)(void*);
-    destroy_t   destroy;
-  private:
-    const Cast& cast;
-    
-  private:
-    /// Initializing Constructor
-    ComponentCast(const Cast& c, destroy_t d) : destroy(d), cast(c)  {}
-    /// Defautl destructor
-    virtual ~ComponentCast() = default;
-    /// Function template to create destructor
-    template <typename TYPE> static void _destroy(void* arg)  {
-      TYPE* ptr = (TYPE*)arg;
-      if (ptr)    delete ptr;
-    }
-  public:
-    template <typename TYPE> static ComponentCast& instance() {
-      static ComponentCast c(Cast::instance<TYPE>(),_destroy<TYPE>);
-      return c;
-    }
-    const std::type_info& type()  const   {
-      return cast.type;
-    }
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_dynCast(const ComponentCast& to, const void* ptr) const  {
-      return cast.apply_dynCast(to.cast, ptr);
-    }
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_upCast(const ComponentCast& to, const void* ptr) const   {
-      return cast.apply_upCast(to.cast, ptr);
-    }
-    /// Apply cast using typeinfo instead of dynamic_cast
-    void* apply_downCast(const ComponentCast& to, const void* ptr) const   {
-      return cast.apply_downCast(to.cast, ptr);
-    }
-  };
 }      // End namespace dd4hep
-#endif // PARSERS_PRIMITIVES_H
+#endif // DD4HEP_PARSERS_PRIMITIVES_H

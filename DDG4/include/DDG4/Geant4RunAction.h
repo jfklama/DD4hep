@@ -11,8 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DDG4_GEANT4RUNACTION_H
-#define DDG4_GEANT4RUNACTION_H
+#ifndef DD4HEP_DDG4_GEANT4RUNACTION_H
+#define DD4HEP_DDG4_GEANT4RUNACTION_H
 
 // Framework include files
 #include "DDG4/Geant4Action.h"
@@ -160,4 +160,4 @@ namespace dd4hep {
   }    // End namespace sim
 }      // End namespace dd4hep
 
-#endif // DDG4_GEANT4RUNACTION_H
+#endif // DD4HEP_DDG4_GEANT4RUNACTION_H

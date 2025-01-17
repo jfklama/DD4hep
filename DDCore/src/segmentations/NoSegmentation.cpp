@@ -36,10 +36,7 @@ namespace dd4hep {
       return vID;
     }
 
+REGISTER_SEGMENTATION(NoSegmentation)
 
   } /* namespace DDSegmentation */
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(NoSegmentation,create_segmentation<dd4hep::DDSegmentation::NoSegmentation>)

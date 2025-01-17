@@ -12,55 +12,53 @@
 #
 #-----------------------------------------------------------------------------
 dd4hep_parse_this()   {
-    local SOURCE=${1}
-    local package=${2};
-    if [ "x${SOURCE}" = "x" ]; then
-        if [ -f bin/this${package}_only.sh ]; then
-            THIS="$PWD"; export THIS
-        elif [ -f ./this${package}_only.sh ]; then
-            THIS=$(cd ..  > /dev/null; pwd); export THIS
-        else
-            echo ERROR: must "cd where/${package}/is" before calling ". bin/this${package}_only.sh" for this version of bash!
-            THIS=; export THIS
-            return 1
-        fi
+    package=${2};
+    if [ "x${1}" = "x" ]; then
+	if [ ! -f bin/this${package}_only.sh ]; then
+            echo ERROR: must "cd where/${package}/is" before calling ". bin/this${package}_only.sh" for this version of bash!;
+            return 1;
+	fi
+	THIS="${PWD}";
     else
-        # get param to "."
-        local thisroot=$(dirname ${SOURCE})
-        THIS=$(cd ${thisroot}/.. > /dev/null;pwd); export THIS
-    fi
+	THIS=$(dirname $(dirname ${1}));
+    fi;
+    THIS=$(cd ${THIS} > /dev/null; pwd);
 }
 #-----------------------------------------------------------------------------
 dd4hep_add_path()   {
-    local path_name=${1}
-    local path_prefix=${2}
-    eval path_value=\$$path_name
-    # Prevent duplicates
-    path_value=`echo ${path_value} | tr : '\n' | grep -v "^${path_prefix}$" | tr '\n' : | sed 's|:$||'`
-    path_value="${path_prefix}${path_value:+:${path_value}}"
-    eval export ${path_name}='${path_value}'
-    unset path_value
+    path_name=${1};
+    path_prefix=${2};
+    eval path_value=\$$path_name;
+    if [ ${path_value} ]; then
+	path_value=${path_prefix}:${path_value};
+    else
+	path_value=${path_prefix};
+    fi; 
+    eval export ${path_name}=${path_value};
 }
 #-----------------------------------------------------------------------------
 dd4hep_add_library_path()    {
-    local p=${1};
-    if [ @APPLE@ ]; then
-        # Do not prepend system library locations on macOS. Stuff will break.
-        [[ "$p" = "/usr/lib" || "$p" = "/usr/local/lib" ]] && return
-        dd4hep_add_path DYLD_LIBRARY_PATH     "$p"
-        dd4hep_add_path DD4HEP_LIBRARY_PATH   "$p"
+    path_prefix=${1};
+    if [ @USE_DYLD@ ];
+    then
+        if [ ${DYLD_LIBRARY_PATH} ]; then
+            export DYLD_LIBRARY_PATH=${path_prefix}:$DYLD_LIBRARY_PATH;
+            export DD4HEP_LIBRARY_PATH=${path_prefix}:$DD4HEP_LIBRARY_PATH;
+        else
+            export DYLD_LIBRARY_PATH=${path_prefix};
+            export DD4HEP_LIBRARY_PATH=${path_prefix};
+        fi;
     else
-        dd4hep_add_path LD_LIBRARY_PATH       "$p"
-    fi
+        if [ ${LD_LIBRARY_PATH} ]; then
+	    export LD_LIBRARY_PATH=${path_prefix}:$LD_LIBRARY_PATH;
+        else
+	    export LD_LIBRARY_PATH=${path_prefix};
+        fi;
+    fi;
 }
 #-----------------------------------------------------------------------------
 #
-SOURCE=${BASH_ARGV[0]}
-if [ "x$SOURCE" = "x" ]; then
-    SOURCE=${(%):-%N} # for zsh
-fi
-
-dd4hep_parse_this $SOURCE dd4hep;
+dd4hep_parse_this ${BASH_ARGV[0]} DD4hep;
 #
 #----DD4hep installation directory--------------------------------------------
 export DD4hepINSTALL=${THIS};
@@ -76,7 +74,7 @@ dd4hep_add_path PYTHONPATH ${THIS}/@DD4HEP_PYTHON_INSTALL_DIR@;
 #----ROOT_INCLUDE_PATH--------------------------------------------------------
 dd4hep_add_path ROOT_INCLUDE_PATH ${THIS}/include;
 #-----------------------------------------------------------------------------
-if [ @APPLE@ ];
+if [ @USE_DYLD@ ];
 then
     export DD4HEP_LIBRARY_PATH=${DYLD_LIBRARY_PATH};
 else
@@ -85,5 +83,4 @@ fi;
 #-----------------------------------------------------------------------------
 #
 unset THIS;
-unset SOURCE;
 #-----------------------------------------------------------------------------

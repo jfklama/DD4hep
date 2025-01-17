@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDG4_GEANT4HIERARCHYDUMP_H
-#define DDG4_GEANT4HIERARCHYDUMP_H
+#ifndef DD4HEP_DDG4_GEANT4HIERARCHYDUMP_H
+#define DD4HEP_DDG4_GEANT4HIERARCHYDUMP_H
 
 // Geant 4 include files
 #include "G4VPhysicalVolume.hh"
@@ -33,23 +33,11 @@ namespace dd4hep {
      */
     class Geant4HierarchyDump {
     public:
-      enum {
-	G4DUMP_ALL     = 0xFFFFFFFF,
-	G4DUMP_LOGVOL  = 1 << 0,
-	G4DUMP_SOLID   = 1 << 1,
-	G4DUMP_SENSDET = 1 << 2,
-	G4DUMP_LIMITS  = 1 << 3,
-	G4DUMP_REGION  = 1 << 4,
-	G4DUMP_MATRIX  = 1 << 5,
-	G4DUMP_LAST
-      };
-
-      Detector&     m_detDesc;
-      unsigned long m_flags = G4DUMP_ALL;
+      Detector& m_detDesc;
 
     public:
       /// Initializing Constructor
-      Geant4HierarchyDump(Detector& description, unsigned long flags = G4DUMP_ALL);
+      Geant4HierarchyDump(Detector& description);
       /// Standard destructor
       virtual ~Geant4HierarchyDump();
       /// Dump the volume hierarchy as it is known to geant 4
@@ -58,4 +46,4 @@ namespace dd4hep {
   }
 }
 
-#endif // DDG4_GEANT4HIERARCHYDUMP_H
+#endif  // DD4HEP_DDG4_GEANT4HIERARCHYDUMP_H

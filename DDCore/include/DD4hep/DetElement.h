@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DD4HEP_DETELEMENT_H
-#define DD4HEP_DETELEMENT_H
+#ifndef DD4HEP_DETECTOR_H
+#define DD4HEP_DETECTOR_H
 
 // Framework include files
 #include "DD4hep/Handle.h"
@@ -77,15 +77,6 @@ namespace dd4hep {
 
     /// Assignment copy operator
     SensitiveDetector& operator=(const SensitiveDetector& sd)  = default;
-
-    /// Equality operator
-    template <typename T> bool operator ==(const Handle<T>& e) const {
-      return ptr() == e.ptr();
-    }
-    /// Non-Equality operator
-    template <typename T> bool operator !=(const Handle<T>& e) const {
-      return ptr() != e.ptr();
-    }
 
     /// Access the type of the sensitive detector
     std::string type() const;
@@ -206,21 +197,20 @@ namespace dd4hep {
     typedef std::map<std::string, DetElement> Children;
 
     enum CopyParameters {
-      COPY_NONE           = 0,
-      COPY_PLACEMENT      = 1 << 0,
-      COPY_PARENT         = 1 << 1,
-      COPY_ALIGNMENT      = 1 << 2,
-      PROPAGATE_PARENT_ID = 1 << 3,
+      COPY_NONE      = 0,
+      COPY_PLACEMENT = 1 << 0,
+      COPY_PARENT    = 1 << 1,
+      COPY_ALIGNMENT = 1 << 2,
       LAST
     };
 
     enum UpdateParam {
-      CONDITIONS_CHANGED  = 1<<0,
-      PLACEMENT_CHANGED   = 1<<1,
-      SOMETHING_CHANGED   = 1<<2,
-      PLACEMENT_ELEMENT   = 1<<20,
-      PLACEMENT_HIGHEST   = 1<<21,
-      PLACEMENT_DETECTOR  = 1<<22,
+      CONDITIONS_CHANGED = 1<<0,
+      PLACEMENT_CHANGED  = 1<<1,
+      SOMETHING_CHANGED  = 1<<2,
+      PLACEMENT_ELEMENT  = 1<<20,
+      PLACEMENT_HIGHEST  = 1<<21,
+      PLACEMENT_DETECTOR = 1<<22,
       PLACEMENT_NONE
     };
 
@@ -322,13 +312,10 @@ namespace dd4hep {
     bool operator <(const DetElement e) const {
       return ptr() < e.ptr();
     }
+
     /// Equality operator
-    template <typename T> bool operator ==(const Handle<T>& e) const {
+    bool operator ==(const DetElement e) const {
       return ptr() == e.ptr();
-    }
-    /// Non-Equality operator
-    template <typename T> bool operator !=(const Handle<T>& e) const {
-      return ptr() != e.ptr();
     }
 
     /// Clone (Deep copy) the DetElement structure
@@ -449,8 +436,6 @@ namespace dd4hep {
     const Children& children() const;
     /// Access to individual children by name
     DetElement child(const std::string& name) const;
-    /// Access to individual children by name. Have option to not throw an exception
-    DetElement child(const std::string& child_name, bool throw_if_not_found) const;
     /// Access to the detector elements's parent
     DetElement parent() const;
     /// Access to the world object. Only possible once the geometry is closed.
@@ -465,4 +450,4 @@ namespace dd4hep {
 
 #include "DD4hep/AlignmentData.h"
 
-#endif // DD4HEP_DETELEMENT_H
+#endif    /* DD4HEP_DETECTOR_H      */

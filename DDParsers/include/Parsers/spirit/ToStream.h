@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef PARSERS_SPIRIT_TOSTREAM_H
-#define PARSERS_SPIRIT_TOSTREAM_H 1
+#ifndef DD4HEPPROPERTYPARSERS_PARSERVALUETOSTREAM_H
+#define DD4HEPPROPERTYPARSERS_PARSERVALUETOSTREAM_H 1
 // ============================================================================
 // Include files
 #include "Parsers/config.h"
@@ -44,11 +44,7 @@
 namespace dd4hep {
   // ==========================================================================
   /// Utility namespace to support boost::spirit
-  namespace Parsers {
-
-    template <class TYPE>
-    std::ostream& toStream(const TYPE& obj, std::ostream& s);
-
+  namespace Utils {
     // ========================================================================
     /** the generic implementation of the printout to the std::ostream
      *  @author Alexander MAZUROV Alexander.Mazurov@gmail.com
@@ -56,7 +52,7 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class TYPE>
-    std::ostream& toStream_(const TYPE& obj, std::ostream& s);
+    std::ostream& toStream(const TYPE& obj, std::ostream& s);
     // ========================================================================
     /// the helper function to print the sequence
     /** @param first (INPUT)  begin-iterator for the sequence
@@ -70,7 +66,7 @@ namespace dd4hep {
      *  @date 2009-09-15
      */
     template <class ITERATOR>
-    inline std::ostream& toStream_(ITERATOR first, // begin of the sequence
+    inline std::ostream& toStream(ITERATOR first, // begin of the sequence
                                   ITERATOR last,                            //   end of the sequence
                                   std::ostream& s,                          //            the stream
                                   const std::string& open,                  //               opening
@@ -83,7 +79,7 @@ namespace dd4hep {
      *  @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-05-12
      */
-    inline std::ostream& toStream_(const std::string& obj, std::ostream& s) {
+    inline std::ostream& toStream(const std::string& obj, std::ostream& s) {
       if (std::string::npos == obj.find('\'')) {
         s << "\'" << obj << "\'";
       }
@@ -96,14 +92,14 @@ namespace dd4hep {
     /** @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-09-09
      */
-    inline std::ostream& toStream_(const bool obj, std::ostream& s) {
+    inline std::ostream& toStream(const bool obj, std::ostream& s) {
       return s << (obj ? "True" : "False");
     }
     /// the printout of float values with the reasonable precision
     /** @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-09-09
      */
-    inline std::ostream& toStream_(const float obj, std::ostream& s, const int prec = 6) {
+    inline std::ostream& toStream(const float obj, std::ostream& s, const int prec = 6) {
       const int p = s.precision();
       return s << std::setprecision(prec) << obj << std::setprecision(p);
     }
@@ -111,7 +107,7 @@ namespace dd4hep {
     /** @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-09-09
      */
-    inline std::ostream& toStream_(const double obj, std::ostream& s, const int prec = 8) {
+    inline std::ostream& toStream(const double obj, std::ostream& s, const int prec = 8) {
       const int p = s.precision();
       return s << std::setprecision(prec) << obj << std::setprecision(p);
     }
@@ -119,7 +115,7 @@ namespace dd4hep {
     /** @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-09-09
      */
-    inline std::ostream& toStream_(const long double obj, std::ostream& s, const int prec = 10) {
+    inline std::ostream& toStream(const long double obj, std::ostream& s, const int prec = 10) {
       const int p = s.precision();
       return s << std::setprecision(prec) << obj << std::setprecision(p);
     }
@@ -132,11 +128,11 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class KTYPE, class VTYPE>
-    inline std::ostream& toStream_(const std::pair<KTYPE, VTYPE>& obj, std::ostream& s) {
+    inline std::ostream& toStream(const std::pair<KTYPE, VTYPE>& obj, std::ostream& s) {
       s << "( ";
-      toStream_(obj.first, s);
+      toStream(obj.first, s);
       s << " , ";
-      toStream_(obj.second, s);
+      toStream(obj.second, s);
       return s << " )";
     }
     // ========================================================================
@@ -147,8 +143,8 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class TYPE, class ALLOCATOR>
-    inline std::ostream& toStream_(const std::vector<TYPE, ALLOCATOR>& obj, std::ostream& s) {
-      return toStream_(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
+    inline std::ostream& toStream(const std::vector<TYPE, ALLOCATOR>& obj, std::ostream& s) {
+      return toStream(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
     }
     // ========================================================================
     /** the partial template specialization of <c>std::list<TYPE,ALLOCATOR></c>
@@ -158,8 +154,8 @@ namespace dd4hep {
      *  @date 2007-04-08
      */
     template <class TYPE, class ALLOCATOR>
-    inline std::ostream& toStream_(const std::list<TYPE, ALLOCATOR>& obj, std::ostream& s) {
-      return toStream_(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
+    inline std::ostream& toStream(const std::list<TYPE, ALLOCATOR>& obj, std::ostream& s) {
+      return toStream(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
     }
     // ========================================================================
     /** the partial template specialization of <c>std::deque<TYPE,ALLOCATOR></c>
@@ -169,8 +165,8 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class TYPE, class ALLOCATOR>
-    inline std::ostream& toStream_(const std::deque<TYPE, ALLOCATOR>& obj, std::ostream& s) {
-      return toStream_(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
+    inline std::ostream& toStream(const std::deque<TYPE, ALLOCATOR>& obj, std::ostream& s) {
+      return toStream(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
     }
     // ========================================================================
     /** the partial template specialization of <c>std::set<TYPE,CMP,ALLOCATOR></c>
@@ -180,8 +176,8 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class TYPE, class CMP, class ALLOCATOR>
-    inline std::ostream& toStream_(const std::set<TYPE, CMP, ALLOCATOR>& obj, std::ostream& s) {
-      return toStream_(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
+    inline std::ostream& toStream(const std::set<TYPE, CMP, ALLOCATOR>& obj, std::ostream& s) {
+      return toStream(obj.begin(), obj.end(), s, "[ ", " ]", " , ");
     }
     // ========================================================================
     /** the partial template specialization of
@@ -192,15 +188,15 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class KTYPE, class VTYPE, class CMP, class ALLOCATOR>
-    inline std::ostream& toStream_(const std::map<KTYPE, VTYPE, CMP, ALLOCATOR>& obj, std::ostream& s) {
+    inline std::ostream& toStream(const std::map<KTYPE, VTYPE, CMP, ALLOCATOR>& obj, std::ostream& s) {
       s << "{ ";
       for (typename std::map<KTYPE, VTYPE, CMP, ALLOCATOR>::const_iterator cur = obj.begin(); obj.end() != cur; ++cur) {
         if (obj.begin() != cur) {
           s << " , ";
         }
-        toStream_(cur->first, s);
+        toStream(cur->first, s);
         s << " : ";
-        toStream_(cur->second, s);
+        toStream(cur->second, s);
       }
       return s << " }";
     }
@@ -211,8 +207,8 @@ namespace dd4hep {
      *  @date 2009-10-05
      */
     template <class TYPE, unsigned int N>
-    std::ostream& toStream_(TYPE (&obj)[N], std::ostream& s) {
-      return toStream_(obj, obj + N, s, "( ", " )", " , ");
+    std::ostream& toStream(TYPE (&obj)[N], std::ostream& s) {
+      return toStream(obj, obj + N, s, "( ", " )", " , ");
     }
     // ========================================================================
     /** the specialization for C-arrays, a'la python tuple
@@ -220,8 +216,8 @@ namespace dd4hep {
      *  @date 2009-10-05
      */
     template <class TYPE, unsigned int N>
-    std::ostream& toStream_(const TYPE (&obj)[N], std::ostream& s) {
-      return toStream_(obj, obj + N, s, "( ", " )", " , ");
+    std::ostream& toStream(const TYPE (&obj)[N], std::ostream& s) {
+      return toStream(obj, obj + N, s, "( ", " )", " , ");
     }
     // ========================================================================
     /** the specialization for C-string, a'la python tuple
@@ -229,8 +225,8 @@ namespace dd4hep {
      *  @date 2009-10-05
      */
     template <unsigned int N>
-    std::ostream& toStream_(char (&obj)[N], std::ostream& s) {
-      return toStream_(std::string(obj, obj + N), s);
+    std::ostream& toStream(char (&obj)[N], std::ostream& s) {
+      return toStream(std::string(obj, obj + N), s);
     }
     // ========================================================================
     /** the specialization for C-string, a'la python tuple
@@ -238,16 +234,16 @@ namespace dd4hep {
      *  @date 2009-10-05
      */
     template <unsigned int N>
-    std::ostream& toStream_(const char (&obj)[N], std::ostream& s) {
-      return toStream_(std::string(obj, obj + N), s);
+    std::ostream& toStream(const char (&obj)[N], std::ostream& s) {
+      return toStream(std::string(obj, obj + N), s);
     }
     // ========================================================================
     /** the specialization for C-string, a'la python tuple
      *  @author Vanya BELYAEV Ivan.Belyaev@nikhenf.nl
      *  @date 2009-10-05
      */
-    inline std::ostream& toStream_(const char* obj, std::ostream& s) {
-      return toStream_(std::string(obj), s);
+    inline std::ostream& toStream(const char* obj, std::ostream& s) {
+      return toStream(std::string(obj), s);
     }
     // ========================================================================
     /** the generic implementation of the printout to the std::ostream
@@ -256,7 +252,7 @@ namespace dd4hep {
      *  @date 2006-05-12
      */
     template <class TYPE>
-    inline std::ostream& toStream_(const TYPE& obj, std::ostream& s) {
+    inline std::ostream& toStream(const TYPE& obj, std::ostream& s) {
       return s << obj;
     }
     // ========================================================================
@@ -272,7 +268,7 @@ namespace dd4hep {
      *  @date 2009-09-15
      */
     template <class ITERATOR>
-    inline std::ostream& toStream_(ITERATOR first,     // begin of the sequence
+    inline std::ostream& toStream(ITERATOR first,     // begin of the sequence
                                   ITERATOR last,                                //   end of the sequence
                                   std::ostream& s,                              //            the stream
                                   const std::string& open,                      //               opening
@@ -284,7 +280,7 @@ namespace dd4hep {
         if (first != curr) {
           s << delim;
         }
-        toStream_(*curr, s);
+        toStream(*curr, s);
       }
       s << close;
       //
@@ -295,7 +291,7 @@ namespace dd4hep {
      *  @author Alexander MAZUROV Alexander.Mazurov@gmail.com
      *  @author Vanya BELYAEV ibelyaev@physics.syr.edu
      *  @date 2006-05-12
-     *  @see dd4hep::Parsers::toStream_
+     *  @see dd4hep::Utils::toStream
      *  @todo need to be compared with boost::lexical_cast
      */
     template <class TYPE>
@@ -303,12 +299,12 @@ namespace dd4hep {
       std::ostringstream s;
       std::ios::fmtflags orig_flags = s.flags();
       s.setf(std::ios::showpoint);   // to display correctly floats
-      toStream_(obj, s);
+      toStream(obj, s);
       s.flags(orig_flags);
       return s.str();
     }
     // ========================================================================
-  }//                                          end of namespace dd4hep::Parsers
+  }//                                            end of namespace dd4hep::Utils
   // ==========================================================================
 }//                                                     end of namespace dd4hep
 
@@ -316,24 +312,20 @@ namespace dd4hep {
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
 #include "Math/Vector4D.h"
-#include "Math/RotationZYX.h"
-
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
   // ==========================================================================
   /// Utility namespace to support boost::spirit
-  namespace Parsers {
+  namespace Utils {
     // ============================================================================
     /// print XYZ point
-    std::ostream& toStream_(const ROOT::Math::XYZPoint& obj, std::ostream& s);
+    std::ostream& toStream(const ROOT::Math::XYZPoint& obj, std::ostream& s);
     // print XYZ-vector
-    std::ostream& toStream_(const ROOT::Math::XYZVector& obj, std::ostream& s);
+    std::ostream& toStream(const ROOT::Math::XYZVector& obj, std::ostream& s);
     /// print Lorentz vector
-    std::ostream& toStream_(const ROOT::Math::PxPyPzEVector& obj, std::ostream& s);
-    /// print RotationZYX
-    std::ostream& toStream_(const ROOT::Math::RotationZYX& obj, std::ostream& s);
+    std::ostream& toStream(const ROOT::Math::PxPyPzEVector& obj, std::ostream& s);
     // ========================================================================
-  }//                                          end of namespace dd4hep::Parsers
+  }//                                            end of namespace dd4hep::Utils
   // ==========================================================================
 }//                                                     end of namespace dd4hep
 #endif

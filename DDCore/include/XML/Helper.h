@@ -10,12 +10,13 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef XML_HELPER_H
-#define XML_HELPER_H
+#ifndef DD4HEP_XML_HELPER_H
+#define DD4HEP_XML_HELPER_H
 
 // Framework include files
 #include "XML/XML.h"
 #include "DD4hep/Detector.h"
+#include "DD4hep/Factories.h"
 #include "DD4hep/DD4hepUnits.h"
 
 /// Namespace for the AIDA detector description toolkit
@@ -46,4 +47,4 @@ namespace dd4hep {
   }
 }
 
-#endif // XML_HELPER_H
+#endif // DD4HEP_XML_HELPER_H

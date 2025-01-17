@@ -30,7 +30,6 @@
 #include "DD4hep/Printout.h"
 
 // ROOT include files
-#include "TROOT.h"
 #include "TH2.h"
 #include "TFile.h"
 #include "TSystem.h"
@@ -47,7 +46,6 @@
 #include "TEveCompound.h"
 #include "TEveBoxSet.h"
 #include "TEvePointSet.h"
-#include "TEveGeoShape.h"
 #include "TEveTrackPropagator.h"
 #include "TGeoManager.h"
 
@@ -91,20 +89,18 @@ Display::Display(TEveManager* eve)
     m_viewMenu(0), m_dd4Menu(0), m_visLevel(7), m_loadLevel(1)
 {
   TEveBrowser* br = m_eve->GetBrowser();
-  TGMenuBar*   menu = br->GetMenuBar();
+  TGMenuBar* bar = br->GetMenuBar();
   EveShapeContextMenu::install(this);
   EvePgonSetProjectedContextMenu::install(this);
   ElementListContextMenu::install(this);
   m_detDesc = &Detector::getInstance();
-  TEveGeoShape::GetGeoMangeur()->AddNavigator();
-  TEveGeoShape::GetGeoMangeur()->SetCurrentNavigator(0);
   m_evtHandler = new GenericEventHandler();
   m_evtHandler->Subscribe(this);
   m_detDesc->addExtension<Display>(this);
   br->ShowCloseTab(kFALSE);
   m_eve->GetViewers()->SwitchColorSet();
   TFile::SetCacheFileDir(".");
-  BuildMenus(menu);
+  BuildMenus(bar);
   br->SetTabTitle("Global Scene",TRootBrowser::kRight,0);
 }
 
@@ -174,9 +170,9 @@ GenericEventHandler& Display::eventHandler() const   {
 }
 
 /// Add new menu to the main menu bar
-void Display::AddMenu(TGMenuBar* menubar, PopupMenu* menu, int hints)  {
+void Display::AddMenu(TGMenuBar* bar, PopupMenu* menu, int hints)  {
   m_menus.insert(menu);
-  menu->Build(menubar, hints);
+  menu->Build(bar, hints);
   m_eve->FullRedraw3D(kTRUE); // Reset camera and redraw
 }
 
@@ -271,11 +267,7 @@ void Display::UnregisterEvents(View* view)   {
 
 /// Open standard message box
 void Display::MessageBox(PrintLevel level, const string& text, const string& title) const   {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,9,2)
-  string path = TString::Format("%s/", TROOT::GetIconPath().Data()).Data();
-#else
   string path = TString::Format("%s/icons/", gSystem->Getenv("ROOTSYS")).Data();
-#endif
   const TGPicture* pic = 0;
   if ( level == VERBOSE )
     pic = client().GetPicture((path+"mb_asterisk_s.xpm").c_str());
@@ -335,17 +327,17 @@ string Display::OpenEventFileDialog(const string& default_dir)   const {
 }
 
 /// Build the DDEve specific menues
-void Display::BuildMenus(TGMenuBar* menubar)   {
-  if ( 0 == menubar ) {
-    menubar = m_eve->GetBrowser()->GetMenuBar();
+void Display::BuildMenus(TGMenuBar* bar)   {
+  if ( 0 == bar ) {
+    bar = m_eve->GetBrowser()->GetMenuBar();
   }
   if ( 0 == m_dd4Menu )  {
     m_dd4Menu = new DD4hepMenu(this);
-    AddMenu(menubar, m_dd4Menu);
+    AddMenu(bar, m_dd4Menu);
   }
   if ( 0 == m_viewMenu && !m_viewConfigs.empty() )  {
     m_viewMenu = new ViewMenu(this,"&Views");
-    AddMenu(menubar, m_viewMenu, kLHintsRight);
+    AddMenu(bar, m_viewMenu, kLHintsRight);
   }
 }
 
@@ -373,37 +365,34 @@ void Display::OnNewEvent(EventHandler& handler )   {
     const Collections& colls = (*ityp).second;
     for(Collections::const_iterator j=colls.begin(); j!=colls.end(); ++j)   {
       size_t len = (*j).second;
+      const char* nam = (*j).first;
       if ( len > 0 )   {
-	const char* nam = (*j).first;
-	DataConfigurations::const_iterator icfg = m_collectionsConfigs.find(nam);
-	DataConfigurations::const_iterator cfgend = m_collectionsConfigs.end();
         EventHandler::CollectionType typ = handler.collectionType(nam);
         if ( typ == EventHandler::CALO_HIT_COLLECTION ||
              typ == EventHandler::TRACKER_HIT_COLLECTION )  {
-          if ( icfg != cfgend )  {
-            const DataConfig& cfg = (*icfg).second;
-	    if ( ::toupper(cfg.use[0]) == 'T' || ::toupper(cfg.use[0]) == 'Y' )  {
-	      if ( cfg.hits == "PointSet" )  {
-		PointsetCreator cr(nam,len,cfg);
-		handler.collectionLoop((*j).first, cr);
-		ImportEvent(cr.element());
-	      }
-	      else if ( cfg.hits == "BoxSet" )  {
-		BoxsetCreator cr(nam,len,cfg);
-		handler.collectionLoop((*j).first, cr);
-		ImportEvent(cr.element());
-	      }
-	      else if ( cfg.hits == "TowerSet" )  {
-		TowersetCreator cr(nam,len,cfg);
-		handler.collectionLoop((*j).first, cr);
-		ImportEvent(cr.element());
-	      }
-	      else {  // Default is point set
-		PointsetCreator cr(nam,len);
-		handler.collectionLoop((*j).first, cr);
-		ImportEvent(cr.element());
-	      }
-	    }
+          const DataConfigurations::const_iterator i=m_collectionsConfigs.find(nam);
+          if ( i != m_collectionsConfigs.end() )  {
+            const DataConfig& cfg = (*i).second;
+            if ( cfg.hits == "PointSet" )  {
+              PointsetCreator cr(nam,len,cfg);
+              handler.collectionLoop((*j).first, cr);
+              ImportEvent(cr.element());
+            }
+            else if ( cfg.hits == "BoxSet" )  {
+              BoxsetCreator cr(nam,len,cfg);
+              handler.collectionLoop((*j).first, cr);
+              ImportEvent(cr.element());
+            }
+            else if ( cfg.hits == "TowerSet" )  {
+              TowersetCreator cr(nam,len,cfg);
+              handler.collectionLoop((*j).first, cr);
+              ImportEvent(cr.element());
+            }
+            else {  // Default is point set
+              PointsetCreator cr(nam,len);
+              handler.collectionLoop((*j).first, cr);
+              ImportEvent(cr.element());
+            }
           }
           else  {
             PointsetCreator cr(nam,len);
@@ -417,21 +406,13 @@ void Display::OnNewEvent(EventHandler& handler )   {
           // last track is gone ie. when we re-initialize the event scene
 
           // $$$ Do not know exactly what the field parameters mean
-	  if ( (icfg=m_collectionsConfigs.find("StartVertexPoints")) != cfgend )   {
-	    StartVertexCreator cr("StartVertexPoints", len, (*icfg).second);
-	    handler.collectionLoop((*j).first, cr);
-	    printout(INFO,"Display","+++ StartVertexPoints: Filled %d start vertex points.....",cr.count);
-	    ImportEvent(cr.element());
-	  }
-	  if ( (icfg=m_collectionsConfigs.find("MCParticles")) != cfgend )   {
-	    MCParticleCreator cr(new TEveTrackPropagator("","",new TEveMagFieldDuo(350, -3.5, 2.0)),
-				 new TEveCompound("MC_Particles","MC_Particles"),
-				 icfg == cfgend ? 0 : &((*icfg).second));
-	    handler.collectionLoop((*j).first, cr);
-	    printout(INFO,"Display","+++ StartVertexPoints: Filled %d patricle tracks.....",cr.count);
-	    cr.close();
-	    particles = cr.particles;
-	  }
+          const DataConfigurations::const_iterator i=m_collectionsConfigs.find(nam);
+          const DataConfig* cfg = (i==m_collectionsConfigs.end()) ? 0 : &((*i).second);
+          MCParticleCreator cr(new TEveTrackPropagator("","",new TEveMagFieldDuo(350, -3.5, 2.0)),
+                               new TEveCompound("MC_Particles","MC_Particles"),cfg);
+          handler.collectionLoop((*j).first, cr);
+          cr.close();
+          particles = cr.particles;
         }
       }
     }

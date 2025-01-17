@@ -24,10 +24,14 @@
 // radian             rad=1                 rad = 1  //NB: different from TGeo
 //
 //
-#ifndef EVALUATOR_DD4HEPUNITS_H
-#define EVALUATOR_DD4HEPUNITS_H
+#ifndef DD4HEP_TGEOUNITS_H
+#define DD4HEP_TGEOUNITS_H
 
 #include "RVersion.h"
+
+#ifndef HAVE_GEANT4_UNITS
+// #define HAVE_GEANT4_UNITS
+#endif
 
 // We use the ROOT system units if they are avalible (FAILS SOME TESTS FOR NOW)
 #if 0
@@ -46,7 +50,7 @@ namespace dd4hep {
     //
     // Length [L]
     //
-#ifdef DD4HEP_USE_GEANT4_UNITS
+#ifdef HAVE_GEANT4_UNITS
     static constexpr double millimeter = 1.0;
 #else
     static constexpr double millimeter = 0.1;
@@ -125,7 +129,7 @@ namespace dd4hep {
     //
     // Time [T]
     //
-#ifdef DD4HEP_USE_GEANT4_UNITS
+#ifdef HAVE_GEANT4_UNITS
     static constexpr double nanosecond = 1.0;
 #else
     static constexpr double nanosecond = 1.e-9;
@@ -154,7 +158,7 @@ namespace dd4hep {
     //
     // Energy [E]
     //
-#ifdef DD4HEP_USE_GEANT4_UNITS
+#ifdef HAVE_GEANT4_UNITS
     static constexpr double megaelectronvolt = 1.0;
 #else
     static constexpr double megaelectronvolt = 1.e-3;
@@ -166,12 +170,11 @@ namespace dd4hep {
     static constexpr double petaelectronvolt = 1.e+9 * megaelectronvolt;
 
     static constexpr double joule = electronvolt / e_SI;   // joule = 6.24150 e+12 * MeV
-    static constexpr double kilojoule = 1.e3*joule;
 
     // symbols
-    static constexpr double eV  = electronvolt;
-    static constexpr double keV = kiloelectronvolt;
     static constexpr double MeV = megaelectronvolt;
+    static constexpr double eV = electronvolt;
+    static constexpr double keV = kiloelectronvolt;
     static constexpr double GeV = gigaelectronvolt;
     static constexpr double TeV = teraelectronvolt;
     static constexpr double PeV = petaelectronvolt;
@@ -192,8 +195,6 @@ namespace dd4hep {
     // Power [E][T^-1]
     //
     static constexpr double watt = joule / second;   // watt = 6.24150 e+3 * MeV/ns
-    static constexpr double kilowatt = 1.e3*watt;
-    static constexpr double megawatt = 1.e6*watt;
 
     //
     // Force [E][L^-1]
@@ -203,9 +204,9 @@ namespace dd4hep {
     //
     // Pressure [E][L^-3]
     //
-#define pascal hep_pascal                               // a trick to avoid warnings
+#define pascal hep_pascal                          // a trick to avoid warnings
     static constexpr double hep_pascal = newton / m2;   // pascal = 6.24150 e+3 * MeV/mm3
-    static constexpr double bar = 100000 * pascal;      // bar    = 6.24150 e+8 * MeV/mm3
+    static constexpr double bar = 100000 * pascal;   // bar    = 6.24150 e+8 * MeV/mm3
     static constexpr double atmosphere = 101325 * pascal;   // atm    = 6.32420 e+8 * MeV/mm3
 
     //
@@ -407,16 +408,12 @@ namespace dd4hep {
     static constexpr double k_Boltzmann = 8.617343e-11 * MeV / kelvin;
 
     //
-    // IUPAC standard temperature and pressure (STP)
-    // STP uses 273.15 K (0 °C, 32 °F) and (since 1982) 1 bar (100 kPa) and not 1 atm!
-    static constexpr double Temperature_STP = 273.15 * kelvin;
-    static constexpr double Pressure_STP    = 1. * bar;
     //
-    // NTP uses the NIST convention: 20 °C (293.15 K, 68 °F), 1 atm (14.696 psi, 101.325 kPa)
-    static constexpr double Temperature_NTP = 293.15 * kelvin;
-    static constexpr double Pressure_NTP    = 1. * atmosphere;
     //
-    static constexpr double kGasThreshold   = 10. * mg / cm3;
+    static constexpr double STP_Temperature = 273.15 * kelvin;
+    static constexpr double STP_Pressure = 1. * atmosphere;
+    static constexpr double kGasThreshold = 10. * mg / cm3;
+
     //
     //
     //
@@ -425,4 +422,4 @@ namespace dd4hep {
 }
 #endif
 
-#endif // EVALUATOR_DD4HEPUNITS_H
+#endif /* DD4HEP_TGEOUNITS_H */

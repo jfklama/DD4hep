@@ -10,8 +10,8 @@
 // Author     : M.Frank
 //
 //==========================================================================
-#ifndef DDEVE_DISPLAY_H
-#define DDEVE_DISPLAY_H
+#ifndef DD4HEP_DDEVE_DISPLAY_H
+#define DD4HEP_DDEVE_DISPLAY_H
 
 // Framework include files
 #include "DD4hep/Detector.h"
@@ -55,11 +55,11 @@ namespace dd4hep {
    */
   class Display : public EventConsumer {
   public:
-    typedef DisplayConfiguration::ViewConfig         ViewConfig;
-    typedef DisplayConfiguration::Config             DataConfig;
-    typedef std::set<View*>                          Views;
-    typedef std::set<DisplayConfiguration*>          Configurations;
-    typedef std::set<PopupMenu*>                     Menus;
+    typedef DisplayConfiguration::ViewConfig ViewConfig;
+    typedef DisplayConfiguration::Config DataConfig;
+    typedef std::set<View*> Views;
+    typedef std::set<DisplayConfiguration*> Configurations;
+    typedef std::set<PopupMenu*> Menus;
     typedef std::map<std::string, TEveElementList*>  Topics;
     typedef std::map<std::string, ViewConfig>        ViewConfigurations;
     typedef std::map<std::string, DataConfig>        DataConfigurations;
@@ -212,12 +212,12 @@ namespace dd4hep {
     virtual void OnNewEvent(EventHandler& handler)  override;
 
     /// Build the DDEve specific menues. Default bar is the ROOT browser's bar
-    virtual void BuildMenus(TGMenuBar* menuBar=0);
+    virtual void BuildMenus(TGMenuBar* bar=0);
     /// Add new menu to the main menu bar
-    virtual void AddMenu(TGMenuBar* menuBar, PopupMenu* menu, int hints=kLHintsNormal);
+    virtual void AddMenu(TGMenuBar* bar, PopupMenu* menu, int hints=kLHintsNormal);
 
     ClassDefOverride(Display,0);
   };
 }      /* End namespace dd4hep   */
-#endif // DDEVE_DISPLAY_H
+#endif /* DD4HEP_DDEVE_DISPLAY_H */
 

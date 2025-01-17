@@ -17,7 +17,6 @@
 // C/C++ include files
 #include <string>
 
-
 // Run a ROOT macro
 void run(const char* macro)  {
   int status;

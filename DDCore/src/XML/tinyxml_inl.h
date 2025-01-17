@@ -1,6 +1,3 @@
-#ifndef DDCORE_SRC_XML_TINYXML_INL_H
-#define DDCORE_SRC_XML_TINYXML_INL_H
-
 /*
   www.sourceforge.net/projects/tinyxml
   Original code (2.0 and earlier )copyright (c) 2000-2006 Lee Thomason (www.grinninglizard.com)
@@ -977,7 +974,7 @@ bool TiXmlDocument::LoadFile( const char* _filename, TiXmlEncoding encoding )
   //            value = filename
   // in the STL case, cause the assignment method of the std::string to
   // be called. What is strange, is that the std::string had the same
-  // address as its c_str() method, and so bad things happen. Looks
+  // address as it's c_str() method, and so bad things happen. Looks
   // like a bug in the Microsoft STL implementation.
   // Add an extra string to avoid the crash.
   TIXML_STRING filename( _filename );
@@ -1907,5 +1904,3 @@ bool TiXmlPrinter::Visit( const TiXmlUnknown& unknown )
   return true;
 }
 
-
-#endif

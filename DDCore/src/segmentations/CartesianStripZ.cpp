@@ -62,9 +62,6 @@ std::vector<double> CartesianStripZ::cellDimensions(const CellID&) const {
 #endif
 }
 
+REGISTER_SEGMENTATION(CartesianStripZ)
 }  // namespace DDSegmentation
 } /* namespace dd4hep */
-
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(CartesianStripZ,create_segmentation<dd4hep::DDSegmentation::CartesianStripZ>)

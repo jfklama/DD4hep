@@ -27,7 +27,7 @@ namespace dd4hep {
   namespace Parsers {
 
     // ==========================================================================
-    template <> int parse(ROOT::Math::XYZPoint& result,const std::string& input) {
+    int parse(ROOT::Math::XYZPoint& result,const std::string& input) {
       return parse_(result, input);
     }
     // ==========================================================================

@@ -93,6 +93,12 @@ PrintLevel Geant4Action::setOutputLevel(PrintLevel new_level)  {
   return (PrintLevel)old;
 }
 
+/// Set object properties
+Geant4Action& Geant4Action::setProperties(PropertyConfigurator& setup) {
+  m_properties.set(m_name, setup);
+  return *this;
+}
+
 /// Check property for existence
 bool Geant4Action::hasProperty(const string& nam) const    {
   return m_properties.exists(nam);
@@ -196,14 +202,6 @@ void Geant4Action::printP2(const char* fmt, ...) const   {
     dd4hep::printout((PrintLevel)level, m_name.c_str(), fmt, args);
     va_end(args);
   }
-}
-
-/// Support of always printed messages.
-void Geant4Action::always(const char* fmt, ...) const {
-  va_list args;
-  va_start(args, fmt);
-  dd4hep::printout(dd4hep::ALWAYS, m_name, fmt, args);
-  va_end(args);
 }
 
 /// Support of debug messages.

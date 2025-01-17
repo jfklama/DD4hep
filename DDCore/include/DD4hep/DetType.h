@@ -11,10 +11,8 @@
 //
 //==========================================================================
 
-#ifndef DD4HEP_DETTYPE_H
-#define DD4HEP_DETTYPE_H
-
-#include <ostream>
+#ifndef DD4HEP_DetType_H
+#define DD4HEP_DetType_H
 
 /// Namespace for the AIDA detector description toolkit
 namespace dd4hep {
@@ -124,4 +122,4 @@ namespace dd4hep {
   
 } /* End namespace dd4hep        */
 
-#endif // DD4HEP_DETTYPE_H
+#endif    /* DD4HEP_DETECTOR_H      */

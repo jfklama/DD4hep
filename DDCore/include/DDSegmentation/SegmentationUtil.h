@@ -5,10 +5,8 @@
  *      Author: Christian Grefe, CERN
  */
 
-#ifndef DDSEGMENTATION_SEGMENTATIONUTIL_H
-#define DDSEGMENTATION_SEGMENTATIONUTIL_H
-
-#include "DDSegmentation/Segmentation.h"
+#ifndef DDSegmentation_SEGMENTATIONUTIL_H_
+#define DDSegmentation_SEGMENTATIONUTIL_H_
 
 #include <cmath>
 #include <vector>
@@ -119,4 +117,4 @@ inline Vector3D positionFromREtaPhi(double ar, double aeta, double aphi) {
 } /* namespace DDSegmentation */
 } /* namespace dd4hep */
 
-#endif // DDSEGMENTATION_SEGMENTATIONUTIL_H
+#endif /* DDSegmentation_SEGMENTATIONUTIL_H_ */

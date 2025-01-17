@@ -12,11 +12,9 @@
 //==========================================================================
 
 // Framework includes
-#include "DD4hep/Printout.h"
 #include "DD4hep/FieldTypes.h"
 #include "DD4hep/MatrixHelpers.h"
 #include "DD4hep/DetFactoryHelper.h"
-#include <cmath>
 
 using namespace dd4hep;
 
@@ -98,7 +96,8 @@ static Handle<NamedObject> convert_multipole(Detector&, xml_h field, Handle<Name
   field.setAttr(_U(name), object->GetName());
   field.setAttr(_U(type), object->GetTitle());
   field.setAttr(_U(Z), ptr->B_z);
-  detail::matrix::_decompose(ptr->transform, pos, rot);
+  Transform3D inv = ptr->transform.Inverse();
+  detail::matrix::_decompose(inv, pos, rot);
   xml_elt_t x_pos = xml_elt_t(doc, _U(position));
   x_pos.setAttr(_U(x),pos.x());
   x_pos.setAttr(_U(y),pos.y());

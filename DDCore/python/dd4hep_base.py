@@ -10,19 +10,15 @@
 # ==========================================================================
 from __future__ import absolute_import, unicode_literals
 import cppyy
-import importlib
-import types
+import imp
 import logging
-
 
 logger = logging.getLogger(__name__)
 
+# We compile the DDG4 plugin on the fly if it does not exist using the AClick mechanism:
+
 
 def compileAClick(dictionary, g4=True):
-  """
-  We compile the DDG4 plugin on the fly if it does not exist using the AClick mechanism.
-
-  """
   from ROOT import gInterpreter, gSystem
   import os.path
   dd4hep = os.environ['DD4hepINSTALL']
@@ -36,17 +32,14 @@ def compileAClick(dictionary, g4=True):
   gSystem.AddIncludePath(inc)
   gSystem.AddLinkedLibs(lib)
   logger.info('Loading AClick %s', dictionary)
-  package_spec = importlib.util.find_spec('DDG4')
-  dic = os.path.dirname(package_spec.origin) + os.sep + dictionary
+  package = imp.find_module('DDG4')
+  dic = os.path.dirname(package[1]) + os.sep + dictionary
   gInterpreter.ProcessLine('.L ' + dic + '+')
   from ROOT import dd4hep as module
   return module
 
 
 def loaddd4hep():
-  """
-  Import DD4hep module from ROOT using ROOT reflection
-  """
   import os
   import sys
   # Add ROOT to the python path in case it is not yet there....
@@ -105,40 +98,7 @@ class _Levels:
     self.ALWAYS = 7
 
 
-# ---------------------------------------------------------------------------
-def unicode_2_string(value):
-  """Turn any unicode literal into str, needed when passing to c++.
-
-  Recursively transverses dicts, lists, sets, tuples
-
-  :return: always a str
-  """
-  import ddsix as six
-  if isinstance(value, (bool, float, six.integer_types)):
-    value = value
-  elif isinstance(value, six.string_types):
-    value = str(value)
-  elif isinstance(value, (list, set, tuple)):
-    value = [unicode_2_string(x) for x in value]
-  elif isinstance(value, dict):
-    tempDict = {}
-    for key, val in value.items():
-      key = unicode_2_string(key)
-      val = unicode_2_string(val)
-      tempDict[key] = val
-    value = tempDict
-  return str(value)
-
-
 OutputLevel = _Levels()
-VERBOSE = OutputLevel.VERBOSE
-DEBUG = OutputLevel.DEBUG
-INFO = OutputLevel.INFO
-WARNING = OutputLevel.WARNING
-ERROR = OutputLevel.ERROR
-FATAL = OutputLevel.FATAL
-
-
 # ------------------------Generic STL stuff can be accessed using std:  -----
 #
 # -- e.g. Create an instance of std::vector<dd4hep::sim::Geant4Vertex*>:
@@ -156,42 +116,22 @@ cond = dd4hep.cond
 tools = dd4hep.tools
 align = dd4hep.align
 detail = dd4hep.detail
-units = types.ModuleType('units')
+units = imp.new_module('units')
 # ---------------------------------------------------------------------------
 import_namespace_item('tools', 'Evaluator')
 # ---------------------------------------------------------------------------
 import_namespace_item('core', 'NamedObject')
 import_namespace_item('core', 'run_interpreter')
-#
-import_namespace_item('detail', 'interp')
-# No: This inhibits the usage of native python eval!
-# import_namespace_item('detail', 'eval')
-
-# ---------------------------------------------------------------------------
-# def run_interpreter(name):   detail.interp.run(name)
-# def evaluator():     return eval.instance()
-# def g4Evaluator():   return eval.g4instance()
 
 
-# ---------------------------------------------------------------------------
 def import_detail():
   import_namespace_item('detail', 'DD4hepUI')
 
 
-# ---------------------------------------------------------------------------
 def import_geometry():
   import_namespace_item('core', 'setPrintLevel')
   import_namespace_item('core', 'setPrintFormat')
   import_namespace_item('core', 'printLevel')
-  import_namespace_item('core', 'PrintLevel')
-
-  import_namespace_item('core', 'debug')
-  import_namespace_item('core', 'info')
-  import_namespace_item('core', 'warning')
-  import_namespace_item('core', 'error')
-  import_namespace_item('core', 'fatal')
-  import_namespace_item('core', 'exception')
-
   import_namespace_item('core', 'Detector')
   import_namespace_item('core', 'evaluator')
   import_namespace_item('core', 'g4Evaluator')
@@ -209,16 +149,10 @@ def import_geometry():
   import_namespace_item('core', 'VisAttr')
   import_namespace_item('core', 'Limit')
   import_namespace_item('core', 'LimitSet')
-  import_namespace_item('core', 'LimitSetObject')
   import_namespace_item('core', 'Region')
-  import_namespace_item('core', 'RegionObject')
-  import_namespace_item('core', 'HitCollection')
 
   # // Readout.h
-  import_namespace_item('core', 'Segmentation')
-  import_namespace_item('core', 'SegmentationObject')
   import_namespace_item('core', 'Readout')
-  import_namespace_item('core', 'ReadoutObject')
 
   # // Alignments.h
   import_namespace_item('core', 'Alignment')
@@ -265,7 +199,6 @@ def import_geometry():
   import_namespace_item('core', 'IntersectionSolid')
 
 
-# ---------------------------------------------------------------------------
 def import_tgeo():
   import_root('TGeoManager')
   import_root('TGeoNode')
@@ -318,124 +251,66 @@ def import_tgeo():
 import_tgeo()
 import_geometry()
 import_detail()
-
-
-# ---------------------------------------------------------------------------
-class Logger:
-  """
-  Helper class to use the dd4hep printout functions from python
-
-  \author  M.Frank
-  \version 1.0
-  """
-
-  def __init__(self, name):
-    "Logger constructor"
-    self.name = name
-
-  def setPrintLevel(self, level):
-    "Adjust printout level of dd4hep"
-    dd4hep.setPrintLevel(level)
-
-  def always(self, msg):
-    "Call dd4hep printout function with level ALWAYS"
-    dd4hep.always(self.name, msg)
-
-  def verbose(self, msg):
-    "Call dd4hep printout function with level VERBOSE"
-    dd4hep.verbose(self.name, msg)
-
-  def debug(self, msg):
-    "Call dd4hep printout function with level DEBUG"
-    dd4hep.debug(self.name, msg)
-
-  def info(self, msg):
-    "Call dd4hep printout function with level INFO"
-    dd4hep.info(self.name, msg)
-
-  def warning(self, msg):
-    "Call dd4hep printout function with level WARNING"
-    dd4hep.warning(self.name, msg)
-
-  def error(self, msg):
-    "Call dd4hep printout function with level ERROR"
-    dd4hep.error(self.name, msg)
-
-  def fatal(self, msg):
-    "Call dd4hep printout function with level FATAL"
-    dd4hep.fatal(self.name, msg)
-
-  def exception(self, msg):
-    "Call dd4hep exception function"
-    dd4hep.exception(self.name, msg)
-
-
-dd4hep_logger = Logger
-
-
-# ---------------------------------------------------------------------------
-#
-# Helper: Command line interpreter
-#
-# ---------------------------------------------------------------------------
-class CommandLine:
-  """
-  Helper to ease parsing the command line.
-  Any argument given in the command line is accessible
-  from the object. If no value is supplied, the returned
-  value is True. If the argument is not present None is returned.
-
-  \author  M.Frank
-  \version 1.0
-  """
-  def __init__(self, help=None):  # noqa: A002
-    import sys
-    self.data = {}
-    help_call = help
-    have_help = False
-    for i in range(len(sys.argv)):
-      if sys.argv[i][0] == '-':
-        key = sys.argv[i][1:]
-        val = True
-        if i + 1 < len(sys.argv):
-          v = sys.argv[i + 1]
-          if v[0] != '-':
-            val = v
-        self.data[key] = val
-        if key.upper() == 'HELP' or key.upper() == '?':
-         have_help = True
-    if have_help and help_call:
-      help_call()
-
-  def __getattr__(self, attr):
-    if self.data.get(attr):
-      return self.data.get(attr)
-    return None
-
-
-# ---------------------------------------------------------------------------
 #
 #  Import units from TGeo.
 #  Calling import_units makes all the units local to the dd4hep module.
 #
 try:
-  import_namespace_item('core', 'dd4hep_units')
-
+  # from ROOT import TGeoUnit as TGeoUnits
   def import_units(ns=None):
+    def import_unit(ns, nam):
+      setattr(ns, nam, getattr(core, nam))
+    items = [
+        # Length
+        'nanometer', 'micrometer', 'millimeter', 'centimeter', 'meter', 'kilometer', 'parsec', 'angstrom', 'fermi',
+        'nm', 'um', 'mm', 'cm', 'm', 'km', 'pc',
+        # Area
+        'millimeter2', 'centimeter2', 'meter2', 'kilometer2', 'barn', 'millibarn', 'microbarn', 'nanobarn', 'picobarn',
+        'mm2', 'cm2', 'm2', 'km2',
+        # Volume
+        'millimeter3', 'centimeter3', 'meter3', 'kilometer3', 'mm3', 'cm3', 'm3', 'km3',
+        # Angle
+        'radian', 'milliradian', 'degree', 'steradian', 'rad', 'mrad', 'sr', 'deg',
+        # Time & frequency
+        'nanosecond', 'second', 'millisecond', 'microsecond', 'picosecond', 'hertz',
+        'kilohertz', 'megahertz', 'ns', 's', 'ms',
+        # Electric charge
+        'eplus', 'e_SI', 'coulomb',
+        # Energy
+        'electronvolt', 'kiloelectronvolt', 'megaelectronvolt', 'gigaelectronvolt', 'teraelectronvolt',
+        'petaelectronvolt', 'joule', 'eV', 'keV', 'MeV', 'GeV', 'TeV', 'PeV',
+        # Mass
+        'milligram', 'gram', 'kilogram', 'mg', 'g', 'kg',
+        # Power, Force, Pressure
+        'watt', 'newton', 'hep_pascal', 'bar', 'atmosphere',
+        # Electrical current, potential, resistance
+        'nanoampere', 'microampere', 'milliampere', 'ampere', 'volt', 'kilovolt', 'megavolt', 'ohm',
+        # Electric capacitance
+        'picofarad', 'nanofarad', 'microfarad', 'millifarad', 'farad',
+        # Magnetic flux, field, Inductance, Temperature, substance
+        'weber', 'tesla', 'gauss', 'kilogauss', 'henry', 'kelvin', 'mole',
+        # Activity, dose intensity
+        'becquerel', 'curie', 'microgray', 'milligray', 'gray', 'kilogray',
+        # Luminous intensity, flux, Illuminance
+        'candela', 'lumen', 'lux',
+        # Misc
+        'perCent', 'perThousand', 'perMillion', 'pi', 'twopi', 'halfpi', 'pi2',
+        'Avogadro', 'c_light', 'c_squared', 'h_Planck', 'hbar_Planck', 'hbarc', 'hbarc_squared', 'electron_charge',
+        'e_squared', 'electron_mass_c2', 'proton_mass_c2', 'neutron_mass_c2', 'amu_c2', 'amu', 'mu0', 'epsilon0',
+        #
+        'elm_coupling', 'fine_structure_const', 'classic_electr_radius', 'electron_Compton_length', 'Bohr_radius',
+        'alpha_rcl2', 'twopi_mc2_rcl2', 'k_Boltzmann', 'STP_Temperature', 'STP_Pressure',
+        'kGasThreshold', 'universe_mean_density'
+        ]
     if ns is None:
       ns = name_space
-
     logger.debug('Importing units into namespace ' + str(ns.__name__))
-    count = 0
-    for nam in dir(dd4hep.dd4hep_units):
-      if nam[0] != '_':
-        count = count + 1
-        setattr(ns, nam, getattr(core.dd4hep_units, nam))
-        # setattr(ns, nam, getattr(core, nam))
-    return count
-
+    for u in items:
+      if u[0] != '_':
+        import_unit(ns, u)
+    return len(items)
 except Exception as e:
-  logger.warning('No units can be imported. ' + str(e))
+  logger.warning('No units can be imported. %s' % str(e))
 
   def import_units(ns=None):
     return 0

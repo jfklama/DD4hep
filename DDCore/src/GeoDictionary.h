@@ -13,14 +13,13 @@
 //  M.Frank
 //
 //==========================================================================
-#ifndef DDCORE_SRC_GEODICTIONARY_H
-#define DDCORE_SRC_GEODICTIONARY_H
+#ifndef DD4HEP_DDCORE_ROOTDICTIONARY_H
+#define DD4HEP_DDCORE_ROOTDICTIONARY_H
 
 // Framework include files
 #include "DD4hep/Volumes.h"
 #include "DD4hep/Shapes.h"
 #include "DD4hep/VolumeProcessor.h"
-#include "DD4hep/detail/ShapesInterna.h"
 
 // C/C++ include files
 #include <vector>
@@ -35,6 +34,8 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
+using namespace std;
+
 #pragma link C++ namespace dd4hep;
 
 // Volume.h
@@ -47,19 +48,17 @@
 #pragma link C++ class dd4hep::PlacedVolume::Processor+;
 
 #ifndef __ROOTCLING__
-template std::vector<std::pair<std::string, int> >;
-template std::vector<std::pair<std::string, int> >::iterator;
+template vector<pair<string, int> >;
+template vector<pair<string, int> >::iterator;
 #endif
-#pragma link C++ class std::vector<std::pair<std::string, int> >+;
-#pragma link C++ class std::vector<std::pair<std::string, int> >::iterator;
+#pragma link C++ class vector<pair<string, int> >+;
+#pragma link C++ class vector<pair<string, int> >::iterator;
 #pragma link C++ class dd4hep::PlacedVolumeExtension::VolIDs+;
-#pragma link C++ class dd4hep::PlacedVolumeExtension::Parameterisation+;
-#pragma link C++ class dd4hep::PlacedVolumeExtension::Parameterisation::Dimension+;
 #pragma link C++ class dd4hep::PlacedVolumeExtension+;
-#pragma link C++ class std::vector<dd4hep::PlacedVolume>+;
+#pragma link C++ class vector<dd4hep::PlacedVolume>+;
 #pragma link C++ class dd4hep::Handle<TGeoNode>+;
-#pragma link C++ class std::vector<TGeoNode*>+;
-#pragma link C++ class std::vector<TGeoVolume*>+;
+#pragma link C++ class vector<TGeoNode*>+;
+#pragma link C++ class vector<TGeoVolume*>+;
 
 
 // Shapes.h
@@ -133,9 +132,5 @@ template std::vector<std::pair<std::string, int> >::iterator;
 #pragma link C++ class dd4hep::PlacedVolumeProcessor+;
 #pragma link C++ class dd4hep::PlacedVolumeScanner+;
 
-#pragma link C++ class dd4hep::TwistedTube+;
-#pragma link C++ class dd4hep::Solid_type<dd4hep::TwistedTubeObject>+;
-#pragma link C++ class dd4hep::TwistedTubeObject+;
-
 #endif  // __CINT__
-#endif // DDCORE_SRC_GEODICTIONARY_H
+#endif  /* DD4HEP_DDCORE_ROOTDICTIONARY_H  */

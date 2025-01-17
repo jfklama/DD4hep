@@ -47,9 +47,7 @@ double GridRPhiEta::r(const CellID& cID) const {
   CellID rValue = _decoder->get(cID, m_rID);
   return binToPosition(rValue, m_gridSizeR, m_offsetR);
 }
+REGISTER_SEGMENTATION(GridRPhiEta)
 }
 }
 
-// This is done DDCore/src/plugins/ReadoutSegmentations.cpp so the plugin is not part of libDDCore
-// needs also #include "DD4hep/Factories.h"
-// DECLARE_SEGMENTATION(GridRPhiEta,create_segmentation<dd4hep::DDSegmentation::GridRPhiEta>)

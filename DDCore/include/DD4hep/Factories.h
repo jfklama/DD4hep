@@ -14,9 +14,9 @@
 #define DD4HEP_FACTORIES_H
 
 // Framework include files
-#include <DD4hep/Plugins.h>
-#include <DD4hep/DetElement.h>
-#include <DD4hep/NamedObject.h>
+#include "DD4hep/Plugins.h"
+#include "DD4hep/DetElement.h"
+#include "DD4hep/NamedObject.h"
 
 // C/C++ include files
 #include <cstdarg>
@@ -54,10 +54,6 @@ namespace dd4hep {
    *  \date    2012/07/31
    *  \ingroup DD4HEP_CORE
    */
-  template <typename T> class SimpleConstructionFactory {
-  public:
-    static void* create();
-  };
   template <typename T> class ConstructionFactory {
   public:
     static void* create(const char* arg);
@@ -116,7 +112,7 @@ namespace dd4hep {
     static Handle<NamedObject> create(Detector& description);
   };
 
-  /// Create an arbitrary object from its XML representation.
+  /// Create an arbitrary object from it's XML representation.
   /**
    *
    *  \author  M.Frank
@@ -142,7 +138,7 @@ namespace dd4hep {
     static Handle<TObject> create(Detector& description, xml::Handle_t e);
   };
   
-  ///  Read an arbitrary XML document and analyze its content
+  ///  Read an arbitrary XML document and analyze it's content
   /**
    *
    *  \author  M.Frank
@@ -155,7 +151,7 @@ namespace dd4hep {
     static long create(Detector& description, xml::Handle_t e);
   };
 
-  /// Read an arbitrary XML document and analyze its content
+  /// Read an arbitrary XML document and analyze it's content
   /**
    *
    *  \author  M.Frank
@@ -210,9 +206,6 @@ namespace {
     typedef dd4hep::DDSegmentation::BitFieldCoder   BitFieldCoder;
   }
 
-  DD4HEP_PLUGIN_FACTORY_ARGS_0(void*)  
-  {    return dd4hep::SimpleConstructionFactory<P>::create();                           }
-
   DD4HEP_PLUGIN_FACTORY_ARGS_1(void*,const char*)  
   {    return dd4hep::ConstructionFactory<P>::create(a0);                               }
 
@@ -225,12 +218,8 @@ namespace {
   DD4HEP_PLUGIN_FACTORY_ARGS_3(void*,dd4hep::Detector*,int,char**)
   {    return dd4hep::DetectorConstructionFactory<P>::create(*a0,a1,a2);                }
 
-  DD4HEP_PLUGIN_FACTORY_ARGS_3(long,dd4hep::Detector*,int,char**)  {
-    static long ret;
-    long result = dd4hep::ApplyFactory<P>::create(*a0,a1,a2);
-    ret = result;
-    return long(&ret);
-  }
+  DD4HEP_PLUGIN_FACTORY_ARGS_3(long,dd4hep::Detector*,int,char**)
+  {    return make_return<long>(dd4hep::ApplyFactory<P>::create(*a0,a1,a2));            }
 
   DD4HEP_PLUGIN_FACTORY_ARGS_2(ns::Named*,dd4hep::Detector*,ns::xml_h*)
   {    return dd4hep::XMLElementFactory<P>::create(*a0,*a1).ptr();                      }
@@ -238,12 +227,8 @@ namespace {
   DD4HEP_PLUGIN_FACTORY_ARGS_2(TObject*,dd4hep::Detector*,ns::xml_h*)
   {    return dd4hep::XMLObjectFactory<P>::create(*a0,*a1).ptr();                       }
 
-  DD4HEP_PLUGIN_FACTORY_ARGS_2(long,dd4hep::Detector*,ns::xml_h*)    {
-    static long ret;
-    long result = dd4hep::XMLDocumentReaderFactory<P>::create(*a0,*a1);
-    ret = result;
-    return long(&ret);
-  }
+  DD4HEP_PLUGIN_FACTORY_ARGS_2(long,dd4hep::Detector*,ns::xml_h*)
+  {    return make_return<long>(dd4hep::XMLDocumentReaderFactory<P>::create(*a0,*a1));  }
 
   DD4HEP_PLUGIN_FACTORY_ARGS_3(ns::Named*,dd4hep::Detector*,ns::xml_h*,ns::ref_t*)
   {    return dd4hep::XmlDetElementFactory<P>::create(*a0,*a1,*a2).ptr();               }
@@ -271,11 +256,6 @@ namespace {
       SegmentationFactory<name>::create(const DDSegmentation::BitFieldCoder* d) { return func(d); } \
     DD4HEP_PLUGINSVC_FACTORY(name,segmentation_constructor__##name,     \
                              SegmentationObject*(const DDSegmentation::BitFieldCoder*),__LINE__)}
-
-// Call function of the type [void* (*func)()]
-#define DECLARE_CREATE(name,func)        DD4HEP_OPEN_PLUGIN(dd4hep,name)   { \
-    template <> void* SimpleConstructionFactory<name>::create() { return func(); } \
-    DD4HEP_PLUGINSVC_FACTORY(name,name,void*(),__LINE__)}
 
 // Call function of the type [long (*func)(const char* arg)]
 #define DECLARE_APPLY(name,func)        DD4HEP_OPEN_PLUGIN(dd4hep,name)   { \
@@ -316,11 +296,6 @@ namespace {
 #define DECLARE_XML_DOC_READER(name,func)  DD4HEP_OPEN_PLUGIN(dd4hep,xml_document_##name)  { \
     template <> long XMLDocumentReaderFactory<xml_document_##name>::create(dd4hep::Detector& l,ns::xml_h e) {return func(l,e);} \
     DD4HEP_PLUGINSVC_FACTORY(xml_document_##name,name##_XML_reader,long(dd4hep::Detector*,ns::xml_h*),__LINE__)  }
-
-// Call function of the type [long (*func)(dd4hep::Detector& description, xml_h handle)]
-#define DECLARE_XML_PLUGIN(name,func)  DD4HEP_OPEN_PLUGIN(dd4hep,xml_document_##name)  { \
-    template <> long XMLDocumentReaderFactory<xml_document_##name>::create(dd4hep::Detector& l,ns::xml_h e) {return func(l,e);} \
-    DD4HEP_PLUGINSVC_FACTORY(xml_document_##name,name,long(dd4hep::Detector*,ns::xml_h*),__LINE__)  }
 
 // Call function of the type [NamedObject* (*func)(dd4hep::Detector& description, xml_h handle, ref_t reference)]
 #define DECLARE_XML_PROCESSOR_BASIC(name,func,deprecated)  DD4HEP_OPEN_PLUGIN(dd4hep,det_element_##name) {\
